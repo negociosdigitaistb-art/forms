@@ -150,6 +150,13 @@
   const PREVIA = qs.has("preview");
   const params = {};
   qs.forEach((v, k) => { if (k !== "preview") params[k] = v.slice(0, 300); });
+  // versão sem trocar "+" por espaço (e-mails com + e telefones +55)
+  const brutos = {};
+  location.search.replace(/^\?/, "").split("&").forEach((par) => {
+    if (!par) return;
+    const i = par.indexOf("="); const k = i < 0 ? par : par.slice(0, i); const v = i < 0 ? "" : par.slice(i + 1);
+    try { brutos[decodeURIComponent(k)] = decodeURIComponent(v).slice(0, 300); } catch (e) {}
+  });
   if (document.referrer && !document.referrer.startsWith(location.origin)) params.referrer = document.referrer.slice(0, 300);
 
   function slugDaUrl() {
@@ -282,7 +289,8 @@
     atual = p.id;
     if (!vistas.includes(p.id)) vistas.push(p.id);
     gravar("fm_progresso", { p_token: token, p_respostas: respostas, p_vistas: vistas, p_atual: p.id });
-    const v = respostas[p.id];
+    let v = respostas[p.id];
+    if (v === undefined && FM.PREENCHE.includes(p.tipo)) { const u = FM.valorDaUrl(p, params, brutos); if (u != null) v = u; }
     let campo = "";
     const t = p.tipo;
 
@@ -404,7 +412,7 @@
       }
       if (t === "telefone") inp.addEventListener("input", () => { inp.value = inp.value.replace(/[^\d+()\s-]/g, ""); });
       inp.addEventListener("input", () => erro(""));
-      setTimeout(() => inp.focus({ preventScroll: true }), 60);
+      setTimeout(() => { inp.focus({ preventScroll: true }); try { if (inp.value && inp.type !== "date" && inp.type !== "email") inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) {} }, 60);
     }
     palco.querySelectorAll(".op[data-v], .op[data-outro]").forEach((b) => {
       if (b.closest("#lst")) return;
@@ -550,6 +558,7 @@
       if (d.fm !== "preview" || !d.form) return;
       if (ev.origin !== location.origin) return;
       if (d.reiniciar) { respostas = {}; vistas = []; historico = []; }
+      if (d.params) { Object.keys(params).forEach((k) => delete params[k]); Object.keys(brutos).forEach((k) => delete brutos[k]); Object.assign(params, d.params); Object.assign(brutos, d.params); }
       comecar(d.form, d.ir);
     });
     const alvo = window.opener || (window.parent !== window ? window.parent : null);

@@ -124,8 +124,9 @@
       const kl = k.toLowerCase();
       let v = "";
       if (porChave[kl]) v = textoResposta(respostas[porChave[kl]]);
-      else if (params && params[k] != null) v = params[k];
-      else if (params && params[kl] != null) v = params[kl];
+      if (!v && params && params[k] != null) v = params[k];
+      if (!v && params && params[kl] != null) v = params[kl];
+      if (/^%[A-Z_]+%$|^\{\{.*\}\}$|^\[.*\]$/.test(String(v).trim())) v = ""; // tag de e-mail não trocada
       return codificar ? encodeURIComponent(v) : v;
     });
   }
@@ -142,5 +143,49 @@
     return norm(s).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "form";
   }
 
-  window.FM = { TIPOS, OPS, uid, vazio, avaliar, regraBate, proximo, textoResposta, variaveis, chaveSugerida, slugify, norm };
+  // ---------- pré-preenchimento pela URL ----------
+  const PREENCHE = ["curto", "longo", "email", "telefone", "numero", "data"];
+  const APELIDOS = {
+    email: ["email", "e-mail", "mail"],
+    telefone: ["telefone", "phone", "whatsapp", "celular", "tel", "fone"],
+    nome: ["nome", "name", "first_name", "primeiro_nome"]
+  };
+  function pareceNome(p) {
+    return p.tipo === "curto" && (/^(nome|primeiro_nome|seu_nome|name)(_|$)/.test(norm(p.chave)) || /\b(seu|teu) (primeiro )?nome\b/.test(norm(p.titulo)));
+  }
+  // nomes de parâmetro que preenchem esta pergunta, em ordem de prioridade
+  function paramsDaPergunta(p) {
+    if (!PREENCHE.includes(p.tipo)) return [];
+    const l = [];
+    if (p.param) l.push(p.param);
+    if (p.chave) l.push(p.chave);
+    if (p.tipo === "email") l.push(...APELIDOS.email);
+    else if (p.tipo === "telefone") l.push(...APELIDOS.telefone);
+    else if (pareceNome(p)) l.push(...APELIDOS.nome);
+    return [...new Set(l.map((x) => x.toLowerCase()))];
+  }
+  // params: já decodificados (+ vira espaço); brutos: sem trocar + por espaço (para e-mail e telefone)
+  function valorDaUrl(p, params, brutos) {
+    const nomes = paramsDaPergunta(p);
+    if (!nomes.length) return null;
+    const fonte = p.tipo === "email" || p.tipo === "telefone" ? brutos : params;
+    const lower = {};
+    Object.keys(fonte || {}).forEach((k) => { lower[k.toLowerCase()] = fonte[k]; });
+    for (const n of nomes) {
+      let v = lower[n];
+      if (v == null || !String(v).trim()) continue;
+      v = String(v).trim().slice(0, 300);
+      if (/^%[A-Z_]+%$|^\{\{.*\}\}$|^\[.*\]$/.test(v)) continue; // tag de e-mail que não foi trocada
+      if (p.tipo === "email") v = v.replace(/\s/g, "").toLowerCase();
+      if (p.tipo === "telefone") v = v.replace(/[^\d+()\s-]/g, "");
+      if (p.tipo === "numero") { const n2 = Number(v.replace(",", ".")); if (isNaN(n2)) continue; v = n2; }
+      if (p.tipo === "data" && !/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+        const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v); if (!m) continue; v = m[3] + "-" + m[2] + "-" + m[1];
+      }
+      return v;
+    }
+    return null;
+  }
+
+  window.FM = { PREENCHE, paramsDaPergunta, valorDaUrl, TIPOS, OPS, uid, vazio, avaliar, regraBate, proximo, textoResposta, variaveis, chaveSugerida, slugify, norm };
 })();

@@ -999,8 +999,10 @@ function painelPergunta(pn, p) {
     campo(p.tipo === "aviso" ? "Texto" : "Pergunta", txa("titulo", p.titulo, 'id="q-titulo" rows="2" placeholder="' + (p.tipo === "aviso" ? "Ex.: Agora vamos falar sobre o seu negócio" : "Escreva sua pergunta aqui") + '"'), "Use <code>{{variável}}</code> para puxar respostas anteriores, ex.: Prazer, {{nome}}!") +
     campo("Descrição", txa("descricao", p.descricao, 'rows="2" placeholder="Opcional"')) +
     (p.tipo !== "aviso" ? tog("obrigatorio", p.obrigatorio, "Resposta obrigatória") : "") +
-    '<details class="mais-op"' + (p.chave || p.imagem ? " open" : "") + "><summary>Variável e imagem</summary>" +
+    '<details class="mais-op"' + (p.chave || p.imagem || p.param ? " open" : "") + "><summary>Variável, preenchimento e imagem</summary>" +
     (p.tipo !== "aviso" ? campo("Variável", inp("chave", p.chave, 'id="q-chave" placeholder="' + h(FM.chaveSugerida(p.titulo || "pergunta", usadas)) + '" pattern="[a-zA-Z0-9_]+"'), "Nome curto para usar como <code>{{" + h(p.chave || "variavel") + "}}</code> em textos e links, e como coluna no Excel.") : "") +
+    (FM.PREENCHE.includes(p.tipo) ? campo("Preencher com parâmetro da URL", inp("param", p.param, 'id="q-param" placeholder="' + h(FM.paramsDaPergunta(Object.assign({}, p, { param: "" })).slice(0, 3).join(", ") || "ex.: cidade") + '"'),
+      "Se o link tiver esse parâmetro, a resposta já aparece preenchida e a pessoa só confirma. " + (FM.paramsDaPergunta(Object.assign({}, p, { param: "" })).length ? "Vazio = usa automaticamente: <code>" + FM.paramsDaPergunta(Object.assign({}, p, { param: "" })).map(h).join("</code> <code>") + "</code>" : "Ex.: <code>?cidade=Porto+Alegre</code>")) : "") +
     campo("Imagem (link)", inp("imagem", p.imagem, 'placeholder="https://…"')) +
     "</details></div>" + extra +
     (p.tipo !== "aviso" || true ? '<div class="card" id="logica"></div>' : "") +
@@ -1008,6 +1010,7 @@ function painelPergunta(pn, p) {
 
   ligarCampos(pn, p, (k, v, el) => {
     if (k === "titulo") { const b = $('[data-tit="' + p.id + '"]'); if (b) b.textContent = v || "Sem título"; if (!p._chaveManual && !p.chave) { const c = $("#q-chave"); if (c) c.placeholder = FM.chaveSugerida(v || "pergunta", usadas); } }
+    if (k === "param") { const lim = String(v).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 40); if (lim !== v) { el.value = lim; p.param = lim; } }
     if (k === "chave") { const lim = String(v).replace(/[^a-zA-Z0-9_]/g, "").slice(0, 30); if (lim !== v) { el.value = lim; p.chave = lim; } if (usadas.has(p.chave)) toast("Já existe outra pergunta com essa variável.", true); }
     if (k === "obrigatorio" || k === "permitir_outro") renderLadoLeve();
     if (k === "escala_min" || k === "escala_max") renderLogica(p);
@@ -1595,11 +1598,13 @@ function renderCompartilhar() {
     '<div class="g3">' + campo("sck", '<input data-utm="sck" placeholder="opcional">') + campo("utm_content", '<input data-utm="utm_content" placeholder="opcional">') + campo("Outros", '<input data-utm="_extra" placeholder="email=x@y.com">') + "</div>" +
     '<div class="copy"><input readonly id="lk-utm" value="' + h(link) + '"><button id="lk-utm-c">Copiar</button></div>' +
     '<p class="ajuda">Qualquer parâmetro na URL fica salvo junto da resposta e pode ser usado como <code>{{nome_do_parametro}}</code> nos textos e no redirecionamento.</p></div>' +
+    blocoPreencher(f, link) +
     '<div class="card"><h3>Incorporar no site</h3><p class="ajuda" style="margin:0 0 10px">Cole este código na página (WordPress, Flow Pages, Elementor…):</p><pre id="emb">' + h(embed) + '</pre><button class="mini" id="emb-c" style="margin-top:10px">Copiar código</button></div>' +
     "</div>";
   $$("input[name=st]").forEach((r) => r.onchange = () => mudarStatus(r.value));
   $("#lk-c").onclick = () => copiar(link);
   $("#emb-c").onclick = () => copiar(embed);
+  $$("[data-cp]").forEach((b) => b.onclick = () => copiar(b.dataset.cp));
   $("#slug-ok").onclick = async () => {
     const s = $("#slug").value.trim().toLowerCase();
     if (!/^[a-z0-9][a-z0-9-]{1,60}$/.test(s)) return toast("Use só letras minúsculas, números e hífen (mín. 2).", true);
@@ -1619,6 +1624,22 @@ function renderCompartilhar() {
   };
   $$("[data-utm]").forEach((i) => i.oninput = montar);
   $("#lk-utm-c").onclick = () => copiar($("#lk-utm").value);
+}
+
+function blocoPreencher(f, link) {
+  const qs = f.perguntas.filter((q) => FM.paramsDaPergunta(q).length);
+  const princ = (q) => { const l = FM.paramsDaPergunta(q); return q.param || (q.tipo === "email" ? "email" : q.tipo === "telefone" ? "telefone" : l.includes("nome") ? "nome" : l[0]); };
+  const tagAC = (q) => q.tipo === "email" ? "%EMAIL%" : q.tipo === "telefone" ? "%PHONE%" : FM.paramsDaPergunta(q).some((n) => ["nome", "name", "first_name"].includes(n)) ? "%FIRSTNAME%" : "";
+  if (!qs.length) return '<div class="card"><h3>Preencher com dados do lead</h3><p class="ajuda" style="margin:0">Nenhuma pergunta deste formulário pode ser preenchida pela URL. Perguntas de e-mail, telefone e nome são reconhecidas automaticamente; nas outras de texto, defina o parâmetro em “Variável, preenchimento e imagem”.</p></div>';
+  const exemplo = link + "?" + qs.map((q) => encodeURIComponent(princ(q)) + "=" + (q.tipo === "email" ? "ana@email.com" : q.tipo === "telefone" ? "51999991234" : "Ana")).join("&");
+  const ac = qs.filter(tagAC);
+  const linkAC = ac.length ? link + "?" + ac.map((q) => princ(q) + "=" + tagAC(q)).join("&") : "";
+  return '<div class="card"><h3>Preencher com dados do lead <small>a pessoa só confirma e clica em OK</small></h3>' +
+    '<div class="tab-wrap" style="margin-bottom:12px"><table><thead><tr><th>Pergunta</th><th>Parâmetros aceitos</th></tr></thead><tbody>' +
+    qs.map((q) => "<tr style=\"cursor:default\"><td>" + h(q.titulo || "Sem título") + '</td><td class="mono">' + FM.paramsDaPergunta(q).map(h).join(", ") + "</td></tr>").join("") + "</tbody></table></div>" +
+    '<label class="f"><span>Exemplo</span><div class="copy" style="margin:0"><input readonly value="' + h(exemplo) + '"><button data-cp="' + h(exemplo) + '">Copiar</button></div></label>' +
+    (linkAC ? '<label class="f"><span>Para e-mails do ActiveCampaign</span><div class="copy" style="margin:0"><input readonly value="' + h(linkAC) + '"><button data-cp="' + h(linkAC) + '">Copiar</button></div><small>As tags %…% são trocadas pelo ActiveCampaign no envio. Se alguma vier vazia, o campo fica em branco para a pessoa digitar.</small></label>' : "") +
+    "</div>";
 }
 
 // ---------------- RESULTADOS ----------------
