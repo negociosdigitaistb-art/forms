@@ -360,6 +360,68 @@
   .fx-lado-cab { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--surface); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
   .fx-lado .painel { flex:1; padding:18px 18px 60px; min-width:460px; }
   @media (max-width: 1080px) { .fx-lado.aberto { position:absolute; right:0; top:113px; bottom:0; z-index:12; width:min(460px, 100vw); box-shadow:var(--shadow); } .fx-lado .painel { min-width:0; } }
+
+  /* ---------- celular ---------- */
+  .u-acoes { text-align:right; white-space:nowrap; }
+  @media (max-width: 760px) {
+    button, a, input, select, textarea { -webkit-tap-highlight-color:transparent; }
+    input, select, textarea { font-size:16px; } /* evita zoom automático no iPhone */
+    .topbar-in { padding:0 12px; gap:8px; min-height:54px; }
+    .brand { font-size:15px; gap:8px; }
+    .brand-dot { width:26px; height:26px; }
+    .who { gap:6px; }
+    #minha-senha { max-width:120px; overflow:hidden; text-overflow:ellipsis; display:inline-block; }
+    #quem { overflow:hidden; text-overflow:ellipsis; }
+    .ed-top { top:54px; }
+    .ed-top-in { padding:8px 12px 6px; gap:6px 8px; }
+    .ed-tit { flex:1; min-width:0; max-width:none; font-size:15px; }
+    .salvo, .ed-top-in .esp { display:none; }
+    #ed-ver { display:none; }
+    .abas { order:10; width:100%; overflow-x:auto; scrollbar-width:none; }
+    .abas::-webkit-scrollbar { display:none; }
+    .abas a { flex:1 1 auto; justify-content:center; padding:0 6px; font-size:12.5px; }
+    .topo h1 { font-size:22px; min-width:0; }
+    .topo { margin-bottom:16px; }
+    .painel { padding:16px 12px 60px; }
+    .card { padding:16px; border-radius:12px; }
+    .lado { max-height:none; padding:10px 8px 14px; }
+    .modal { padding:10px; align-items:end; }
+    .modal > div { padding:20px 16px; max-height:92vh; border-radius:16px 16px 12px 12px; }
+    .rod { flex-wrap:wrap; }
+    .rod button { flex:1; }
+    .tipos { grid-template-columns:1fr 1fr; gap:4px 8px; }
+    /* fluxo */
+    .fluxo { height:calc(100dvh - 150px); }
+    .fx-barra { top:8px; left:8px; padding:4px; gap:4px; }
+    .fx-barra .mini { padding:0 8px; height:30px; }
+    #fx-org { display:none; }
+    .fx-zoom { top:auto; bottom:12px; right:8px; }
+    .fx-dica { display:none; }
+    .fx-lado.aberto { top:0; position:fixed; width:100vw; z-index:40; }
+    .fx-dot { width:22px; height:22px; margin-top:-11px; right:-11px; }
+    /* design / compartilhar / resultados */
+    .design .cfg { padding:14px 12px; border-right:0; }
+    .design .prevbox { height:560px; }
+    .copy { flex-wrap:wrap; }
+    .copy input { flex:1 1 100%; }
+    .barra { gap:6px; }
+    .barra > .esp { display:none; }
+    .datas { width:100%; }
+    .datas label { flex:1; }
+    .datas input { flex:1; min-width:0; }
+    #rs-busca { width:100% !important; }
+    .rs-vistas { width:100%; }
+    .rs-vistas button { flex:1; }
+    .kpi { padding:12px; }
+    .kpi b { font-size:22px; }
+    .tab-resp { max-height:65vh; }
+    .gaveta > div { padding:16px; }
+    /* usuários */
+    .u-tab th:nth-child(3), .u-tab td:nth-child(3) { display:none; }
+    .u-tab td { white-space:normal; }
+    .u-acoes { white-space:normal; display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+    .grade { grid-template-columns:1fr; }
+  }
   @media (max-width: 1280px) { .construir { grid-template-columns:260px minmax(0,1fr) 340px; } }
   @media (max-width: 1080px) {
     .construir { grid-template-columns:240px minmax(0,1fr); }
@@ -589,9 +651,9 @@ async function renderUsuarios() {
   const { data, error } = await sb.from("fm_usuarios").select("user_id,nome,email,criado_em").order("criado_em");
   if (error) { $("#u-lista").innerHTML = '<p style="color:var(--err-fg)">Erro ao carregar: ' + h(error.message) + "</p>"; return; }
   $("#u-lista").className = "";
-  $("#u-lista").innerHTML = '<div class="tab-wrap"><table><thead><tr><th>Nome</th><th>E-mail (login)</th><th>Desde</th><th></th></tr></thead><tbody>' +
+  $("#u-lista").innerHTML = '<div class="tab-wrap u-tab"><table><thead><tr><th>Nome</th><th>E-mail (login)</th><th>Desde</th><th></th></tr></thead><tbody>' +
     data.map((u) => '<tr style="cursor:default"><td><b style="font-weight:600">' + h(u.nome || "—") + "</b>" + (EU && u.user_id === EU.id ? ' <span class="pill visita">você</span>' : "") + "</td><td>" + h(u.email) + '</td><td class="mut">' + new Date(u.criado_em).toLocaleDateString("pt-BR") + "</td>" +
-      '<td style="text-align:right;white-space:nowrap"><button class="mini" data-senha="' + u.user_id + '">Trocar senha</button> ' +
+      '<td class="u-acoes"><button class="mini" data-senha="' + u.user_id + '">Trocar senha</button> ' +
       (EU && u.user_id === EU.id ? "" : '<button class="mini perigo" data-rem="' + u.user_id + '">Remover acesso</button>') + "</td></tr>").join("") +
     "</tbody></table></div>";
   $$("[data-senha]").forEach((b) => b.onclick = () => trocarSenhaDe(data.find((u) => u.user_id === b.dataset.senha)));
@@ -951,7 +1013,10 @@ function renderLado() {
     f.finais.map((fi, i) => '<div class="item' + (ED.sel === "fim:" + fi.id ? " on" : "") + '" data-sel="fim:' + fi.id + '"><span class="ic t-fim">✓</span><span class="tx"><b>' + h(fi.nome || fi.titulo || "Final") + "</b><small>" + (i === 0 ? "Padrão" : "Por lógica") + (fi.redirecionar ? " · redireciona" : "") + "</small></span></div>").join("") +
     '<button class="add" id="add-fim">+ Tela final</button>';
 
-  $$(".item[data-sel]", lado).forEach((it) => it.onclick = () => { ED.sel = it.dataset.sel; renderLado(); renderPainel(); atualizarPrevia(); });
+  $$(".item[data-sel]", lado).forEach((it) => it.onclick = () => {
+    ED.sel = it.dataset.sel; renderLado(); renderPainel(); atualizarPrevia();
+    if (innerWidth < 760) { const pn = $("#painel"); if (pn) pn.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  });
   $("#add-q").onclick = () => escolherTipo((tipo) => adicionarPergunta(tipo));
   $("#add-fim").onclick = () => {
     const fi = novoFinal("Obrigado!"); fi.nome = "Final " + (f.finais.length + 1);
@@ -1462,6 +1527,10 @@ function fxAjustar() {
   let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
   els.forEach((el) => { const p = pos[el.dataset.no]; if (!p) return; x1 = Math.min(x1, p[0]); y1 = Math.min(y1, p[1]); x2 = Math.max(x2, p[0] + el.offsetWidth); y2 = Math.max(y2, p[1] + el.offsetHeight); });
   const W = cv.clientWidth, H = cv.clientHeight, pad = 60;
+  if (W < 700) { // celular: começa pela primeira etapa num tamanho que dá para ler
+    const z = .72, pIni = pos[els[0].dataset.no];
+    ED.fxView = { z, x: 24 - pIni[0] * z, y: 70 - pIni[1] * z }; return;
+  }
   const z = Math.max(.3, Math.min(1, (W - pad * 2) / (x2 - x1), (H - pad * 2 - 30) / (y2 - y1)));
   ED.fxView = { z, x: (W - (x2 - x1) * z) / 2 - x1 * z, y: Math.max(pad, (H - (y2 - y1) * z) / 2) - y1 * z };
 }
@@ -1581,7 +1650,29 @@ function ligarFluxo() {
   const mundoPt = (e) => { const r = cv.getBoundingClientRect(), v = ED.fxView; return [(e.clientX - r.left - v.x) / v.z, (e.clientY - r.top - v.y) / v.z]; };
   let acao = null;
 
+  const toques = new Map(); let pinca = null;
+  const distTq = () => { const [a, b] = [...toques.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+  cv.addEventListener("pointerdown", (e) => { if (e.pointerType === "touch") toques.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (toques.size === 2) {
+    const t = $("#fx-temp"); if (t) t.remove(); acao = null;
+    const [a, b] = [...toques.values()], r = cv.getBoundingClientRect();
+    pinca = { d0: distTq(), z0: ED.fxView.z, x0: ED.fxView.x, y0: ED.fxView.y, cx: (a.x + b.x) / 2 - r.left, cy: (a.y + b.y) / 2 - r.top };
+  } }, true);
+  cv.addEventListener("pointermove", (e) => {
+    if (!toques.has(e.pointerId)) return;
+    toques.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinca && toques.size === 2) {
+      const v = ED.fxView, z = Math.max(.25, Math.min(1.8, pinca.z0 * distTq() / pinca.d0));
+      const [a, b] = [...toques.values()], r = cv.getBoundingClientRect();
+      const cx = (a.x + b.x) / 2 - r.left, cy = (a.y + b.y) / 2 - r.top;
+      v.z = z; v.x = cx - (pinca.cx - pinca.x0) * z / pinca.z0; v.y = cy - (pinca.cy - pinca.y0) * z / pinca.z0;
+      fxAplicarView(); e.stopImmediatePropagation();
+    }
+  }, true);
+  const fimToque = (e) => { toques.delete(e.pointerId); if (toques.size < 2) pinca = null; };
+  cv.addEventListener("pointerup", fimToque, true);
+  cv.addEventListener("pointercancel", fimToque, true);
   cv.addEventListener("pointerdown", (e) => {
+    if (pinca) return;
     if (e.button !== 0 || e.target.closest(".fx-barra,.fx-zoom,.fx-aresta-ctl")) return;
     const dot = e.target.closest(".fx-dot");
     const hit = e.target.closest(".fx-hit");

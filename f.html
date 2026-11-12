@@ -23,7 +23,8 @@
   body { background:var(--bg); color:var(--fg); font:400 17px/1.5 var(--font); -webkit-font-smoothing:antialiased; overflow:hidden; }
   body.bgimg { background-size:cover; background-position:center; }
   body.bgimg::before { content:""; position:fixed; inset:0; background:color-mix(in srgb, var(--bg) 72%, transparent); pointer-events:none; }
-  button { font:inherit; color:inherit; cursor:pointer; }
+  button { font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+  a, input, textarea { -webkit-tap-highlight-color:transparent; }
   .hide { display:none !important; }
 
   #barra { position:fixed; top:0; left:0; right:0; height:4px; background:var(--fg-06); z-index:5; }
@@ -31,7 +32,7 @@
   #logo { position:fixed; top:22px; left:28px; z-index:4; max-height:34px; max-width:160px; }
   #previa { position:fixed; top:14px; right:14px; z-index:6; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:5px 10px; border-radius:999px; background:var(--ac-20); color:var(--ac); }
 
-  #palco { position:relative; height:100%; overflow-y:auto; display:flex; }
+  #palco { position:relative; height:100%; height:100dvh; overflow-y:auto; display:flex; -webkit-overflow-scrolling:touch; }
   .tela { margin:auto; width:100%; max-width:720px; padding:96px 28px 120px; }
   .tela.centro { text-align:center; }
   .entra { animation:entra .5s cubic-bezier(.2,.8,.2,1) both; }
@@ -109,16 +110,45 @@
 
   @media (max-width: 640px) {
     body { font-size:16px; }
-    .tela { padding:84px 22px 140px; }
-    #logo { top:18px; left:20px; max-height:28px; }
-    .acoes .btn { flex:1; justify-content:center; }
+    /* conteúdo começa no alto (não pula quando o teclado abre) */
+    .tela { margin:0 auto; padding:calc(64px + 7vh) 20px 132px; }
+    .tela.centro { margin:auto; padding:72px 22px 120px; }
+    #logo { top:16px; left:20px; max-height:28px; }
+    .num { font-size:14px; margin-bottom:8px; }
+    h1.tit { font-size:23px; line-height:1.28; }
+    .tela.centro h1.tit { font-size:27px; }
+    .desc { font-size:16.5px; margin-top:8px; }
+    .campo { margin-top:26px; }
+    .inp { font-size:22px; padding:8px 0 10px; }
+    .ops { gap:9px; max-width:none; }
+    .op { min-height:56px; font-size:17px; padding:12px 14px; border-radius:12px; }
+    .op .k { width:28px; height:28px; }
+    .dica { font-size:14.5px; }
+    /* escalas longas (NPS 0–10) em duas linhas com botões grandes */
+    .escala { gap:8px; }
+    .escala .op { min-width:0; min-height:54px; font-size:18px; border-radius:12px; }
+    .escala.longa { display:grid; grid-template-columns:repeat(6, 1fr); }
+    .rotulos { font-size:14px; }
+    .estrelas { justify-content:space-between; max-width:340px; }
+    .estrelas svg { width:48px; height:48px; }
+    .busca { max-width:none; }
+    .busca .lst { max-height:46vh; }
+    .busca .lst .op { min-height:50px; }
+    .acoes { margin-top:24px; }
+    .acoes .btn { flex:1; justify-content:center; height:54px; font-size:18px; border-radius:12px; }
     .enter { display:none; }
-    .escala { gap:5px; }
-    .escala .op { min-width:0; min-height:48px; font-size:15px; }
-    .estrelas svg { width:38px; height:38px; }
-    #nav { right:16px; bottom:16px; }
+    .erro { font-size:15px; }
+    #nav { right:14px; bottom:max(14px, env(safe-area-inset-bottom)); }
+    #nav button { width:46px; height:42px; }
     #marca { display:none; }
+    #previa { top:10px; right:10px; }
   }
+  @media (max-width: 360px) {
+    .tela { padding-left:16px; padding-right:16px; }
+    h1.tit { font-size:21px; }
+    .escala .op { font-size:16px; min-height:48px; }
+  }
+  @media (max-height: 560px) and (max-width: 640px) { .tela { padding-top:60px; } }
 </style>
 </head>
 <body>
@@ -330,7 +360,7 @@
       let b = "";
       for (let n = mi; n <= ma; n++) b += '<button type="button" class="op' + (v === n ? " sel" : "") + '" data-n="' + n + '" role="radio" aria-checked="' + (v === n) + '">' + n + "</button>";
       const rmin = p.rot_min || (t === "nps" ? "Nada provável" : ""), rmax = p.rot_max || (t === "nps" ? "Muito provável" : "");
-      campo = '<div class="escala" role="radiogroup" aria-labelledby="tit">' + b + "</div>" +
+      campo = '<div class="escala' + (t === "nps" ? " nps" : "") + (ma - mi + 1 > 7 ? " longa" : "") + '" role="radiogroup" aria-labelledby="tit">' + b + "</div>" +
         (rmin || rmax ? '<div class="rotulos"><span>' + esc(rmin) + "</span><span>" + esc(rmax) + "</span></div>" : "") + '<div class="erro-box" aria-live="polite"></div>';
     } else if (t === "estrelas") {
       const ma = +p.escala_max || 5;
