@@ -338,7 +338,7 @@
   @media (max-width: 760px) { .map, .map-cab { grid-template-columns:1fr 32px; } .map .seta, .map-cab span:nth-child(2) { display:none; } .map > :nth-child(3) { grid-column:1; } }
   /* fluxo visual */
   .fluxo { display:grid; grid-template-columns:minmax(0,1fr) auto; height:calc(100vh - 113px); }
-  .fx-canvas { position:relative; overflow:hidden; background-color:var(--bg); background-image:radial-gradient(var(--field) 1px, transparent 1.2px); background-size:20px 20px; cursor:grab; touch-action:none; outline:none; }
+  .fx-canvas { user-select:none; -webkit-user-select:none; position:relative; overflow:hidden; background-color:var(--bg); background-image:radial-gradient(var(--field) 1px, transparent 1.2px); background-size:20px 20px; cursor:grab; touch-action:none; outline:none; }
   .fx-canvas.arrastando { cursor:grabbing; }
   .fx-mundo { position:absolute; left:0; top:0; transform-origin:0 0; }
   .fx-svg { position:absolute; left:-5000px; top:-5000px; width:20000px; height:20000px; overflow:visible; pointer-events:none; }
@@ -1626,6 +1626,7 @@ function fxAjustar() {
 
 function desenharFluxo() {
   const caixa = $("#fx-nos"); if (!caixa) return;
+  if (ED.fxArrastando) { ED.fxPendente = true; return; } // não troca os cartões no meio de um arrasto
   const f = ED.form, nos = fxNos(), pos = fxPosicoes();
   if (nos.some((n) => !pos[n.id])) fxAutoLayout(true);
   // entradas para achar etapas soltas
@@ -1639,7 +1640,7 @@ function desenharFluxo() {
     if (no.tipo === "inicio") {
       const i = f.inicio;
       return '<div class="fx-no fx-inicio' + on + '" data-no="inicio" style="left:' + x + "px;top:" + y + 'px"><div class="fx-cab"><small><span class="fx-ic t-tela">▶</span>Boas-vindas</small><b>' + h(i.titulo || "Tela de boas-vindas") + "</b></div>" +
-        '<div class="fx-portas"><div class="fx-porta padrao"><span class="rot">' + h(i.botao || "Começar") + '</span><span class="fx-dot ligado fixa" title="Sempre vai para a primeira pergunta"></span></div></div></div>';
+        '<div class="fx-portas"><div class="fx-porta padrao" data-chave="inicio"><span class="rot">' + h(i.botao || "Começar") + '</span><span class="fx-dot ligado fixa" title="Sempre vai para a primeira pergunta"></span></div></div></div>';
     }
     if (no.tipo === "fim") {
       const fi = no.fi;
@@ -1655,8 +1656,22 @@ function desenharFluxo() {
       '<div class="fx-portas">' + portas.map((pt) => '<div class="fx-porta ' + pt.cls + '" data-chave="' + h(pt.chave) + '" title="' + h(pt.rot) + (pt.alvo ? "" : pt.spec.tipo === "padrao" ? " — sem ligação: vai para a tela final padrão" : " — sem ligação: segue “Qualquer outra resposta”") + '"><span class="rot">' + h(pt.rot) + "</span>" +
         '<span class="fx-dot' + (pt.alvo ? (pt.impl ? " impl" : " ligado") : "") + '" data-q="' + p.id + '" data-chave="' + h(pt.chave) + '"></span></div>').join("") + "</div></div>";
   }).join("");
+  medirFluxo();
   desenharArestas();
 }
+// mede uma vez os cartões e as bolinhas (largura e altura de cada saída) e guarda as saídas de cada pergunta
+function medirFluxo() {
+  const geo = {}, portasC = {};
+  $$("#fx-nos .fx-no").forEach((el) => {
+    const g = { w: el.offsetWidth, h: el.offsetHeight, portas: {} };
+    $$(".fx-porta[data-chave]", el).forEach((pt) => { g.portas[pt.dataset.chave] = pt.offsetTop + pt.offsetHeight / 2; });
+    geo[el.dataset.no] = g;
+  });
+  ED.form.perguntas.forEach((p) => { portasC[p.id] = fxPortas(p); });
+  ED.fxGeo = geo; ED.fxPortasC = portasC;
+}
+function fxSaida(id, chave) { const g = (ED.fxGeo || {})[id], p = fxPosicoes()[id]; return g && p && g.portas[chave] != null ? [p[0] + g.w, p[1] + g.portas[chave]] : null; }
+function fxEntrada(id) { const g = (ED.fxGeo || {})[id], p = fxPosicoes()[id]; return g && p ? [p[0], p[1] + 26] : null; }
 
 function fxPonto(el, porta) {
   const pos = fxPosicoes()[el.dataset.no];
@@ -1671,25 +1686,26 @@ function fxCurva(a, b) {
 }
 function desenharArestas() {
   const g = $("#fx-g"); if (!g) return;
-  const f = ED.form; let s = ""; let botao = "";
-  const noEl = (id) => $('.fx-no[data-no="' + CSS.escape(id) + '"]');
-  const ini = noEl("inicio");
-  if (ini && f.perguntas[0]) { const alvo = noEl(f.perguntas[0].id); if (alvo) { const c = fxCurva(fxPonto(ini, $(".fx-porta", ini)), fxPonto(alvo)); s += '<path class="fx-linha padrao" d="' + c.d + '"/>'; } }
+  const f = ED.form; let svg = "", botao = "";
+  if (!ED.fxGeo) medirFluxo();
+  if (ED.fxGeo.inicio && f.perguntas[0]) {
+    const a = fxSaida("inicio", "inicio"), b = fxEntrada(f.perguntas[0].id);
+    if (a && b) svg += '<path class="fx-linha padrao" d="' + fxCurva(a, b).d + '"/>';
+  }
   f.perguntas.forEach((p) => {
-    const el = noEl(p.id); if (!el) return;
-    fxPortas(p).forEach((pt) => {
+    (ED.fxPortasC[p.id] || []).forEach((pt) => {
       if (!pt.alvo) return;
-      const alvo = noEl(pt.alvo); const porta = $('.fx-porta[data-chave="' + CSS.escape(pt.chave) + '"]', el);
-      if (!alvo || !porta) return;
-      const c = fxCurva(fxPonto(el, porta), fxPonto(alvo));
+      const a = fxSaida(p.id, pt.chave), b = fxEntrada(pt.alvo);
+      if (!a || !b) return;
+      const c = fxCurva(a, b);
       const sel = ED.fxAresta && ED.fxAresta.q === p.id && ED.fxAresta.chave === pt.chave;
       const cls = "fx-linha " + pt.cls + (pt.impl ? " impl" : "") + (sel ? " sel" : "");
-      s += '<path class="fx-hit" data-q="' + p.id + '" data-chave="' + h(pt.chave) + '" d="' + c.d + '"><title>' + h(pt.rot) + " → " + h(fxNome(pt.alvo)) + '</title></path><path class="' + cls + '" d="' + c.d + '"/>';
+      svg += '<path class="fx-hit" data-q="' + p.id + '" data-chave="' + h(pt.chave) + '" d="' + c.d + '"><title>' + h(pt.rot) + " → " + h(fxNome(pt.alvo)) + '</title></path><path class="' + cls + '" d="' + c.d + '"/>';
       if (sel) botao = '<div class="fx-aresta-ctl" style="left:' + c.meio[0] + "px;top:" + c.meio[1] + "px;transform:translate(-50%,-50%) scale(" + (1 / ED.fxView.z) + ')">' +
         '<button class="mini perigo" id="fx-rm">Remover ligação</button>' + (pt.impl ? '<small class="fx-obs">automática: segue a ordem da lista</small>' : "") + "</div>";
     });
   });
-  g.innerHTML = s;
+  g.innerHTML = svg;
   const antigo = $(".fx-aresta-ctl"); if (antigo) antigo.remove();
   if (botao) {
     $("#fx-mundo").insertAdjacentHTML("beforeend", botao);
@@ -1760,57 +1776,78 @@ function ligarFluxo() {
   const fimToque = (e) => { toques.delete(e.pointerId); if (toques.size < 2) pinca = null; };
   cv.addEventListener("pointerup", fimToque, true);
   cv.addEventListener("pointercancel", fimToque, true);
+  let quadro = 0, ultimoMov = null;
+  const comecar = (e, a) => {
+    acao = a; ED.fxArrastando = true;
+    try { cv.setPointerCapture(e.pointerId); } catch (er) {}
+  };
+  const limpar = () => {
+    acao = null; ED.fxArrastando = false;
+    if (quadro) { cancelAnimationFrame(quadro); quadro = 0; }
+    cv.classList.remove("arrastando");
+    const t = $("#fx-temp"); if (t) t.remove();
+    $$(".fx-no.alvo").forEach((x) => x.classList.remove("alvo"));
+    if (ED.fxPendente) { ED.fxPendente = false; desenharFluxo(); }
+  };
   cv.addEventListener("pointerdown", (e) => {
     if (pinca) return;
+    if (acao) limpar(); // arrasto anterior que não terminou direito
     if (e.button !== 0 || e.target.closest(".fx-barra,.fx-zoom,.fx-aresta-ctl")) return;
     const dot = e.target.closest(".fx-dot");
     const hit = e.target.closest(".fx-hit");
     const no = e.target.closest(".fx-no");
     if (dot && !dot.classList.contains("fixa")) {
-      const el = dot.closest(".fx-no"), porta = dot.closest(".fx-porta");
-      acao = { tipo: "ligar", q: dot.dataset.q, chave: dot.dataset.chave, de: fxPonto(el, porta) };
+      const de = fxSaida(dot.dataset.q, dot.dataset.chave) || mundoPt(e);
+      comecar(e, { tipo: "ligar", q: dot.dataset.q, chave: dot.dataset.chave, de, ini: [e.clientX, e.clientY], moveu: false });
       $("#fx-g").insertAdjacentHTML("beforeend", '<path id="fx-temp" class="fx-linha temp" d=""/>');
-      cv.setPointerCapture(e.pointerId); e.preventDefault(); return;
+      e.preventDefault(); return;
     }
     if (hit) { ED.fxAresta = { q: hit.dataset.q, chave: hit.dataset.chave }; desenharArestas(); e.preventDefault(); return; }
     if (no) {
       const p0 = fxPosicoes()[no.dataset.no];
-      acao = { tipo: "mover", id: no.dataset.no, el: no, ini: [e.clientX, e.clientY], p0: p0.slice(), moveu: false };
-      cv.setPointerCapture(e.pointerId); return;
+      comecar(e, { tipo: "mover", id: no.dataset.no, ini: [e.clientX, e.clientY], p0: p0.slice(), moveu: false });
+      e.preventDefault(); return;
     }
-    acao = { tipo: "pan", ini: [e.clientX, e.clientY], v0: Object.assign({}, ED.fxView), moveu: false };
-    cv.classList.add("arrastando"); cv.setPointerCapture(e.pointerId);
+    comecar(e, { tipo: "pan", ini: [e.clientX, e.clientY], v0: Object.assign({}, ED.fxView), moveu: false });
+    cv.classList.add("arrastando"); e.preventDefault();
   });
-  cv.addEventListener("pointermove", (e) => {
-    if (!acao) return;
+  const aplicarMov = () => {
+    quadro = 0;
+    const e = ultimoMov; if (!acao || !e) return;
     if (acao.tipo === "pan") {
-      const dx = e.clientX - acao.ini[0], dy = e.clientY - acao.ini[1];
-      if (Math.abs(dx) + Math.abs(dy) > 3) acao.moveu = true;
-      ED.fxView.x = acao.v0.x + dx; ED.fxView.y = acao.v0.y + dy; fxAplicarView();
+      ED.fxView.x = acao.v0.x + (e.clientX - acao.ini[0]); ED.fxView.y = acao.v0.y + (e.clientY - acao.ini[1]); fxAplicarView();
     } else if (acao.tipo === "mover") {
       const z = ED.fxView.z, dx = (e.clientX - acao.ini[0]) / z, dy = (e.clientY - acao.ini[1]) / z;
-      if (Math.abs(dx) + Math.abs(dy) > 3) acao.moveu = true;
-      if (!acao.moveu) return;
-      const p = fxPosicoes()[acao.id]; p[0] = Math.round(acao.p0[0] + dx); p[1] = Math.round(acao.p0[1] + dy);
-      acao.el.style.left = p[0] + "px"; acao.el.style.top = p[1] + "px";
+      const p = fxPosicoes()[acao.id]; if (!p) return;
+      p[0] = Math.round(acao.p0[0] + dx); p[1] = Math.round(acao.p0[1] + dy);
+      const el = $('.fx-no[data-no="' + CSS.escape(acao.id) + '"]');
+      if (el) { el.style.left = p[0] + "px"; el.style.top = p[1] + "px"; }
       desenharArestas();
     } else if (acao.tipo === "ligar") {
-      const b = mundoPt(e);
-      const t = $("#fx-temp"); if (t) t.setAttribute("d", fxCurva(acao.de, b).d);
+      const t = $("#fx-temp"); if (t) t.setAttribute("d", fxCurva(acao.de, mundoPt(e)).d);
       const sob = document.elementFromPoint(e.clientX, e.clientY);
       const alvo = sob && sob.closest(".fx-no");
       $$(".fx-no.alvo").forEach((x) => x !== alvo && x.classList.remove("alvo"));
       if (alvo && alvo.dataset.no !== acao.q && alvo.dataset.no !== "inicio") alvo.classList.add("alvo");
     }
+  };
+  cv.addEventListener("pointermove", (e) => {
+    if (!acao) return;
+    if (e.pointerType === "mouse" && e.buttons === 0) { fim(e); return; } // soltou fora da janela
+    const d = Math.abs(e.clientX - acao.ini[0]) + Math.abs(e.clientY - acao.ini[1]);
+    if (d > (acao.tipo === "ligar" ? 6 : 3)) acao.moveu = true;
+    if (!acao.moveu) return;
+    ultimoMov = e;
+    if (!quadro) quadro = requestAnimationFrame(aplicarMov);
   });
   const fim = (e) => {
     if (!acao) return;
-    const a = acao; acao = null; cv.classList.remove("arrastando");
+    if (acao.moveu && ultimoMov) aplicarMov();
+    const a = acao; limpar();
     if (a.tipo === "pan" && !a.moveu) { ED.sel = null; ED.fxAresta = null; $$(".fx-no.on").forEach((x) => x.classList.remove("on")); desenharArestas(); fxPainel(); }
     if (a.tipo === "mover") { if (a.moveu) marcarSujo(true); else fxSelecionar(a.id); }
     if (a.tipo === "ligar") {
-      const t = $("#fx-temp"); if (t) t.remove();
-      $$(".fx-no.alvo").forEach((x) => x.classList.remove("alvo"));
+      if (!a.moveu) return; // só um clique na bolinha: não liga nem abre nada
       const sob = document.elementFromPoint(e.clientX, e.clientY);
       const alvo = sob && sob.closest(".fx-no");
       const p = P(a.q); if (!p) return;
@@ -1828,7 +1865,9 @@ function ligarFluxo() {
     }
   };
   cv.addEventListener("pointerup", fim);
-  cv.addEventListener("pointercancel", () => { acao = null; const t = $("#fx-temp"); if (t) t.remove(); });
+  cv.addEventListener("pointercancel", () => { const a = acao; limpar(); if (a && a.tipo === "mover" && a.moveu) marcarSujo(true); });
+  cv.addEventListener("lostpointercapture", (e) => { if (acao) fim(e); });
+  window.addEventListener("blur", () => { if (acao && $("#fluxo")) { const a = acao; limpar(); if (a.tipo === "mover" && a.moveu) marcarSujo(true); } });
   cv.addEventListener("wheel", (e) => {
     e.preventDefault();
     const v = ED.fxView;
