@@ -14,7 +14,8 @@
     escala:   { nome: "Escala",            ic: "▤",   grupo: "Avaliação" },
     estrelas: { nome: "Estrelas",          ic: "★",   grupo: "Avaliação" },
     data:     { nome: "Data",              ic: "▦",   grupo: "Texto" },
-    aviso:    { nome: "Texto / aviso",     ic: "i",   grupo: "Outros", semResposta: true }
+    aviso:    { nome: "Texto / aviso",     ic: "i",   grupo: "Outros", semResposta: true },
+    active:   { nome: "ActiveCampaign",    ic: "AC",  grupo: "Integrações", semResposta: true, interno: true }
   };
 
   const OPS = {
@@ -188,5 +189,9 @@
     return null;
   }
 
-  window.FM = { PREENCHE, paramsDaPergunta, valorDaUrl, TIPOS, OPS, uid, vazio, avaliar, regraBate, proximo, textoResposta, variaveis, chaveSugerida, slugify, norm };
+  // pergunta que a pessoa responde (exclui texto/aviso e blocos de integração)
+  const ehPergunta = (q) => !!q && q.tipo !== "aviso" && !(TIPOS[q.tipo] && TIPOS[q.tipo].interno);
+  const ehInterno = (q) => !!q && !!(TIPOS[q.tipo] && TIPOS[q.tipo].interno);
+
+  window.FM = { ehPergunta, ehInterno, PREENCHE, paramsDaPergunta, valorDaUrl, TIPOS, OPS, uid, vazio, avaliar, regraBate, proximo, textoResposta, variaveis, chaveSugerida, slugify, norm };
 })();

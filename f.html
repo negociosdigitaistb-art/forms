@@ -296,7 +296,7 @@
 
   function cabecalho(p) {
     const ps = form.perguntas;
-    const n = ps.filter((x) => x.tipo !== "aviso").findIndex((x) => x.id === p.id) + 1;
+    const n = ps.filter(FM.ehPergunta).findIndex((x) => x.id === p.id) + 1;
     const mostrarNum = cfg().mostrar_numero !== false && p.tipo !== "aviso";
     return (mostrarNum ? '<div class="num">' + n + " " + IC.seta + "</div>" : "") +
       '<h1 class="tit" id="tit">' + esc(V(p.titulo || "…")) + (p.obrigatorio && p.tipo !== "aviso" ? '&#8288;<span class="req" aria-label="obrigatória">*</span>' : "") + "</h1>" +
@@ -521,17 +521,40 @@
     }
   }
 
-  function irPara(dest, volta) {
+  // bloco de integração: não aparece para a pessoa; registra a passagem, dispara o envio e segue
+  function passarBloco(p, volta, saltos) {
+    if (!vistas.includes(p.id)) vistas.push(p.id);
+    atual = p.id;
+    if (!PREVIA && token) {
+      gravar("fm_progresso", { p_token: token, p_respostas: respostas, p_vistas: vistas, p_atual: p.id });
+      if (p.tipo === "active") {
+        fila = fila.then(() => fetch(CFG.url + "/functions/v1/fm-active", {
+          method: "POST", keepalive: true,
+          headers: { apikey: CFG.anon, Authorization: "Bearer " + CFG.anon, "Content-Type": "application/json" },
+          body: JSON.stringify({ acao: "enviar", token, bloco: p.id })
+        })).catch(() => {});
+      }
+    }
+    irPara(FM.proximo(form, p.id, respostas), volta, (saltos || 0) + 1);
+  }
+
+  function irPara(dest, volta, saltos) {
     if (!dest) return;
     if (dest.tipo === "fim") return telaFim(dest.id);
     const p = P(dest.id);
-    if (p) telaPergunta(p, volta);
+    if (!p) return;
+    if (FM.ehInterno(p)) {
+      if ((saltos || 0) > 30) return telaFim(null); // proteção contra ciclo só de blocos
+      return passarBloco(p, volta, saltos);
+    }
+    telaPergunta(p, volta);
   }
 
   function voltar() {
     if (!historico.length || cfg().permitir_voltar === false) return;
-    const id = historico.pop();
-    const p = P(id); if (p) telaPergunta(p, true);
+    let id = historico.pop();
+    while (id && FM.ehInterno(P(id)) && historico.length) id = historico.pop();
+    const p = P(id); if (p && !FM.ehInterno(p)) telaPergunta(p, true);
   }
 
   function telaMsg(titulo, texto) {
@@ -575,7 +598,9 @@
     if (ir) {
       if (ir === "inicio") return telaInicio();
       if (ir.startsWith("fim:")) return telaFim(ir.slice(4));
-      const p = P(ir); if (p) return telaPergunta(p);
+      const p = P(ir);
+      if (p && FM.ehInterno(p)) { atual = null; return trocar('<p class="num">' + esc((FM.TIPOS[p.tipo] || {}).nome || "") + '</p><h1 class="tit">Etapa invisível</h1><p class="desc">Quem responde não vê esta etapa. Ao passar por aqui, o formulário envia os dados e segue para a próxima.</p>', false, true); }
+      if (p) return telaPergunta(p);
     }
     if (f.inicio && f.inicio.ativo !== false && (f.inicio.titulo || f.inicio.texto)) telaInicio();
     else irPara(FM.proximo(form, null, respostas));

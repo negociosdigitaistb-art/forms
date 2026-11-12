@@ -15,6 +15,7 @@
     --ok-bg:#DCF5E3; --ok-fg:#1E6B3A; --err-bg:#FBE1EC; --err-fg:#8F2756; --warn-bg:#FCEFD3; --warn-fg:#7A5310; --info-bg:#E3ECFF; --info-fg:#2F44C8; --lil-bg:#EEE6FB; --lil-fg:#5B3AA8;
     --code:#EEF0F4; --shadow:0 12px 32px rgba(15,18,40,.14);
     --bar1:#2F44C8; --bar2:#C9D0F5; --gold:#B8924A;
+    --int-bg:#FFE9D6; --int-fg:#B54708;
   }
   :root[data-theme="dark"] { color-scheme:dark;
     --bg:#0E1117; --surface:#161A23; --ink:#E7E9F0; --ink2:#CDD1DC; --muted:#9CA3B4; --line:#2A303D; --line2:#212632;
@@ -22,6 +23,7 @@
     --ok-bg:#15331F; --ok-fg:#7FD9A0; --err-bg:#3A1826; --err-fg:#F3A0C1; --warn-bg:#382B10; --warn-fg:#EEC56F; --info-bg:#1A2744; --info-fg:#93A1F7; --lil-bg:#2A2145; --lil-fg:#C4A9F5;
     --code:#212632; --shadow:0 12px 32px rgba(0,0,0,.5);
     --bar1:#7C8CF2; --bar2:#2C3555; --gold:#D9B878;
+    --int-bg:#3A2414; --int-fg:#F5A86B;
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { background:var(--bg); color:var(--ink); font:400 14px/1.45 'Hanken Grotesk',system-ui,-apple-system,Segoe UI,sans-serif; }
@@ -303,6 +305,24 @@
   #toast.erro { background:#8F2756; }
 
 
+  .item .ic.t-integ, .fx-ic.t-integ { background:var(--int-bg); color:var(--int-fg); font-size:11px; }
+  .fx-no.fx-integ { border-left:3px solid var(--int-fg); }
+  .fx-resumo { display:block; margin-top:5px; font-size:11.5px; color:var(--muted); }
+  .map { display:grid; grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr) 32px; gap:6px; align-items:center; margin-bottom:6px; }
+  .map select, .map input { height:36px; font-size:13px; }
+  .map .seta { text-align:center; color:var(--muted); font-weight:700; }
+  .map-cab { display:grid; grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr) 32px; gap:6px; font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+  .chips .chip { display:inline-flex; align-items:center; gap:6px; padding:4px 6px 4px 10px; font-size:12.5px; }
+  .chips .chip button { height:20px; width:20px; padding:0; border:0; background:transparent; color:var(--muted); }
+  .sugest { border:1px solid var(--line); border-radius:10px; max-height:200px; overflow:auto; margin-top:6px; background:var(--surface); }
+  .sugest button { display:flex; width:100%; justify-content:flex-start; border:0; border-radius:0; height:34px; font-weight:500; background:transparent; }
+  .sugest button:hover { background:var(--line2); }
+  .aviso-box { background:var(--warn-bg); color:var(--warn-fg); border-radius:10px; padding:10px 12px; font-size:13px; margin-bottom:12px; }
+  .ok-box { background:var(--ok-bg); color:var(--ok-fg); border-radius:10px; padding:10px 12px; font-size:13px; margin-bottom:12px; }
+  .integ { display:flex; gap:8px; align-items:flex-start; padding:8px 10px; border-radius:8px; margin-top:6px; font-size:13px; }
+  .integ.ok { background:var(--ok-bg); color:var(--ok-fg); } .integ.erro { background:var(--err-bg); color:var(--err-fg); }
+  @media (max-width: 760px) { .map, .map-cab { grid-template-columns:1fr 32px; } .map .seta, .map-cab span:nth-child(2) { display:none; } .map > :nth-child(3) { grid-column:1; } }
   /* fluxo visual */
   .fluxo { display:grid; grid-template-columns:minmax(0,1fr) auto; height:calc(100vh - 113px); }
   .fx-canvas { position:relative; overflow:hidden; background-color:var(--bg); background-image:radial-gradient(var(--field) 1px, transparent 1.2px); background-size:20px 20px; cursor:grab; touch-action:none; outline:none; }
@@ -363,6 +383,7 @@
 
   /* ---------- celular ---------- */
   .u-acoes { text-align:right; white-space:nowrap; }
+  #nav-menu { display:none; }
   @media (max-width: 760px) {
     button, a, input, select, textarea { -webkit-tap-highlight-color:transparent; }
     input, select, textarea { font-size:16px; } /* evita zoom automático no iPhone */
@@ -370,6 +391,8 @@
     .brand { font-size:15px; gap:8px; }
     .brand-dot { width:26px; height:26px; }
     .who { gap:6px; }
+    #nav-cfg, #nav-usu { display:none; }
+    #nav-menu { display:inline-flex !important; }
     #minha-senha { max-width:120px; overflow:hidden; text-overflow:ellipsis; display:inline-block; }
     #quem { overflow:hidden; text-overflow:ellipsis; }
     .ed-top { top:54px; }
@@ -467,7 +490,9 @@
         <svg class="lua" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
         <svg class="sol" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>
       </button>
+      <button class="mini ghost" id="nav-menu" aria-label="Menu">☰</button>
       <a class="b mini ghost" href="#/usuarios" id="nav-usu">Usuários</a>
+      <a class="b mini ghost" href="#/config" id="nav-cfg">Configurações</a>
       <button class="mini ghost" id="minha-senha" title="Trocar minha senha"><span id="quem"></span></button>
       <button class="mini" id="sair">Sair</button>
     </div>
@@ -489,7 +514,8 @@ const h = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g,
 const view = $("#view");
 const T = FM.TIPOS;
 const LETRAS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const GRUPO_CLS = { Texto: "t-texto", Contato: "t-contato", Escolha: "t-escolha", "Avaliação": "t-avaliacao", Outros: "t-outros" };
+const GRUPO_CLS = { Texto: "t-texto", Contato: "t-contato", Escolha: "t-escolha", "Avaliação": "t-avaliacao", Outros: "t-outros", "Integrações": "t-integ" };
+const GRUPO_COR = { Texto: "info", Contato: "ok", Escolha: "lil", "Avaliação": "warn", Outros: "line2", "Integrações": "int" };
 const fmtN = (n) => Number(n || 0).toLocaleString("pt-BR");
 const pct = (a, b) => b ? Math.round(a / b * 1000) / 10 : 0;
 const fmtPct = (a, b) => (b ? pct(a, b).toLocaleString("pt-BR") : "0") + "%";
@@ -600,6 +626,7 @@ async function rotear() {
   }
   if (ED) { await salvarAgora(); ED = null; }
   if (p[0] === "usuarios") return renderUsuarios();
+  if (p[0] === "config") return renderConfig();
   renderLista();
 }
 window.addEventListener("beforeunload", (e) => { if (ED && ED.dirty) { salvarAgora(); e.preventDefault(); e.returnValue = ""; } });
@@ -727,6 +754,12 @@ function minhaSenha() {
     });
 }
 $("#minha-senha").onclick = minhaSenha;
+$("#nav-menu").onclick = (e) => menu(e.currentTarget, [
+  { rot: "Formulários", fn: () => location.hash = "#/" },
+  { rot: "Usuários", fn: () => location.hash = "#/usuarios" },
+  { rot: "Configurações", fn: () => location.hash = "#/config" },
+  { rot: "Minha senha", fn: minhaSenha }
+]);
 
 // ---------------- modelos ----------------
 const TEMA_PADRAO = { fundo: "#0a0b0c", texto: "#F2EEE6", destaque: "#C9A96E", fonte: "Hanken Grotesk" };
@@ -793,7 +826,7 @@ async function renderLista() {
   $("#lista").className = "grade";
   $("#lista").innerHTML = forms.map((f) => {
     const r = R[f.id] || {};
-    const nq = (f.perguntas || []).filter((p) => p.tipo !== "aviso").length;
+    const nq = (f.perguntas || []).filter(FM.ehPergunta).length;
     return '<div class="fcard" data-id="' + f.id + '">' +
       '<button class="ico ghost mais" data-mais="' + f.id + '" aria-label="Mais ações">⋯</button>' +
       "<div><span class=\"st " + f.status + '">' + h(f.status) + "</span></div>" +
@@ -922,7 +955,7 @@ function renderEditor() {
 async function mudarStatus(st) {
   const f = ED.form;
   if (st === "publicado") {
-    const ps = f.perguntas.filter((p) => p.tipo !== "aviso");
+    const ps = f.perguntas.filter(FM.ehPergunta);
     if (!ps.length) return toast("Adicione pelo menos uma pergunta antes de publicar.", true);
     const sem = f.perguntas.find((p) => !String(p.titulo || "").trim());
     if (sem) { ED.sel = sem.id; if (ED.aba !== "construir") location.hash = "#/f/" + f.id + "/construir"; else renderConstruir(); return toast("Tem pergunta sem texto. Preencha antes de publicar.", true); }
@@ -1002,11 +1035,11 @@ function renderLado() {
     '<h4>Perguntas <span>' + f.perguntas.length + "</span></h4>" +
     '<div id="lista-q">' + f.perguntas.map((p) => {
       const t = T[p.tipo] || T.curto;
-      if (p.tipo !== "aviso") n++;
+      if (FM.ehPergunta(p)) n++;
       return '<div class="item' + (ED.sel === p.id ? " on" : "") + '" data-sel="' + p.id + '" draggable="true">' +
-        '<span class="n">' + (p.tipo === "aviso" ? "" : n) + "</span>" +
+        '<span class="n">' + (FM.ehPergunta(p) ? n : "") + "</span>" +
         '<span class="ic ' + GRUPO_CLS[t.grupo] + '">' + t.ic + "</span>" +
-        '<span class="tx"><b data-tit="' + p.id + '">' + h(p.titulo || "Sem título") + "</b><small>" + t.nome + (p.obrigatorio ? " · obrigatória" : "") + (temLogica(p) ? ' · <span class="logica" title="Tem lógica condicional">⤳ lógica</span>' : "") + "</small></span></div>";
+        '<span class="tx"><b data-tit="' + p.id + '">' + h(p.titulo || "Sem título") + "</b><small>" + (p.tipo === "active" ? "ActiveCampaign · " + resumoActive(p) : t.nome) + (p.obrigatorio ? " · obrigatória" : "") + (temLogica(p) ? ' · <span class="logica" title="Tem lógica condicional">⤳ lógica</span>' : "") + "</small></span></div>";
     }).join("") + "</div>" +
     '<button class="add" id="add-q">+ Adicionar pergunta</button>' +
     '<h4>Telas finais</h4>' +
@@ -1047,7 +1080,7 @@ function escolherTipo(cb, atual) {
   const grupos = {};
   Object.entries(T).forEach(([k, t]) => (grupos[t.grupo] = grupos[t.grupo] || []).push([k, t]));
   modal("<h3>" + (atual ? "Mudar tipo da pergunta" : "Adicionar pergunta") + '</h3><div class="tipos">' +
-    Object.entries(grupos).map(([g, arr]) => "<h5>" + g + "</h5>" + arr.map(([k, t]) => '<button data-tipo="' + k + '"' + (k === atual ? ' style="background:var(--sel)"' : "") + '><span class="ic ' + GRUPO_CLS[g] + '" style="background:var(--' + ({ Texto: "info", Contato: "ok", Escolha: "lil", "Avaliação": "warn", Outros: "line2" }[g]) + '-bg)">' + t.ic + "</span>" + t.nome + "</button>").join("")).join("") +
+    Object.entries(grupos).map(([g, arr]) => "<h5>" + g + "</h5>" + arr.map(([k, t]) => '<button data-tipo="' + k + '"' + (k === atual ? ' style="background:var(--sel)"' : "") + '><span class="ic ' + GRUPO_CLS[g] + '" style="background:var(--' + (GRUPO_COR[g]) + '-bg)">' + t.ic + "</span>" + t.nome + "</button>").join("")).join("") +
     '</div><div class="rod"><button data-fechar>Cancelar</button></div>',
     (el, fechar) => $$("[data-tipo]", el).forEach((b) => b.onclick = () => { fechar(); cb(b.dataset.tipo); }));
 }
@@ -1067,6 +1100,19 @@ function prepararTipo(p) {
   if (p.tipo === "escala") { if (p.escala_min == null || p.escala_min === "") p.escala_min = 1; if (!p.escala_max || p.escala_max > 10) p.escala_max = 5; }
   if (p.tipo === "estrelas" && (!p.escala_max || p.escala_max > 10)) p.escala_max = 5;
   if (p.tipo === "aviso") p.obrigatorio = false;
+  if (p.tipo === "active") {
+    p.obrigatorio = false; p.chave = "";
+    if (!p.titulo) p.titulo = "Enviar para o ActiveCampaign";
+    if (!p.ac) {
+      const ps = (ED && ED.form ? ED.form.perguntas : []).filter(FM.ehPergunta);
+      const campos = [];
+      const nome = ps.find((q) => FM.paramsDaPergunta(q).includes("nome"));
+      if (nome) campos.push({ ac: "_nome_completo", fonte: "q:" + nome.id });
+      const tel = ps.find((q) => q.tipo === "telefone");
+      if (tel) campos.push({ ac: "phone", fonte: "q:" + tel.id });
+      p.ac = { email: "", campos, tags: [], lista: null };
+    }
+  }
 }
 
 function removerReferencias(id, ehFinal) {
@@ -1155,6 +1201,7 @@ let ladoLeveT;
 function renderLadoLeve() { clearTimeout(ladoLeveT); ladoLeveT = setTimeout(renderLado, 400); }
 
 function painelPergunta(pn, p) {
+  if (p.tipo === "active") return painelActive(pn, p);
   const f = ED.form;
   const t = T[p.tipo] || T.curto;
   const i = f.perguntas.indexOf(p);
@@ -1184,7 +1231,7 @@ function painelPergunta(pn, p) {
 
   const usadas = new Set(f.perguntas.filter((x) => x !== p && x.chave).map((x) => x.chave));
   pn.innerHTML = '<div class="painel-in">' +
-    '<div class="painel-cab"><h2><span class="ic ' + GRUPO_CLS[t.grupo] + '" style="background:var(--' + ({ Texto: "info", Contato: "ok", Escolha: "lil", "Avaliação": "warn", Outros: "line2" }[t.grupo]) + '-bg)">' + t.ic + "</span>" +
+    '<div class="painel-cab"><h2><span class="ic ' + GRUPO_CLS[t.grupo] + '" style="background:var(--' + (GRUPO_COR[t.grupo]) + '-bg)">' + t.ic + "</span>" +
     '<button class="mini" id="q-tipo" title="Mudar tipo">' + t.nome + " ▾</button></h2>" +
     '<button class="ico ghost" id="q-up" title="Subir" aria-label="Subir"' + (i === 0 ? " disabled" : "") + ">↑</button>" +
     '<button class="ico ghost" id="q-down" title="Descer" aria-label="Descer"' + (i === f.perguntas.length - 1 ? " disabled" : "") + ">↓</button>" +
@@ -1304,7 +1351,7 @@ function valoresPossiveis(q) {
   return null;
 }
 function rotuloQ(q) {
-  const ps = ED.form.perguntas.filter((x) => x.tipo !== "aviso");
+  const ps = ED.form.perguntas.filter(FM.ehPergunta);
   const n = ps.indexOf(q) + 1;
   const t = (q.titulo || "Sem título").replace(/\{\{|\}\}/g, "");
   return (n ? n + ". " : "") + (t.length > 46 ? t.slice(0, 46) + "…" : t);
@@ -1322,7 +1369,7 @@ function renderLogica(p) {
   const box = $("#logica"); if (!box) return;
   const f = ED.form;
   const i = f.perguntas.indexOf(p);
-  const candidatas = f.perguntas.slice(0, i + 1).filter((q) => q.tipo !== "aviso");
+  const candidatas = f.perguntas.slice(0, i + 1).filter(FM.ehPergunta);
   p.regras = p.regras || [];
   box.innerHTML = '<h3>Lógica condicional <small>para onde a pessoa vai depois desta pergunta</small></h3>' +
     p.regras.map((r, ri) => {
@@ -1358,8 +1405,8 @@ function renderLogica(p) {
   $("#q-depois", box).onchange = (e) => { p.depois = e.target.value; mud(); };
   $("#r-add", box).onclick = () => {
     const vals = valoresPossiveis(p);
-    const ops = opsPara(p.tipo === "aviso" ? candidatas[candidatas.length - 1] : p);
-    const qRef = p.tipo === "aviso" ? candidatas[candidatas.length - 1] : p;
+    const ops = opsPara(!FM.ehPergunta(p) ? candidatas[candidatas.length - 1] : p);
+    const qRef = !FM.ehPergunta(p) ? candidatas[candidatas.length - 1] : p;
     if (!qRef) return toast("Adicione uma pergunta antes para criar regras.", true);
     const valsRef = valoresPossiveis(qRef);
     p.regras.push({ id: FM.uid("r"), juncao: "e", conds: [{ pergunta: qRef.id, op: ops[0][0], valor: valsRef ? valsRef[0] : "" }], destino: f.finais[0] ? "fim:" + f.finais[0].id : "" });
@@ -1431,7 +1478,7 @@ function fxPortas(p) {
   let alvo = p.depois, impl = false;
   if (p.depois === "fim") alvo = null;
   else if (!fxExiste(alvo)) { impl = true; alvo = f.perguntas[i + 1] ? f.perguntas[i + 1].id : (f.finais[0] ? "fim:" + f.finais[0].id : null); }
-  portas.push({ chave: "padrao", rot: portas.length ? "Qualquer outra resposta" : (p.tipo === "aviso" ? "Continuar" : "Depois de responder"), alvo, impl, spec: { tipo: "padrao" }, cls: "padrao" });
+  portas.push({ chave: "padrao", rot: portas.length ? "Qualquer outra resposta" : (p.tipo === "aviso" ? "Continuar" : p.tipo === "active" ? "Depois de enviar" : "Depois de responder"), alvo, impl, spec: { tipo: "padrao" }, cls: "padrao" });
   return portas;
 }
 function fxLigar(p, chave, alvo) {
@@ -1558,11 +1605,11 @@ function desenharFluxo() {
         (fi.redirecionar ? '<span class="fx-info">↗ redireciona</span>' : "") + (!no.padrao && !entra.has(no.id) ? '<span class="fx-solta">sem ligação</span>' : "") + "</div></div>";
     }
     const p = no.p, t = T[p.tipo] || T.curto;
-    if (p.tipo !== "aviso") n++;
+    if (FM.ehPergunta(p)) n++;
     const portas = fxPortas(p);
-    return '<div class="fx-no' + on + '" data-no="' + p.id + '" style="left:' + x + "px;top:" + y + 'px"><span class="fx-in"></span>' +
-      '<div class="fx-cab"><small><span class="fx-ic ' + GRUPO_CLS[t.grupo] + '">' + t.ic + "</span>" + (p.tipo === "aviso" ? "" : n + " · ") + t.nome + "</small>" +
-      '<b data-tit="' + p.id + '">' + h(p.titulo || "Sem título") + "</b>" + (!entra.has(p.id) ? '<span class="fx-solta" title="Nenhuma etapa leva até aqui">sem entrada</span>' : "") + "</div>" +
+    return '<div class="fx-no' + on + (FM.ehInterno(p) ? " fx-integ" : "") + '" data-no="' + p.id + '" style="left:' + x + "px;top:" + y + 'px"><span class="fx-in"></span>' +
+      '<div class="fx-cab"><small><span class="fx-ic ' + GRUPO_CLS[t.grupo] + '">' + t.ic + "</span>" + (FM.ehPergunta(p) ? n + " · " : "") + t.nome + "</small>" +
+      '<b data-tit="' + p.id + '">' + h(p.titulo || "Sem título") + "</b>" + (p.tipo === "active" ? '<span class="fx-resumo">' + h(resumoActive(p)) + "</span>" : "") + (!entra.has(p.id) ? '<span class="fx-solta" title="Nenhuma etapa leva até aqui">sem entrada</span>' : "") + "</div>" +
       '<div class="fx-portas">' + portas.map((pt) => '<div class="fx-porta ' + pt.cls + '" data-chave="' + h(pt.chave) + '" title="' + h(pt.rot) + (pt.alvo ? "" : pt.spec.tipo === "padrao" ? " — sem ligação: vai para a tela final padrão" : " — sem ligação: segue “Qualquer outra resposta”") + '"><span class="rot">' + h(pt.rot) + "</span>" +
         '<span class="fx-dot' + (pt.alvo ? (pt.impl ? " impl" : " ligado") : "") + '" data-q="' + p.id + '" data-chave="' + h(pt.chave) + '"></span></div>').join("") + "</div></div>";
   }).join("");
@@ -1780,6 +1827,201 @@ function ligarFluxo() {
   $("#fx-fechar").onclick = () => { ED.sel = null; $$(".fx-no.on").forEach((x) => x.classList.remove("on")); fxPainel(); };
 }
 
+
+// ---------------- ACTIVECAMPAIGN ----------------
+async function funcActive(corpo) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) throw new Error("Faça login de novo.");
+  const r = await fetch(CFG.url + "/functions/v1/fm-active", {
+    method: "POST", headers: { Authorization: "Bearer " + session.access_token, apikey: CFG.anon, "Content-Type": "application/json" },
+    body: JSON.stringify(corpo)
+  });
+  let d = {}; try { d = await r.json(); } catch (e) {}
+  if (!r.ok || !d.ok) throw new Error(d.erro || "Não foi possível falar com o ActiveCampaign (" + r.status + ").");
+  return d;
+}
+const AC = { status: null, campos: null, listas: null, carregando: {} };
+function acCarregar(qual, forcar) {
+  if (!forcar && AC[qual]) return Promise.resolve(AC[qual]);
+  if (AC.carregando[qual]) return AC.carregando[qual];
+  const pr = funcActive({ acao: qual }).then((d) => { AC[qual] = qual === "listas" ? d.listas : qual === "campos" ? { padrao: d.padrao, campos: d.campos } : d; return AC[qual]; })
+    .finally(() => { delete AC.carregando[qual]; });
+  AC.carregando[qual] = pr;
+  return pr;
+}
+
+async function renderConfig() {
+  view.innerHTML = '<div class="pagina" style="max-width:760px"><div class="topo"><h1>Configurações</h1></div>' +
+    '<div class="card"><h3 style="display:flex;align-items:center;gap:10px"><span class="ic" style="width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--int-bg);color:var(--int-fg);font-size:12px">AC</span>ActiveCampaign</h3><div id="ac-box" class="mut">Verificando conexão…</div></div></div>';
+  let st;
+  try { st = await acCarregar("status", true); }
+  catch (e) { $("#ac-box").innerHTML = '<p style="color:var(--err-fg)">' + h(e.message) + "</p>"; return; }
+  const box = $("#ac-box"); box.className = "";
+  const formChave = (rotBotao) => '<label class="f"><span>Endereço da API</span><input id="ac-url" placeholder="https://suaconta.api-us1.com" value="' + h(st.url || "") + '"><small>No ActiveCampaign: Configurações → Desenvolvedor → URL.</small></label>' +
+    '<label class="f"><span>Chave da API</span><input id="ac-key" type="password" autocomplete="off" placeholder="cole a chave aqui"><small>No mesmo lugar, campo “Chave”. Ela fica guardada no servidor e não aparece mais na tela.</small></label>' +
+    '<p id="ac-erro" style="color:var(--err-fg);min-height:18px;font-size:13px"></p><button class="pri" id="ac-salvar">' + rotBotao + "</button>";
+  if (st.configurado) {
+    box.innerHTML = '<div class="ok-box">Conectado à conta <b>' + h(st.conta || "") + "</b></div>" +
+      '<p class="mut" style="margin-bottom:14px">' + h(st.url) + " · chave " + h(st.chave_final) + " · atualizado " + tempoRel(st.atualizado_em) + "</p>" +
+      '<p class="ajuda" style="margin-bottom:14px">Para enviar respostas, adicione o bloco <b>ActiveCampaign</b> no formulário (Construir → + Adicionar pergunta → Integrações, ou pelo Fluxo).</p>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="ac-trocar">Trocar chave</button><button class="perigo" id="ac-rem">Desconectar</button></div><div id="ac-troca" class="hide" style="margin-top:16px"></div>';
+    $("#ac-trocar").onclick = () => { $("#ac-troca").classList.remove("hide"); $("#ac-troca").innerHTML = formChave("Salvar e testar"); ligarSalvar(); };
+    $("#ac-rem").onclick = async () => {
+      if (!await confirmar("Desconectar o ActiveCampaign? Os blocos dos formulários param de enviar até conectar de novo.", "Desconectar", true)) return;
+      try { await funcActive({ acao: "remover" }); AC.status = AC.campos = AC.listas = null; toast("Desconectado"); renderConfig(); } catch (e) { toast(e.message, true); }
+    };
+  } else {
+    box.innerHTML = (st.webnario ? '<div class="card" style="background:var(--bg);margin-bottom:16px"><b style="display:block;margin-bottom:4px">O Webnario já está conectado ao ActiveCampaign</b><p class="mut" style="margin-bottom:10px">' + h(st.webnario.conta || st.webnario.url) + '</p><button class="pri" id="ac-wb">Usar a mesma conta</button></div><p class="mut" style="margin-bottom:12px">Ou conecte outra conta:</p>' : "") +
+      formChave("Conectar");
+    if ($("#ac-wb")) $("#ac-wb").onclick = async (e) => {
+      e.target.disabled = true;
+      try { const d = await funcActive({ acao: "copiar_webnario" }); AC.status = AC.campos = AC.listas = null; toast("Conectado a " + d.conta); renderConfig(); }
+      catch (er) { toast(er.message, true); e.target.disabled = false; }
+    };
+    ligarSalvar();
+  }
+  function ligarSalvar() {
+    $("#ac-salvar").onclick = async () => {
+      const url = $("#ac-url").value.trim(), key = $("#ac-key").value.trim();
+      if (!url || !key) return $("#ac-erro").textContent = "Preencha o endereço e a chave.";
+      $("#ac-salvar").disabled = true; $("#ac-erro").textContent = "Testando a conexão…"; $("#ac-erro").style.color = "var(--muted)";
+      try { const d = await funcActive({ acao: "salvar", url, key }); AC.status = AC.campos = AC.listas = null; toast("Conectado a " + d.conta); renderConfig(); }
+      catch (e) { $("#ac-erro").style.color = "var(--err-fg)"; $("#ac-erro").textContent = e.message; $("#ac-salvar").disabled = false; }
+    };
+  }
+}
+
+function fontesActive(atual) {
+  const f = ED.form;
+  const ps = f.perguntas.filter(FM.ehPergunta);
+  const PARAMS = ["email", "nome", "telefone", "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "sck", "src"];
+  const extra = atual && atual.startsWith("param:") && !PARAMS.includes(atual.slice(6)) ? [atual.slice(6)] : [];
+  const opt = (v, rot) => '<option value="' + h(v) + '"' + (atual === v || (v === "fixo:" && atual && atual.startsWith("fixo:")) ? " selected" : "") + ">" + h(rot) + "</option>";
+  return '<option value="">— escolha —</option>' +
+    '<optgroup label="Respostas do formulário">' + ps.map((q) => opt("q:" + q.id, rotuloQ(q))).join("") + "</optgroup>" +
+    '<optgroup label="Parâmetros do link">' + PARAMS.concat(extra).map((k) => opt("param:" + k, "?" + k + "=")).join("") + opt("param:__novo", "Outro parâmetro…") + "</optgroup>" +
+    '<optgroup label="Outros">' + opt("meta:form", "Nome do formulário") + opt("meta:data", "Data da resposta") + opt("fixo:", "Texto fixo…") + "</optgroup>";
+}
+
+function painelActive(pn, p) {
+  const f = ED.form;
+  const i = f.perguntas.indexOf(p);
+  p.ac = p.ac || { email: "", campos: [], tags: [], lista: null };
+  const ac = p.ac;
+  const qEmail = f.perguntas.find((q) => q.tipo === "email");
+  pn.innerHTML = '<div class="painel-in">' +
+    '<div class="painel-cab"><h2><span class="ic t-integ" style="background:var(--int-bg);color:var(--int-fg);font-size:12px">AC</span>ActiveCampaign</h2>' +
+    '<button class="ico ghost" id="q-up" title="Subir" aria-label="Subir"' + (i === 0 ? " disabled" : "") + ">↑</button>" +
+    '<button class="ico ghost" id="q-down" title="Descer" aria-label="Descer"' + (i === f.perguntas.length - 1 ? " disabled" : "") + ">↓</button>" +
+    '<button class="ico ghost" id="q-dup" title="Duplicar" aria-label="Duplicar">⧉</button>' +
+    '<button class="ico ghost perigo" id="q-del" title="Excluir" aria-label="Excluir">🗑</button></div>' +
+    '<div id="ac-status"></div>' +
+    '<div class="card"><p class="ajuda" style="margin:0 0 12px">Quem responde não vê esta etapa. Quando a pessoa passa por aqui, o contato é criado ou atualizado no ActiveCampaign pelo e-mail, e o formulário segue para a próxima etapa.</p>' +
+    campo("Nome do bloco", '<input id="ac-nome" value="' + h(p.titulo || "") + '" maxlength="80">') +
+    campo("E-mail do contato", '<select id="ac-email"><option value=""' + (!ac.email ? " selected" : "") + ">Automático: " + h(qEmail ? "pergunta “" + (qEmail.titulo || "E-mail") + "”" : "?email= do link") + "</option>" + fontesActive(ac.email).replace('<option value="">— escolha —</option>', "") + "</select>", "É por ele que o ActiveCampaign sabe se cria um contato novo ou atualiza um que já existe.") +
+    "</div>" +
+    '<div class="card"><h3>Campos <small>o que vai para cada campo do ActiveCampaign</small></h3><div id="ac-map"></div><button class="mini" id="ac-add">+ Campo</button><p class="ajuda" id="ac-campos-st"></p></div>' +
+    '<div class="card"><h3>Tags <small>opcional</small></h3><div class="chips" id="ac-tags"></div><input id="ac-tag-busca" placeholder="Buscar tag no ActiveCampaign…" autocomplete="off"><div id="ac-tag-sug"></div></div>' +
+    '<div class="card"><h3>Lista <small>opcional</small></h3><select id="ac-lista"><option value="">Não inscrever em lista</option>' + (ac.lista ? '<option value="' + h(ac.lista.id) + '" selected>' + h(ac.lista.nome) + "</option>" : "") + '</select><small class="ajuda">Inscreve o contato na lista (necessário para ele receber campanhas dessa lista).</small></div>' +
+    '<div class="card" id="logica"></div></div>';
+
+  // status da conexão
+  acCarregar("status").then((st) => {
+    const b = $("#ac-status"); if (!b) return;
+    b.innerHTML = st.configurado ? "" : '<div class="aviso-box">O ActiveCampaign ainda não está conectado. <a href="#/config">Conectar em Configurações</a> — até lá, este bloco não envia nada.</div>';
+  }).catch(() => {});
+
+  $("#ac-nome").oninput = (e) => { p.titulo = e.target.value; marcarSujo(); renderLadoLeve(); };
+  $("#ac-email").onchange = (e) => {
+    let v = e.target.value;
+    if (v === "param:__novo") { const n = prompt("Nome do parâmetro no link (ex.: email_lead):"); v = n ? "param:" + n.replace(/[^\w-]/g, "") : ""; }
+    if (v === "fixo:") { toast("O e-mail precisa vir de uma resposta ou do link.", true); v = ""; }
+    ac.email = v; marcarSujo(); painelActive(pn, p);
+  };
+
+  // mapeamento de campos
+  const desenharMapa = (lista) => {
+    const box = $("#ac-map"); if (!box) return;
+    const opcAc = (sel) => {
+      if (!lista) return '<option value="' + h(sel || "") + '">' + h(sel ? "Campo " + sel : "Carregando campos…") + "</option>";
+      const op = (c) => '<option value="' + h(c.id) + '" data-tipo="' + h(c.tipo || "") + '"' + (String(sel) === String(c.id) ? " selected" : "") + ">" + h(c.titulo) + "</option>";
+      return '<option value="">— campo do ActiveCampaign —</option><optgroup label="Contato">' + lista.padrao.map(op).join("") + '</optgroup><optgroup label="Campos personalizados">' + lista.campos.map(op).join("") + "</optgroup>";
+    };
+    box.innerHTML = (ac.campos.length ? '<div class="map-cab"><span>Campo no ActiveCampaign</span><span></span><span>Vem de</span><span></span></div>' : '<p class="mut" style="margin-bottom:10px">Nenhum campo além do e-mail. Clique em “+ Campo”.</p>') +
+      ac.campos.map((m, j) => '<div class="map" data-j="' + j + '"><select data-mac>' + opcAc(m.ac) + '</select><span class="seta">←</span>' +
+        (m.fonte && m.fonte.startsWith("fixo:") ? '<div style="display:flex;gap:4px"><input data-mfixo value="' + h(m.fonte.slice(5)) + '" placeholder="texto fixo"><button class="ico ghost" data-mfixo-x title="Escolher outra origem">↺</button></div>' : '<select data-mfonte>' + fontesActive(m.fonte) + "</select>") +
+        '<button class="ico ghost" data-mdel aria-label="Remover campo">×</button></div>').join("");
+    $$(".map", box).forEach((row) => {
+      const m = ac.campos[+row.dataset.j];
+      const sAc = $("[data-mac]", row);
+      sAc.onchange = () => { m.ac = sAc.value; m.ac_tipo = (sAc.selectedOptions[0] && sAc.selectedOptions[0].dataset.tipo) || ""; marcarSujo(true); };
+      const sF = $("[data-mfonte]", row);
+      if (sF) sF.onchange = () => {
+        let v = sF.value;
+        if (v === "param:__novo") { const n = prompt("Nome do parâmetro no link:"); v = n ? "param:" + n.replace(/[^\w-]/g, "") : ""; }
+        m.fonte = v; marcarSujo(true); desenharMapa(AC.campos);
+        if (v === "fixo:") setTimeout(() => { const el = $('.map[data-j="' + row.dataset.j + '"] [data-mfixo]'); if (el) el.focus(); }, 20);
+      };
+      const fx = $("[data-mfixo]", row); if (fx) fx.oninput = () => { m.fonte = "fixo:" + fx.value; marcarSujo(true); };
+      const fxx = $("[data-mfixo-x]", row); if (fxx) fxx.onclick = () => { m.fonte = ""; marcarSujo(true); desenharMapa(AC.campos); };
+      $("[data-mdel]", row).onclick = () => { ac.campos.splice(+row.dataset.j, 1); marcarSujo(); desenharMapa(AC.campos); };
+    });
+  };
+  desenharMapa(AC.campos);
+  acCarregar("campos").then((l) => { desenharMapa(l); const st = $("#ac-campos-st"); if (st) st.textContent = l.campos.length + " campos personalizados encontrados no ActiveCampaign."; })
+    .catch((e) => { const st = $("#ac-campos-st"); if (st) { st.textContent = e.message; st.style.color = "var(--err-fg)"; } });
+  $("#ac-add").onclick = () => { ac.campos.push({ ac: "", fonte: "" }); marcarSujo(); desenharMapa(AC.campos); };
+
+  // tags
+  const desenharTags = () => {
+    $("#ac-tags").innerHTML = ac.tags.length ? ac.tags.map((t, j) => '<span class="chip">' + h(t.nome) + '<button data-tdel="' + j + '" aria-label="Remover tag">×</button></span>').join("") : '<span class="mut" style="font-size:13px">Nenhuma tag.</span>';
+    $$("[data-tdel]").forEach((b) => b.onclick = () => { ac.tags.splice(+b.dataset.tdel, 1); marcarSujo(); desenharTags(); });
+  };
+  desenharTags();
+  let tb;
+  $("#ac-tag-busca").oninput = (e) => {
+    clearTimeout(tb);
+    const q = e.target.value.trim();
+    if (!q) { $("#ac-tag-sug").innerHTML = ""; return; }
+    tb = setTimeout(async () => {
+      try {
+        const d = await funcActive({ acao: "tags", busca: q });
+        const sug = d.tags.filter((t) => !ac.tags.some((x) => x.id === t.id));
+        $("#ac-tag-sug").innerHTML = sug.length ? '<div class="sugest">' + sug.map((t) => '<button data-tadd="' + h(t.id) + '" data-nome="' + h(t.nome) + '">' + h(t.nome) + "</button>").join("") + "</div>" : '<p class="ajuda">Nenhuma tag encontrada com “' + h(q) + "”. Crie a tag no ActiveCampaign primeiro.</p>";
+        $$("[data-tadd]").forEach((b) => b.onclick = () => { ac.tags.push({ id: b.dataset.tadd, nome: b.dataset.nome }); marcarSujo(); $("#ac-tag-busca").value = ""; $("#ac-tag-sug").innerHTML = ""; desenharTags(); });
+      } catch (er) { $("#ac-tag-sug").innerHTML = '<p class="ajuda" style="color:var(--err-fg)">' + h(er.message) + "</p>"; }
+    }, 350);
+  };
+
+  // lista
+  acCarregar("listas").then((ls) => {
+    const sel = $("#ac-lista"); if (!sel) return;
+    sel.innerHTML = '<option value="">Não inscrever em lista</option>' + ls.map((l) => '<option value="' + h(l.id) + '"' + (ac.lista && String(ac.lista.id) === String(l.id) ? " selected" : "") + ">" + h(l.nome) + "</option>").join("");
+  }).catch(() => {});
+  $("#ac-lista").onchange = (e) => { const o = e.target.selectedOptions[0]; ac.lista = e.target.value ? { id: e.target.value, nome: o.textContent } : null; marcarSujo(); };
+
+  // ações do bloco
+  $("#q-up").onclick = () => mover(p, -1);
+  $("#q-down").onclick = () => mover(p, 1);
+  $("#q-dup").onclick = () => { const c = JSON.parse(JSON.stringify(p)); c.id = FM.uid("q"); c.regras = []; f.perguntas.splice(i + 1, 0, c); ED.sel = c.id; marcarSujo(); renderLado(); renderPainel(); toast("Bloco duplicado"); };
+  $("#q-del").onclick = async () => {
+    if (!await confirmar("Excluir este bloco do ActiveCampaign?", "Excluir", true)) return;
+    f.perguntas.splice(i, 1); removerReferencias(p.id, false);
+    ED.sel = f.perguntas[Math.min(i, f.perguntas.length - 1)] ? f.perguntas[Math.min(i, f.perguntas.length - 1)].id : null;
+    marcarSujo(); renderLado(); renderPainel();
+  };
+  renderLogica(p);
+}
+function resumoActive(p) {
+  const ac = p.ac || {};
+  const partes = ["e-mail"];
+  const n = (ac.campos || []).filter((m) => m.ac && m.fonte).length;
+  if (n) partes.push(n + " campo" + (n > 1 ? "s" : ""));
+  if ((ac.tags || []).length) partes.push(ac.tags.length + " tag" + (ac.tags.length > 1 ? "s" : ""));
+  if (ac.lista) partes.push("lista");
+  return partes.join(" · ");
+}
+
 // ---------------- DESIGN ----------------
 const PRESETS = [
   { nome: "TB Escuro", fundo: "#0a0b0c", texto: "#F2EEE6", destaque: "#C9A96E", fonte: "Hanken Grotesk" },
@@ -1922,7 +2164,7 @@ async function carregarRespostas(R) {
   const desde = iv && iv.desde, ate = iv && iv.ate;
   const todas = [];
   for (let de = 0; de < 100000; de += 1000) {
-    let q = sb.from("fm_respostas").select("id,status,respostas,vistas,atual,final_id,params,dispositivo,iniciado_em,atualizado_em,concluido_em").eq("form_id", f.id).order("iniciado_em", { ascending: false }).range(de, de + 999);
+    let q = sb.from("fm_respostas").select("id,status,respostas,vistas,atual,final_id,params,dispositivo,iniciado_em,atualizado_em,concluido_em,integracoes").eq("form_id", f.id).order("iniciado_em", { ascending: false }).range(de, de + 999);
     if (desde) q = q.gte("iniciado_em", desde.toISOString());
     if (ate) q = q.lt("iniciado_em", ate.toISOString());
     const { data, error } = await q;
@@ -1983,7 +2225,7 @@ function desenharResultados() {
   }
 
   // ----- funil -----
-  const ps = f.perguntas;
+  const ps = f.perguntas.filter((q) => !FM.ehInterno(q));
   const linhasF = ps.map((q) => {
     const viram = L.filter((r) => (r.vistas || []).includes(q.id)).length;
     const responderam = q.tipo === "aviso" ? L.filter((r) => (r.vistas || []).includes(q.id) && (r.status === "concluida" || r.atual !== q.id)).length : L.filter((r) => !FM.vazio((r.respostas || {})[q.id])).length;
@@ -2026,7 +2268,7 @@ function desenharResultados() {
 
   // ----- resumo por pergunta -----
   const base = R.filtro === "todas" ? inic : conc;
-  const resumos = ps.filter((q) => q.tipo !== "aviso").map((q) => resumoPergunta(q, base)).join("");
+  const resumos = ps.filter(FM.ehPergunta).map((q) => resumoPergunta(q, base)).join("");
 
   $("#rs-corpo").className = "";
   $("#rs-corpo").innerHTML =
@@ -2157,10 +2399,16 @@ function tabela() {
   const tot = L.length, pags = Math.max(1, Math.ceil(tot / POR));
   R.pagina = Math.min(R.pagina, pags - 1);
   const fatia = L.slice(R.pagina * POR, R.pagina * POR + POR);
-  const qs = f.perguntas.filter((q) => q.tipo !== "aviso");
+  const qs = f.perguntas.filter(FM.ehPergunta);
   const nomeFinal = (id) => { const fi = f.finais.find((x) => x.id === id); return fi ? fi.nome || fi.titulo : ""; };
   const stRot = { concluida: "Concluída", parcial: "Parcial", visita: "Só visitou" };
   if (!tot) { $("#rs-tab").innerHTML = '<div class="card vazio" style="padding:30px">Nenhuma resposta com esse filtro.</div>'; return; }
+  const temAc = f.perguntas.some((q) => q.tipo === "active");
+  const celAc = (r) => {
+    const vs = Object.values(r.integracoes || {});
+    if (!vs.length) return '<span class="mut">—</span>';
+    return vs.every((v) => v.ok) ? '<span class="pill concluida" title="Enviado">✓ enviado</span>' : '<span class="pill" style="background:var(--err-bg);color:var(--err-fg)" title="' + h(vs.filter((v) => !v.ok).map((v) => v.erro).join("; ")) + '">✕ erro</span>';
+  };
   const curto = (t) => { t = String(t || "Sem título").replace(/\s+/g, " ").trim(); return t.length > 42 ? t.slice(0, 42) + "…" : t; };
   const cel = (q, v) => {
     if (FM.vazio(v)) return '<span class="mut">—</span>';
@@ -2169,13 +2417,14 @@ function tabela() {
   };
   $("#rs-tab").innerHTML = '<div class="tab-wrap tab-resp"><table><thead><tr><th class="fixa">#</th><th>Data</th><th>Status</th>' +
     qs.map((q) => '<th title="' + h(q.titulo) + '">' + h(curto(q.titulo)) + "</th>").join("") +
-    "<th>Tela final</th><th>Parou em</th><th>Origem</th><th>Dispositivo</th></tr></thead><tbody>" +
+    "<th>Tela final</th><th>Parou em</th><th>Origem</th>" + (temAc ? "<th>ActiveCampaign</th>" : "") + "<th>Dispositivo</th></tr></thead><tbody>" +
     fatia.map((r, i) => {
       const parou = r.status !== "concluida" && r.atual ? P(r.atual) : null;
       const pr = r.params || {};
       return '<tr data-id="' + r.id + '"><td class="fixa mut">' + (tot - (R.pagina * POR + i)) + "</td><td>" + dataHora(r.iniciado_em) + '</td><td><span class="pill ' + r.status + '">' + stRot[r.status] + "</span></td>" +
         qs.map((q) => "<td>" + cel(q, (r.respostas || {})[q.id]) + "</td>").join("") +
-        "<td>" + h(nomeFinal(r.final_id)) + '</td><td class="mut">' + (parou ? h(curto(parou.titulo)) : "") + '</td><td class="mut">' + h([pr.utm_source, pr.utm_campaign, pr.sck].filter(Boolean).join(" · ")) + '</td><td class="mut">' + h(r.dispositivo || "") + "</td></tr>";
+        "<td>" + h(nomeFinal(r.final_id)) + '</td><td class="mut">' + (parou ? h(curto(parou.titulo)) : "") + '</td><td class="mut">' + h([pr.utm_source, pr.utm_campaign, pr.sck].filter(Boolean).join(" · ")) + "</td>" +
+        (temAc ? "<td>" + celAc(r) + "</td>" : "") + '<td class="mut">' + h(r.dispositivo || "") + "</td></tr>";
     }).join("") +
     "</tbody></table></div>" +
     '<div class="pag">' + fmtN(tot) + " resposta" + (tot === 1 ? "" : "s") + (pags > 1 ? " · página " + (R.pagina + 1) + " de " + pags : "") +
@@ -2195,10 +2444,12 @@ function detalhe(r) {
   g.innerHTML = '<div role="dialog" aria-modal="true"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><h3 style="flex:1;font-size:18px">Resposta</h3><button class="ico ghost" id="dt-x" aria-label="Fechar">×</button></div>' +
     '<p class="mut" style="margin-bottom:12px"><span class="pill ' + r.status + '">' + stRot[r.status] + "</span> · " + dataHora(r.iniciado_em) + (dur ? " · " + (dur < 60 ? dur + "s" : Math.floor(dur / 60) + "min " + dur % 60 + "s") : "") + (r.dispositivo ? " · " + h(r.dispositivo) : "") + (fi ? " · final: " + h(fi.nome || fi.titulo) : "") + "</p>" +
     (parou ? '<div class="alerta">Parou em: “' + h(parou.titulo) + "”</div>" : "") +
-    f.perguntas.filter((q) => q.tipo !== "aviso").map((q) => {
+    f.perguntas.filter(FM.ehPergunta).map((q) => {
       const v = (r.respostas || {})[q.id];
       return '<div class="resp-item"><span>' + h(q.titulo || "Sem título") + "</span><p>" + (FM.vazio(v) ? '<i class="mut">' + ((r.vistas || []).includes(q.id) ? "não respondeu" : "não viu") + "</i>" : h(FM.textoResposta(v))) + "</p></div>";
     }).join("") +
+    (Object.keys(r.integracoes || {}).length ? '<h4 style="margin:18px 0 6px">Integrações</h4>' + Object.entries(r.integracoes).map(([k, v]) =>
+      '<div class="integ ' + (v.ok ? "ok" : "erro") + '"><b>' + (v.ok ? "✓" : "✕") + "</b><span><b>" + h(v.nome || "ActiveCampaign") + "</b> · " + (v.ok ? "contato " + h(v.email || "") + " criado/atualizado" + (v.tags ? ", " + v.tags + " tag(s)" : "") + ((v.avisos || []).length ? ". Avisos: " + h(v.avisos.join("; ")) : "") : h(v.erro || "falhou")) + ' <span class="mut">· ' + dataHora(v.em) + "</span></span></div>").join("") : "") +
     (Object.keys(r.params || {}).length ? '<h4 style="margin:18px 0 6px">Origem</h4>' + Object.entries(r.params).map(([k, v]) => '<div class="resp-item" style="padding:6px 0"><span>' + h(k) + '</span><p class="mono">' + h(v) + "</p></div>").join("") : "") +
     '<div style="margin-top:18px"><button class="mini perigo" id="dt-del">Excluir esta resposta</button></div></div>';
   document.body.appendChild(g);
@@ -2231,7 +2482,7 @@ async function apagarPeriodo() {
 
 function tabelaExport() {
   const f = ED.form;
-  const qs = f.perguntas.filter((q) => q.tipo !== "aviso");
+  const qs = f.perguntas.filter(FM.ehPergunta);
   const L = ED.resultados.linhas;
   const pks = [...new Set(L.flatMap((r) => Object.keys(r.params || {})))].sort();
   const stRot = { concluida: "Concluída", parcial: "Parcial", visita: "Só visitou" };
@@ -2271,6 +2522,7 @@ async function exportarExcel() {
   const f = ED.form, L = R.linhas;
   const fun = [["Etapa", "Viram", "Responderam", "Saíram aqui", "Abandono %"], ["Abriram o formulário", L.length, L.filter((r) => r.status !== "visita").length, L.filter((r) => r.status === "visita" && !r.atual).length, ""]];
   f.perguntas.forEach((q) => {
+    if (FM.ehInterno(q)) return;
     const v = L.filter((r) => (r.vistas || []).includes(q.id)).length;
     const re = L.filter((r) => !FM.vazio((r.respostas || {})[q.id])).length;
     const s = L.filter((r) => r.status !== "concluida" && r.atual === q.id).length;
@@ -2321,7 +2573,7 @@ async function gerarPdf(op) {
   const inic = L.filter((r) => r.status !== "visita");
   const conc = L.filter((r) => r.status === "concluida");
   const base = op.parciais ? inic : conc;
-  const qs = f.perguntas.filter((q) => q.tipo !== "aviso");
+  const qs = f.perguntas.filter(FM.ehPergunta);
   const durs = conc.map((r) => (new Date(r.concluido_em) - new Date(r.iniciado_em)) / 1000).filter((x) => x > 0 && x < 86400).sort((a, b) => a - b);
   const med = durs.length ? durs[Math.floor(durs.length / 2)] : 0;
   const fmtDur = (x) => !x ? "—" : x < 60 ? Math.round(x) + "s" : Math.floor(x / 60) + "min " + Math.round(x % 60) + "s";
@@ -2359,6 +2611,7 @@ async function gerarPdf(op) {
     corpo.push(["", "Abriram o formulário", barra(inic.length / visitas, 120, 1), { text: fmtN(visitas), alignment: "right" }, { text: fmtN(inic.length), alignment: "right" }, { text: fmtN(saiuIni), alignment: "right" }, { text: pctTxt(saiuIni, visitas), alignment: "right" }]);
     let n = 0;
     f.perguntas.forEach((q) => {
+      if (FM.ehInterno(q)) return;
       const viram = L.filter((r) => (r.vistas || []).includes(q.id)).length;
       const respond = q.tipo === "aviso" ? L.filter((r) => (r.vistas || []).includes(q.id) && (r.status === "concluida" || r.atual !== q.id)).length : L.filter((r) => !FM.vazio((r.respostas || {})[q.id])).length;
       const sairam = L.filter((r) => r.status !== "concluida" && r.atual === q.id).length;

@@ -31,3 +31,12 @@ drop policy if exists fm_usuarios_ler on public.fm_usuarios;
 create policy fm_usuarios_ler on public.fm_usuarios for select to authenticated using (public.fm_is_admin());
 revoke insert, update, delete on public.fm_usuarios from anon, authenticated;
 revoke all on public.fm_usuarios from anon;
+
+-- ===== ActiveCampaign (fm-active) =====
+create table if not exists public.fm_config (
+  chave text primary key, url text, api_key text, conta text,
+  atualizado_em timestamptz not null default now()
+);
+alter table public.fm_config enable row level security;
+revoke all on public.fm_config from anon, authenticated;
+alter table public.fm_respostas add column if not exists integracoes jsonb not null default '{}'::jsonb;
