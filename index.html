@@ -291,6 +291,61 @@
   #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--pop); color:#fff; padding:11px 18px; border-radius:10px; z-index:80; box-shadow:var(--shadow); font-weight:600; }
   #toast.erro { background:#8F2756; }
 
+
+  /* fluxo visual */
+  .fluxo { display:grid; grid-template-columns:minmax(0,1fr) auto; height:calc(100vh - 113px); }
+  .fx-canvas { position:relative; overflow:hidden; background-color:var(--bg); background-image:radial-gradient(var(--field) 1px, transparent 1.2px); background-size:20px 20px; cursor:grab; touch-action:none; outline:none; }
+  .fx-canvas.arrastando { cursor:grabbing; }
+  .fx-mundo { position:absolute; left:0; top:0; transform-origin:0 0; }
+  .fx-svg { position:absolute; left:-5000px; top:-5000px; width:20000px; height:20000px; overflow:visible; pointer-events:none; }
+  .fx-linha { fill:none; stroke:var(--link); stroke-width:2; }
+  .fx-linha.padrao { stroke:var(--ink2); opacity:.55; }
+  .fx-linha.impl { stroke:var(--muted); stroke-dasharray:5 5; opacity:.6; }
+  .fx-linha.nps-det { stroke:#E5484D; } .fx-linha.nps-neu { stroke:#D9A21B; } .fx-linha.nps-pro { stroke:#30A46C; }
+  .fx-linha.sel { stroke-width:3.5; opacity:1; }
+  .fx-linha.temp { stroke-dasharray:6 4; opacity:.9; }
+  .fx-hit { fill:none; stroke:transparent; stroke-width:14; pointer-events:stroke; cursor:pointer; }
+  .fx-no { position:absolute; width:250px; background:var(--surface); border:1px solid var(--line); border-radius:12px; box-shadow:0 2px 8px rgba(15,18,40,.07); user-select:none; cursor:pointer; }
+  .fx-no:hover { border-color:#B9BECA; }
+  .fx-no.on { border-color:var(--link); box-shadow:0 0 0 3px color-mix(in srgb, var(--link) 22%, transparent); }
+  .fx-no.alvo { border-color:var(--ok-fg); box-shadow:0 0 0 4px color-mix(in srgb, var(--ok-fg) 28%, transparent); }
+  .fx-cab { padding:10px 12px 9px; }
+  .fx-cab small { display:flex; gap:7px; align-items:center; font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+  .fx-cab b { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-weight:600; font-size:13.5px; margin-top:6px; line-height:1.3; }
+  .fx-ic { width:20px; height:20px; border-radius:6px; display:grid; place-items:center; font-size:11px; background:var(--info-bg); color:var(--info-fg); text-transform:none; }
+  .fx-ic.t-escolha { background:var(--lil-bg); color:var(--lil-fg); } .fx-ic.t-avaliacao { background:var(--warn-bg); color:var(--warn-fg); }
+  .fx-ic.t-contato, .fx-ic.t-fim { background:var(--ok-bg); color:var(--ok-fg); } .fx-ic.t-outros, .fx-ic.t-tela { background:var(--line2); color:var(--muted); }
+  .fx-solta, .fx-info { display:inline-block; margin-top:6px; font-size:11px; font-weight:700; padding:2px 7px; border-radius:99px; background:var(--warn-bg); color:var(--warn-fg); }
+  .fx-info { background:var(--info-bg); color:var(--info-fg); margin-right:4px; }
+  .fx-fim { border-left:3px solid var(--ok-fg); }
+  .fx-inicio { border-left:3px solid var(--ink2); }
+  .fx-portas { border-top:1px solid var(--line2); padding:3px 0; }
+  .fx-porta { position:relative; display:flex; align-items:center; height:30px; padding:0 22px 0 12px; font-size:12.5px; }
+  .fx-porta .rot { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .fx-porta.padrao .rot, .fx-porta.regra .rot { color:var(--muted); }
+  .fx-porta.padrao .rot { font-style:italic; }
+  .fx-dot { position:absolute; right:-8px; top:50%; width:15px; height:15px; margin-top:-7.5px; border-radius:50%; background:var(--surface); border:2px solid var(--link); cursor:crosshair; transition:transform .1s; }
+  .fx-dot:hover { transform:scale(1.3); }
+  .fx-dot.ligado { background:var(--link); }
+  .fx-dot.impl { border-color:var(--muted); border-style:dashed; }
+  .fx-porta.padrao .fx-dot { border-color:var(--ink2); } .fx-porta.padrao .fx-dot.ligado { background:var(--ink2); }
+  .fx-porta.nps-det .fx-dot { border-color:#E5484D; } .fx-porta.nps-det .fx-dot.ligado { background:#E5484D; }
+  .fx-porta.nps-neu .fx-dot { border-color:#D9A21B; } .fx-porta.nps-neu .fx-dot.ligado { background:#D9A21B; }
+  .fx-porta.nps-pro .fx-dot { border-color:#30A46C; } .fx-porta.nps-pro .fx-dot.ligado { background:#30A46C; }
+  .fx-dot.fixa { cursor:default; border-color:var(--ink2); background:var(--ink2); }
+  .fx-in { position:absolute; left:-8px; top:19px; width:15px; height:15px; border-radius:50%; background:var(--surface); border:2px solid var(--muted); }
+  .fx-aresta-ctl { position:absolute; transform:translate(-50%,-50%); z-index:5; }
+  .fx-aresta-ctl span { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:5px 9px; font-size:12px; color:var(--muted); white-space:nowrap; box-shadow:var(--shadow); }
+  .fx-aresta-ctl button { background:var(--surface); box-shadow:var(--shadow); }
+  .fx-barra { position:absolute; top:14px; left:14px; display:flex; gap:6px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:6px; box-shadow:0 2px 8px rgba(15,18,40,.06); }
+  .fx-zoom { position:absolute; top:14px; right:14px; display:flex; gap:2px; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:5px; box-shadow:0 2px 8px rgba(15,18,40,.06); }
+  .fx-zoom span { font-size:12px; color:var(--muted); width:42px; text-align:center; font-variant-numeric:tabular-nums; }
+  .fx-dica { position:absolute; left:14px; bottom:14px; font-size:12px; color:var(--muted); background:color-mix(in srgb, var(--surface) 88%, transparent); border:1px solid var(--line); border-radius:10px; padding:7px 11px; max-width:560px; }
+  .fx-lado { width:0; overflow:hidden; border-left:1px solid var(--line); background:var(--bg); transition:width .2s; display:flex; flex-direction:column; }
+  .fx-lado.aberto { width:460px; }
+  .fx-lado-cab { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--surface); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .fx-lado .painel { flex:1; padding:18px 18px 60px; min-width:460px; }
+  @media (max-width: 1080px) { .fx-lado.aberto { position:absolute; right:0; top:113px; bottom:0; z-index:12; width:min(460px, 100vw); box-shadow:var(--shadow); } .fx-lado .painel { min-width:0; } }
   @media (max-width: 1280px) { .construir { grid-template-columns:260px minmax(0,1fr) 340px; } }
   @media (max-width: 1080px) {
     .construir { grid-template-columns:240px minmax(0,1fr); }
@@ -652,7 +707,7 @@ async function salvarAgora() {
 
 function renderEditor() {
   const f = ED.form;
-  const abas = [["construir", "Construir"], ["design", "Design"], ["compartilhar", "Compartilhar"], ["resultados", "Resultados"]];
+  const abas = [["construir", "Construir"], ["fluxo", "Fluxo"], ["design", "Design"], ["compartilhar", "Compartilhar"], ["resultados", "Resultados"]];
   view.innerHTML =
     '<div class="ed-top"><div class="ed-top-in">' +
     '<a class="b ico ghost" href="#/" aria-label="Voltar para a lista" title="Voltar">←</a>' +
@@ -669,7 +724,7 @@ function renderEditor() {
   $("#ed-ver").onclick = abrirPreviaNova;
   if ($("#ed-pub")) $("#ed-pub").onclick = () => mudarStatus("publicado");
   if ($("#ed-link")) $("#ed-link").onclick = () => copiar(linkForm(f));
-  ({ construir: renderConstruir, design: renderDesign, compartilhar: renderCompartilhar, resultados: renderResultados })[ED.aba]();
+  ({ construir: renderConstruir, fluxo: renderFluxo, design: renderDesign, compartilhar: renderCompartilhar, resultados: renderResultados })[ED.aba]();
 }
 
 async function mudarStatus(st) {
@@ -745,6 +800,7 @@ function renderConstruir() {
 function temLogica(p) { return (p.regras || []).length > 0 || !!p.depois; }
 
 function renderLado() {
+  if (!$("#lado")) { if ($("#fluxo")) desenharFluxo(); return; }
   const f = ED.form;
   let n = 0;
   const lado = $("#lado");
@@ -1002,7 +1058,7 @@ function ligarOpcoes(pn, p) {
   const redesenhar = (foco) => { renderPainel(); if (foco != null) setTimeout(() => { const el = $('[data-op="' + foco + '"]'); if (el) el.focus(); }, 20); };
   $$("[data-op]", pn).forEach((el) => {
     const j = +el.dataset.op;
-    el.addEventListener("input", () => { const antigo = p.opcoes[j].texto; p.opcoes[j].texto = el.value; trocarValorEmRegras(p.id, antigo, el.value); marcarSujo(); });
+    el.addEventListener("input", () => { const antigo = p.opcoes[j].texto; p.opcoes[j].texto = el.value; trocarValorEmRegras(p.id, antigo, el.value); marcarSujo(); renderLadoLeve(); });
     el.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); p.opcoes.splice(j + 1, 0, { id: FM.uid("o"), texto: "" }); marcarSujo(); redesenhar(j + 1); }
       if (e.key === "Backspace" && !el.value && p.opcoes.length > 1) { e.preventDefault(); p.opcoes.splice(j, 1); marcarSujo(); redesenhar(Math.max(0, j - 1)); }
@@ -1123,6 +1179,358 @@ function renderLogica(p) {
     $$("[data-cv]", el).forEach((s) => s.addEventListener(s.tagName === "SELECT" ? "change" : "input", () => { r.conds[+s.dataset.cv].valor = s.value; mud(); }));
     $$("[data-cdel]", el).forEach((b) => b.onclick = () => { r.conds.splice(+b.dataset.cdel, 1); mud(); renderLogica(p); });
   });
+}
+
+// ---------------- FLUXO VISUAL ----------------
+const FX_W = 250;
+const OP_SIMB = { igual: "=", diferente: "≠", maior: ">", menor: "<", maior_igual: "≥", menor_igual: "≤", contem: "contém", nao_contem: "não contém", respondeu: "respondeu", nao_respondeu: "não respondeu" };
+function fxExiste(id) { return id && (id.startsWith("fim:") ? !!Fim(id.slice(4)) : !!P(id)); }
+function fxNos() {
+  const f = ED.form, nos = [];
+  if (f.inicio.ativo !== false && (f.inicio.titulo || f.inicio.texto)) nos.push({ id: "inicio", tipo: "inicio" });
+  f.perguntas.forEach((p) => nos.push({ id: p.id, tipo: "pergunta", p }));
+  f.finais.forEach((fi, i) => nos.push({ id: "fim:" + fi.id, tipo: "fim", fi, padrao: i === 0 }));
+  return nos;
+}
+function npsFaixa(r, pid) {
+  const c = r.conds || [];
+  if (!c.every((x) => x.pergunta === pid)) return null;
+  const v = (x) => Number(x.valor);
+  if (c.length === 1 && c[0].op === "menor_igual" && v(c[0]) === 6) return "det";
+  if (c.length === 1 && c[0].op === "maior_igual" && v(c[0]) === 9) return "pro";
+  if (c.length === 2 && r.juncao !== "ou") {
+    const a = c.find((x) => x.op === "maior_igual"), b = c.find((x) => x.op === "menor_igual");
+    if (a && b && v(a) === 7 && v(b) === 8) return "neu";
+  }
+  return null;
+}
+function resumoRegra(r, p) {
+  const cs = (r.conds || []).map((c) => {
+    const q = P(c.pergunta);
+    const quem = !q || q === p ? "" : (q.chave || rotuloQ(q)) + " ";
+    return quem + (OP_SIMB[c.op] || c.op) + (["respondeu", "nao_respondeu"].includes(c.op) ? "" : " " + c.valor);
+  });
+  return "Se " + cs.join(r.juncao === "ou" ? " ou " : " e ");
+}
+function fxPortas(p) {
+  const f = ED.form, portas = [], usadas = new Set(), regras = p.regras || [], t = p.tipo;
+  const simples = (r) => { const c = r.conds || []; return c.length === 1 && c[0].pergunta === p.id && c[0].op === "igual" ? String(c[0].valor) : null; };
+  if (["unica", "lista", "sim_nao", "multipla"].includes(t)) {
+    const ops = t === "sim_nao" ? ["Sim", "Não"] : (p.opcoes || []).map((o) => o.texto).filter((s) => s && s.trim());
+    ops.forEach((v) => {
+      const r = regras.find((x) => !usadas.has(x.id) && simples(x) === v); if (r) usadas.add(r.id);
+      portas.push({ chave: "op:" + v, rot: v, alvo: r && fxExiste(r.destino) ? r.destino : null, rid: r ? r.id : null, spec: { tipo: "op", valor: v }, cls: "op" });
+    });
+  }
+  if (t === "nps") {
+    [["det", "Detratores (0–6)"], ["neu", "Neutros (7–8)"], ["pro", "Promotores (9–10)"]].forEach(([k, rot]) => {
+      const r = regras.find((x) => !usadas.has(x.id) && npsFaixa(x, p.id) === k); if (r) usadas.add(r.id);
+      portas.push({ chave: "nps:" + k, rot, alvo: r && fxExiste(r.destino) ? r.destino : null, rid: r ? r.id : null, spec: { tipo: "nps", faixa: k }, cls: "nps-" + k });
+    });
+  }
+  regras.forEach((r) => { if (!usadas.has(r.id)) portas.push({ chave: "r:" + r.id, rot: resumoRegra(r, p), alvo: fxExiste(r.destino) ? r.destino : null, rid: r.id, spec: { tipo: "regra" }, cls: "regra" }); });
+  const i = f.perguntas.indexOf(p);
+  let alvo = p.depois, impl = false;
+  if (!fxExiste(alvo)) { impl = true; alvo = f.perguntas[i + 1] ? f.perguntas[i + 1].id : (f.finais[0] ? "fim:" + f.finais[0].id : null); }
+  portas.push({ chave: "padrao", rot: portas.length ? "Qualquer outra resposta" : (p.tipo === "aviso" ? "Continuar" : "Depois de responder"), alvo, impl, spec: { tipo: "padrao" }, cls: "padrao" });
+  return portas;
+}
+function fxLigar(p, chave, alvo) {
+  const porta = fxPortas(p).find((x) => x.chave === chave); if (!porta) return;
+  p.regras = p.regras || [];
+  if (porta.spec.tipo === "padrao") p.depois = alvo;
+  else if (porta.rid) { const r = p.regras.find((x) => x.id === porta.rid); if (r) r.destino = alvo; }
+  else {
+    let conds, juncao = "e";
+    if (porta.spec.tipo === "op") conds = [{ pergunta: p.id, op: "igual", valor: porta.spec.valor }];
+    else if (porta.spec.faixa === "det") conds = [{ pergunta: p.id, op: "menor_igual", valor: "6" }];
+    else if (porta.spec.faixa === "pro") conds = [{ pergunta: p.id, op: "maior_igual", valor: "9" }];
+    else conds = [{ pergunta: p.id, op: "maior_igual", valor: "7" }, { pergunta: p.id, op: "menor_igual", valor: "8" }];
+    p.regras.push({ id: FM.uid("r"), conds, juncao, destino: alvo });
+  }
+  marcarSujo();
+}
+function fxDesligar(p, chave) {
+  const porta = fxPortas(p).find((x) => x.chave === chave); if (!porta) return;
+  if (porta.spec.tipo === "padrao") p.depois = "";
+  else if (porta.rid) p.regras = (p.regras || []).filter((x) => x.id !== porta.rid);
+  marcarSujo();
+}
+
+function fxPosicoes() {
+  const f = ED.form;
+  f.config.fluxo_pos = f.config.fluxo_pos || {};
+  return f.config.fluxo_pos;
+}
+function fxAutoLayout(soFaltantes) {
+  const f = ED.form, pos = fxPosicoes(), nos = fxNos();
+  const ordem = {}; nos.forEach((n, i) => ordem[n.id] = i);
+  const prof = {};
+  const temInicio = nos[0] && nos[0].id === "inicio";
+  if (temInicio) prof.inicio = 0;
+  const base = temInicio ? 1 : 0;
+  f.perguntas.forEach((p, i) => { if (prof[p.id] == null) prof[p.id] = i === 0 ? base : null; });
+  // caminho mais longo considerando só ligações "para frente" na lista
+  for (let it = 0; it < f.perguntas.length + 2; it++) {
+    f.perguntas.forEach((p) => {
+      if (prof[p.id] == null) return;
+      fxPortas(p).forEach((pt) => {
+        if (!pt.alvo || pt.alvo.startsWith("fim:") || ordem[pt.alvo] <= ordem[p.id]) return;
+        prof[pt.alvo] = Math.max(prof[pt.alvo] || 0, prof[p.id] + 1);
+      });
+    });
+  }
+  let ult = base;
+  f.perguntas.forEach((p) => { if (prof[p.id] == null) prof[p.id] = ult + 1; ult = prof[p.id]; });
+  const maxQ = Math.max(base, ...f.perguntas.map((p) => prof[p.id]));
+  f.finais.forEach((fi) => prof["fim:" + fi.id] = maxQ + 1);
+  const colY = {};
+  nos.forEach((n) => {
+    const c = prof[n.id] || 0;
+    const alt = n.tipo === "pergunta" ? 78 + fxPortas(n.p).length * 30 : 92;
+    const y = colY[c] || 40;
+    colY[c] = y + alt + 36;
+    if (!soFaltantes || !pos[n.id]) pos[n.id] = [40 + c * (FX_W + 110), y];
+  });
+}
+
+function renderFluxo() {
+  if (!ED.fxView) ED.sel = null; // primeira vez: canvas inteiro visível
+  ED.fxView = ED.fxView || null;
+  $("#ed-corpo").innerHTML = '<div class="fluxo"><div class="fx-canvas" id="fluxo" tabindex="0" aria-label="Fluxo do formulário">' +
+    '<div class="fx-mundo" id="fx-mundo"><svg class="fx-svg" id="fx-svg"><g id="fx-g" transform="translate(5000,5000)"></g></svg><div id="fx-nos"></div></div>' +
+    '<div class="fx-barra"><button class="mini" id="fx-addq">+ Pergunta</button><button class="mini" id="fx-addf">+ Tela final</button><button class="mini ghost" id="fx-org" title="Reorganizar todas as etapas em colunas">Organizar</button></div>' +
+    '<div class="fx-zoom"><button class="ico ghost" id="fx-zm" aria-label="Diminuir zoom">−</button><span id="fx-zv">100%</span><button class="ico ghost" id="fx-zp" aria-label="Aumentar zoom">+</button><button class="mini ghost" id="fx-fit">Ajustar</button></div>' +
+    '<div class="fx-dica">Arraste a bolinha de uma resposta até outra etapa para ligar. Solte no vazio para criar uma pergunta nova. Clique numa linha para remover.</div>' +
+    '</div><aside class="fx-lado" id="fx-lado"><div class="fx-lado-cab"><span>Editar etapa</span><button class="ico ghost" id="fx-fechar" aria-label="Fechar painel">×</button></div><section class="painel" id="painel"></section></aside></div>';
+  fxPainel();
+  desenharFluxo();
+  if (!ED.fxView) fxAjustar();
+  fxAplicarView();
+  ligarFluxo();
+}
+function fxPainel() {
+  const aberto = !!ED.sel && fxExiste(ED.sel === "inicio" ? null : ED.sel) || ED.sel === "inicio";
+  $("#fx-lado").classList.toggle("aberto", aberto);
+  if (aberto) renderPainel();
+}
+function fxAplicarView() {
+  const v = ED.fxView; const m = $("#fx-mundo"); if (!m || !v) return;
+  m.style.transform = "translate(" + v.x + "px," + v.y + "px) scale(" + v.z + ")";
+  $("#fx-zv").textContent = Math.round(v.z * 100) + "%";
+  $("#fluxo").style.backgroundPosition = v.x + "px " + v.y + "px";
+  $("#fluxo").style.backgroundSize = (20 * v.z) + "px " + (20 * v.z) + "px";
+}
+function fxAjustar() {
+  const cv = $("#fluxo"); const els = $$(".fx-no", cv); if (!els.length) { ED.fxView = { x: 40, y: 40, z: 1 }; return; }
+  const pos = fxPosicoes();
+  let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+  els.forEach((el) => { const p = pos[el.dataset.no]; if (!p) return; x1 = Math.min(x1, p[0]); y1 = Math.min(y1, p[1]); x2 = Math.max(x2, p[0] + el.offsetWidth); y2 = Math.max(y2, p[1] + el.offsetHeight); });
+  const W = cv.clientWidth, H = cv.clientHeight, pad = 60;
+  const z = Math.max(.3, Math.min(1, (W - pad * 2) / (x2 - x1), (H - pad * 2 - 30) / (y2 - y1)));
+  ED.fxView = { z, x: (W - (x2 - x1) * z) / 2 - x1 * z, y: Math.max(pad, (H - (y2 - y1) * z) / 2) - y1 * z };
+}
+
+function desenharFluxo() {
+  const caixa = $("#fx-nos"); if (!caixa) return;
+  const f = ED.form, nos = fxNos(), pos = fxPosicoes();
+  if (nos.some((n) => !pos[n.id])) fxAutoLayout(true);
+  // entradas para achar etapas soltas
+  const entra = new Set();
+  if (f.perguntas[0]) entra.add(f.perguntas[0].id);
+  f.perguntas.forEach((p) => fxPortas(p).forEach((pt) => { if (pt.alvo) entra.add(pt.alvo); }));
+  let n = 0;
+  caixa.innerHTML = nos.map((no) => {
+    const [x, y] = pos[no.id];
+    const on = ED.sel === no.id ? " on" : "";
+    if (no.tipo === "inicio") {
+      const i = f.inicio;
+      return '<div class="fx-no fx-inicio' + on + '" data-no="inicio" style="left:' + x + "px;top:" + y + 'px"><div class="fx-cab"><small><span class="fx-ic t-tela">▶</span>Boas-vindas</small><b>' + h(i.titulo || "Tela de boas-vindas") + "</b></div>" +
+        '<div class="fx-portas"><div class="fx-porta padrao"><span class="rot">' + h(i.botao || "Começar") + '</span><span class="fx-dot ligado fixa" title="Sempre vai para a primeira pergunta"></span></div></div></div>';
+    }
+    if (no.tipo === "fim") {
+      const fi = no.fi;
+      return '<div class="fx-no fx-fim' + on + '" data-no="' + no.id + '" style="left:' + x + "px;top:" + y + 'px"><span class="fx-in"></span><div class="fx-cab"><small><span class="fx-ic t-fim">✓</span>Tela final' + (no.padrao ? " · padrão" : "") + "</small><b>" + h(fi.nome || fi.titulo || "Final") + "</b>" +
+        (fi.redirecionar ? '<span class="fx-info">↗ redireciona</span>' : "") + (!no.padrao && !entra.has(no.id) ? '<span class="fx-solta">sem ligação</span>' : "") + "</div></div>";
+    }
+    const p = no.p, t = T[p.tipo] || T.curto;
+    if (p.tipo !== "aviso") n++;
+    const portas = fxPortas(p);
+    return '<div class="fx-no' + on + '" data-no="' + p.id + '" style="left:' + x + "px;top:" + y + 'px"><span class="fx-in"></span>' +
+      '<div class="fx-cab"><small><span class="fx-ic ' + GRUPO_CLS[t.grupo] + '">' + t.ic + "</span>" + (p.tipo === "aviso" ? "" : n + " · ") + t.nome + "</small>" +
+      '<b data-tit="' + p.id + '">' + h(p.titulo || "Sem título") + "</b>" + (!entra.has(p.id) ? '<span class="fx-solta" title="Nenhuma etapa leva até aqui">sem entrada</span>' : "") + "</div>" +
+      '<div class="fx-portas">' + portas.map((pt) => '<div class="fx-porta ' + pt.cls + '" data-chave="' + h(pt.chave) + '" title="' + h(pt.rot) + (pt.alvo ? "" : " — sem ligação: segue “Qualquer outra resposta”") + '"><span class="rot">' + h(pt.rot) + "</span>" +
+        '<span class="fx-dot' + (pt.alvo ? (pt.impl ? " impl" : " ligado") : "") + '" data-q="' + p.id + '" data-chave="' + h(pt.chave) + '"></span></div>').join("") + "</div></div>";
+  }).join("");
+  desenharArestas();
+}
+
+function fxPonto(el, porta) {
+  const pos = fxPosicoes()[el.dataset.no];
+  if (porta) return [pos[0] + el.offsetWidth, pos[1] + porta.offsetTop + porta.offsetHeight / 2];
+  return [pos[0], pos[1] + 26];
+}
+function fxCurva(a, b) {
+  const dx = b[0] >= a[0] ? Math.max(50, (b[0] - a[0]) / 2) : 140;
+  const c1 = [a[0] + dx, a[1]], c2 = [b[0] - dx, b[1]];
+  return { d: "M" + a[0] + "," + a[1] + " C" + c1[0] + "," + c1[1] + " " + c2[0] + "," + c2[1] + " " + b[0] + "," + b[1],
+    meio: [.125 * a[0] + .375 * c1[0] + .375 * c2[0] + .125 * b[0], .125 * a[1] + .375 * c1[1] + .375 * c2[1] + .125 * b[1]] };
+}
+function desenharArestas() {
+  const g = $("#fx-g"); if (!g) return;
+  const f = ED.form; let s = ""; let botao = "";
+  const noEl = (id) => $('.fx-no[data-no="' + CSS.escape(id) + '"]');
+  const ini = noEl("inicio");
+  if (ini && f.perguntas[0]) { const alvo = noEl(f.perguntas[0].id); if (alvo) { const c = fxCurva(fxPonto(ini, $(".fx-porta", ini)), fxPonto(alvo)); s += '<path class="fx-linha padrao" d="' + c.d + '"/>'; } }
+  f.perguntas.forEach((p) => {
+    const el = noEl(p.id); if (!el) return;
+    fxPortas(p).forEach((pt) => {
+      if (!pt.alvo) return;
+      const alvo = noEl(pt.alvo); const porta = $('.fx-porta[data-chave="' + CSS.escape(pt.chave) + '"]', el);
+      if (!alvo || !porta) return;
+      const c = fxCurva(fxPonto(el, porta), fxPonto(alvo));
+      const sel = ED.fxAresta && ED.fxAresta.q === p.id && ED.fxAresta.chave === pt.chave;
+      const cls = "fx-linha " + pt.cls + (pt.impl ? " impl" : "") + (sel ? " sel" : "");
+      s += '<path class="' + cls + '" d="' + c.d + '"/><path class="fx-hit" data-q="' + p.id + '" data-chave="' + h(pt.chave) + '" d="' + c.d + '"><title>' + h(pt.rot) + " → " + h(fxNome(pt.alvo)) + "</title></path>";
+      if (sel) botao = '<div class="fx-aresta-ctl" style="left:' + c.meio[0] + "px;top:" + c.meio[1] + 'px">' +
+        (pt.impl ? '<span>Segue a ordem da lista</span>' : '<button class="mini perigo" id="fx-rm">Remover ligação</button>') + "</div>";
+    });
+  });
+  g.innerHTML = s;
+  const antigo = $(".fx-aresta-ctl"); if (antigo) antigo.remove();
+  if (botao) {
+    $("#fx-mundo").insertAdjacentHTML("beforeend", botao);
+    const rm = $("#fx-rm");
+    if (rm) rm.onclick = (e) => { e.stopPropagation(); const p = P(ED.fxAresta.q); if (p) fxDesligar(p, ED.fxAresta.chave); ED.fxAresta = null; desenharFluxo(); toast("Ligação removida"); };
+  }
+}
+function fxNome(id) {
+  if (!id) return "";
+  if (id.startsWith("fim:")) { const fi = Fim(id.slice(4)); return fi ? "✓ " + (fi.nome || fi.titulo) : ""; }
+  const q = P(id); return q ? rotuloQ(q) : "";
+}
+
+function fxSelecionar(id) {
+  ED.sel = id; ED.fxAresta = null;
+  $$(".fx-no").forEach((el) => el.classList.toggle("on", el.dataset.no === id));
+  desenharArestas(); fxPainel();
+}
+
+function ligarFluxo() {
+  const cv = $("#fluxo");
+  const mundoPt = (e) => { const r = cv.getBoundingClientRect(), v = ED.fxView; return [(e.clientX - r.left - v.x) / v.z, (e.clientY - r.top - v.y) / v.z]; };
+  let acao = null;
+
+  cv.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || e.target.closest(".fx-barra,.fx-zoom,.fx-aresta-ctl")) return;
+    const dot = e.target.closest(".fx-dot");
+    const hit = e.target.closest(".fx-hit");
+    const no = e.target.closest(".fx-no");
+    if (dot && !dot.classList.contains("fixa")) {
+      const el = dot.closest(".fx-no"), porta = dot.closest(".fx-porta");
+      acao = { tipo: "ligar", q: dot.dataset.q, chave: dot.dataset.chave, de: fxPonto(el, porta) };
+      $("#fx-g").insertAdjacentHTML("beforeend", '<path id="fx-temp" class="fx-linha temp" d=""/>');
+      cv.setPointerCapture(e.pointerId); e.preventDefault(); return;
+    }
+    if (hit) { ED.fxAresta = { q: hit.dataset.q, chave: hit.dataset.chave }; desenharArestas(); e.preventDefault(); return; }
+    if (no) {
+      const p0 = fxPosicoes()[no.dataset.no];
+      acao = { tipo: "mover", id: no.dataset.no, el: no, ini: [e.clientX, e.clientY], p0: p0.slice(), moveu: false };
+      cv.setPointerCapture(e.pointerId); return;
+    }
+    acao = { tipo: "pan", ini: [e.clientX, e.clientY], v0: Object.assign({}, ED.fxView), moveu: false };
+    cv.classList.add("arrastando"); cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener("pointermove", (e) => {
+    if (!acao) return;
+    if (acao.tipo === "pan") {
+      const dx = e.clientX - acao.ini[0], dy = e.clientY - acao.ini[1];
+      if (Math.abs(dx) + Math.abs(dy) > 3) acao.moveu = true;
+      ED.fxView.x = acao.v0.x + dx; ED.fxView.y = acao.v0.y + dy; fxAplicarView();
+    } else if (acao.tipo === "mover") {
+      const z = ED.fxView.z, dx = (e.clientX - acao.ini[0]) / z, dy = (e.clientY - acao.ini[1]) / z;
+      if (Math.abs(dx) + Math.abs(dy) > 3) acao.moveu = true;
+      if (!acao.moveu) return;
+      const p = fxPosicoes()[acao.id]; p[0] = Math.round(acao.p0[0] + dx); p[1] = Math.round(acao.p0[1] + dy);
+      acao.el.style.left = p[0] + "px"; acao.el.style.top = p[1] + "px";
+      desenharArestas();
+    } else if (acao.tipo === "ligar") {
+      const b = mundoPt(e);
+      const t = $("#fx-temp"); if (t) t.setAttribute("d", fxCurva(acao.de, b).d);
+      const sob = document.elementFromPoint(e.clientX, e.clientY);
+      const alvo = sob && sob.closest(".fx-no");
+      $$(".fx-no.alvo").forEach((x) => x !== alvo && x.classList.remove("alvo"));
+      if (alvo && alvo.dataset.no !== acao.q && alvo.dataset.no !== "inicio") alvo.classList.add("alvo");
+    }
+  });
+  const fim = (e) => {
+    if (!acao) return;
+    const a = acao; acao = null; cv.classList.remove("arrastando");
+    if (a.tipo === "pan" && !a.moveu) { ED.sel = null; ED.fxAresta = null; $$(".fx-no.on").forEach((x) => x.classList.remove("on")); desenharArestas(); fxPainel(); }
+    if (a.tipo === "mover") { if (a.moveu) marcarSujo(true); else fxSelecionar(a.id); }
+    if (a.tipo === "ligar") {
+      const t = $("#fx-temp"); if (t) t.remove();
+      $$(".fx-no.alvo").forEach((x) => x.classList.remove("alvo"));
+      const sob = document.elementFromPoint(e.clientX, e.clientY);
+      const alvo = sob && sob.closest(".fx-no");
+      const p = P(a.q); if (!p) return;
+      if (alvo && alvo.dataset.no !== "inicio" && alvo.dataset.no !== a.q) { fxLigar(p, a.chave, alvo.dataset.no); desenharFluxo(); toast("Ligado a " + fxNome(alvo.dataset.no)); }
+      else if (!alvo && sob && sob.closest("#fluxo")) {
+        const pt = mundoPt(e);
+        escolherTipo((tipo) => {
+          const nova = { id: FM.uid("q"), tipo, titulo: "", descricao: "", obrigatorio: false, chave: "", regras: [], depois: "" };
+          prepararTipo(nova);
+          ED.form.perguntas.push(nova);
+          fxPosicoes()[nova.id] = [Math.round(pt[0]), Math.round(pt[1] - 26)];
+          fxLigar(p, a.chave, nova.id);
+          desenharFluxo(); fxSelecionar(nova.id);
+          setTimeout(() => { const ti = $("#q-titulo"); if (ti) ti.focus(); }, 60);
+        });
+      }
+    }
+  };
+  cv.addEventListener("pointerup", fim);
+  cv.addEventListener("pointercancel", () => { acao = null; const t = $("#fx-temp"); if (t) t.remove(); });
+  cv.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const v = ED.fxView;
+    if (e.ctrlKey || e.metaKey) {
+      const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+      const z = Math.max(.25, Math.min(1.8, v.z * Math.exp(-e.deltaY * .002)));
+      v.x = mx - (mx - v.x) * z / v.z; v.y = my - (my - v.y) * z / v.z; v.z = z;
+    } else { v.x -= e.deltaX; v.y -= e.deltaY; }
+    fxAplicarView();
+  }, { passive: false });
+  cv.addEventListener("keydown", (e) => {
+    if ((e.key === "Delete" || e.key === "Backspace") && ED.fxAresta && !e.target.closest("input,textarea,select")) {
+      const p = P(ED.fxAresta.q); if (p) fxDesligar(p, ED.fxAresta.chave); ED.fxAresta = null; desenharFluxo(); toast("Ligação removida");
+    }
+  });
+  const zoom = (fator) => {
+    const v = ED.fxView, W = cv.clientWidth / 2, H = cv.clientHeight / 2;
+    const z = Math.max(.25, Math.min(1.8, v.z * fator));
+    v.x = W - (W - v.x) * z / v.z; v.y = H - (H - v.y) * z / v.z; v.z = z; fxAplicarView();
+  };
+  $("#fx-zm").onclick = () => zoom(1 / 1.2);
+  $("#fx-zp").onclick = () => zoom(1.2);
+  $("#fx-fit").onclick = () => { fxAjustar(); fxAplicarView(); };
+  $("#fx-org").onclick = () => { fxAutoLayout(false); marcarSujo(true); desenharFluxo(); fxAjustar(); fxAplicarView(); };
+  $("#fx-addq").onclick = () => escolherTipo((tipo) => {
+    const nova = { id: FM.uid("q"), tipo, titulo: "", descricao: "", obrigatorio: false, chave: "", regras: [], depois: "" };
+    prepararTipo(nova);
+    const ref = P(ED.sel);
+    const i = ref ? ED.form.perguntas.indexOf(ref) + 1 : ED.form.perguntas.length;
+    ED.form.perguntas.splice(i, 0, nova);
+    const pr = ref && fxPosicoes()[ref.id];
+    if (pr) fxPosicoes()[nova.id] = [pr[0] + FX_W + 110, pr[1]];
+    marcarSujo(); desenharFluxo(); fxSelecionar(nova.id);
+    setTimeout(() => { const ti = $("#q-titulo"); if (ti) ti.focus(); }, 60);
+  });
+  $("#fx-addf").onclick = () => {
+    const fi = novoFinal("Obrigado!"); fi.nome = "Final " + (ED.form.finais.length + 1);
+    ED.form.finais.push(fi); marcarSujo(); desenharFluxo(); fxSelecionar("fim:" + fi.id);
+  };
+  $("#fx-fechar").onclick = () => { ED.sel = null; $$(".fx-no.on").forEach((x) => x.classList.remove("on")); fxPainel(); };
 }
 
 // ---------------- DESIGN ----------------
