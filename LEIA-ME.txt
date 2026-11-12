@@ -1,0 +1,14 @@
+TB FORMS — construtor de formulários (estilo Typeform)
+
+Publicar na Vercel: Add New > Project > importe este repositório. Framework: Other. Sem build command, output na raiz. Deploy.
+Abra o endereço do site: é o painel. Entre com o mesmo e-mail e senha do Disparador / Webnario.
+
+Páginas:  /  = painel   |   /f/SLUG = formulário público
+Banco: projeto Supabase lycwnthgmjhblnxxykrh (TB Disparador), tabelas fm_forms e fm_respostas.
+Acesso de admin: o mesmo do Webnario (tabela wb_admins).
+config.js guarda a URL e a chave pública do Supabase.
+
+Como funciona o funil:
+- Cada pessoa que abre o link vira uma linha em fm_respostas (status "visita").
+- Ao responder a 1ª pergunta vira "parcial"; ao chegar numa tela final vira "concluida".
+- "vistas" guarda as perguntas que a pessoa viu e "atual" onde ela está/parou. É daí que sai o abandono por pergunta.

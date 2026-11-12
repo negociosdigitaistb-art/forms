@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Formulário</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="fonte" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg:#0a0b0c; --fg:#F2EEE6; --ac:#C9A96E; --btn-fg:#14110B;
+    --font:'Hanken Grotesk', system-ui, -apple-system, Segoe UI, sans-serif;
+    --fg-60: color-mix(in srgb, var(--fg) 62%, transparent);
+    --fg-30: color-mix(in srgb, var(--fg) 30%, transparent);
+    --fg-12: color-mix(in srgb, var(--fg) 12%, transparent);
+    --fg-06: color-mix(in srgb, var(--fg) 6%, transparent);
+    --ac-20: color-mix(in srgb, var(--ac) 22%, transparent);
+    --ac-10: color-mix(in srgb, var(--ac) 10%, transparent);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; }
+  body { background:var(--bg); color:var(--fg); font:400 17px/1.5 var(--font); -webkit-font-smoothing:antialiased; overflow:hidden; }
+  body.bgimg { background-size:cover; background-position:center; }
+  body.bgimg::before { content:""; position:fixed; inset:0; background:color-mix(in srgb, var(--bg) 72%, transparent); pointer-events:none; }
+  button { font:inherit; color:inherit; cursor:pointer; }
+  .hide { display:none !important; }
+
+  #barra { position:fixed; top:0; left:0; right:0; height:4px; background:var(--fg-06); z-index:5; }
+  #barra i { display:block; height:100%; width:0; background:var(--ac); transition:width .45s cubic-bezier(.2,.8,.2,1); }
+  #logo { position:fixed; top:22px; left:28px; z-index:4; max-height:34px; max-width:160px; }
+  #previa { position:fixed; top:14px; right:14px; z-index:6; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:5px 10px; border-radius:999px; background:var(--ac-20); color:var(--ac); }
+
+  #palco { position:relative; height:100%; overflow-y:auto; display:flex; }
+  .tela { margin:auto; width:100%; max-width:720px; padding:96px 28px 120px; }
+  .tela.centro { text-align:center; }
+  .entra { animation:entra .5s cubic-bezier(.2,.8,.2,1) both; }
+  .entra-volta { animation:entraVolta .5s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes entra { from { opacity:0; transform:translateY(36px); } to { opacity:1; transform:none; } }
+  @keyframes entraVolta { from { opacity:0; transform:translateY(-36px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { .entra, .entra-volta { animation:none; } #barra i { transition:none; } }
+
+  .num { display:flex; align-items:center; gap:8px; color:var(--ac); font-size:15px; font-weight:600; margin-bottom:10px; }
+  .num svg { width:14px; height:14px; }
+  h1.tit { font-size:clamp(22px, 3.4vw, 30px); line-height:1.25; font-weight:600; letter-spacing:-.01em; }
+  h1.tit .req { color:var(--ac); margin-left:2px; }
+  .desc { color:var(--fg-60); font-size:clamp(16px, 2vw, 19px); margin-top:10px; white-space:pre-line; }
+  .img { margin-top:20px; max-width:100%; max-height:280px; border-radius:12px; display:block; }
+  .tela.centro .img { margin-left:auto; margin-right:auto; }
+  .campo { margin-top:32px; }
+
+  .inp { width:100%; background:transparent; border:0; border-bottom:2px solid var(--fg-30); color:var(--fg); font:inherit; font-size:clamp(20px, 3vw, 28px); padding:8px 0 10px; outline:none; border-radius:0; transition:border-color .2s; }
+  .inp:focus { border-bottom-color:var(--ac); }
+  .inp::placeholder { color:var(--fg-30); }
+  textarea.inp { resize:none; min-height:52px; max-height:40vh; line-height:1.35; overflow-y:auto; }
+  input[type=date].inp { color-scheme:dark; max-width:320px; }
+  .claro input[type=date].inp { color-scheme:light; }
+
+  .ops { display:flex; flex-direction:column; gap:10px; max-width:520px; }
+  .op { display:flex; align-items:center; gap:12px; text-align:left; width:100%; min-height:52px; padding:10px 14px; border-radius:10px; border:1px solid var(--fg-30); background:var(--fg-06); font-size:18px; transition:background .15s, border-color .15s, transform .1s; }
+  .op:hover { background:var(--ac-10); border-color:var(--ac); }
+  .op:active { transform:scale(.99); }
+  .op .k { flex:none; width:26px; height:26px; border-radius:6px; border:1px solid var(--fg-30); display:grid; place-items:center; font-size:12.5px; font-weight:700; color:var(--fg-60); background:var(--bg); }
+  .op .t { flex:1; }
+  .op .ok { flex:none; opacity:0; color:var(--ac); }
+  .op.sel { background:var(--ac-20); border-color:var(--ac); }
+  .op.sel .k { background:var(--ac); color:var(--btn-fg); border-color:var(--ac); }
+  .op.sel .ok { opacity:1; }
+  .op.pisca { animation:pisca .3s 2; }
+  @keyframes pisca { 50% { background:var(--ac-10); } }
+  .outro-inp { margin-top:6px; }
+  .dica { color:var(--fg-60); font-size:14px; margin-bottom:12px; }
+
+  .escala { display:flex; gap:8px; flex-wrap:wrap; }
+  .escala .op { flex:1 1 0; min-width:44px; justify-content:center; padding:0; min-height:56px; font-weight:600; }
+  .rotulos { display:flex; justify-content:space-between; color:var(--fg-60); font-size:14px; margin-top:10px; gap:12px; }
+  .estrelas { display:flex; gap:6px; }
+  .estrelas button { background:none; border:0; padding:4px; line-height:0; }
+  .estrelas svg { width:44px; height:44px; fill:none; stroke:var(--fg-30); stroke-width:1.5; transition:transform .12s, fill .12s, stroke .12s; }
+  .estrelas button.on svg { fill:var(--ac); stroke:var(--ac); }
+  .estrelas button:hover svg { transform:scale(1.08); }
+
+  .busca { position:relative; max-width:520px; }
+  .busca .lst { margin-top:10px; max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+  .busca .lst .op { min-height:44px; font-size:16px; }
+
+  .acoes { display:flex; align-items:center; gap:14px; margin-top:28px; flex-wrap:wrap; }
+  .btn { display:inline-flex; align-items:center; gap:10px; background:var(--ac); color:var(--btn-fg); border:0; border-radius:10px; font-weight:700; font-size:18px; height:48px; padding:0 22px; transition:filter .15s, transform .1s; text-decoration:none; }
+  .btn:hover { filter:brightness(1.07); }
+  .btn:active { transform:scale(.98); }
+  .btn[disabled] { opacity:.6; cursor:wait; }
+  .btn svg { width:16px; height:16px; }
+  .enter { color:var(--fg-60); font-size:13.5px; }
+  .enter b { font-weight:700; }
+  .erro { display:inline-flex; align-items:center; gap:8px; margin-top:16px; background:color-mix(in srgb, #E5484D 18%, transparent); color:#FF9592; padding:7px 12px; border-radius:8px; font-size:14.5px; animation:entra .25s both; }
+  .claro .erro { color:#B4232A; }
+
+  #nav { position:fixed; right:22px; bottom:22px; display:flex; gap:2px; z-index:5; border-radius:10px; overflow:hidden; }
+  #nav button { width:42px; height:40px; border:0; background:var(--ac); color:var(--btn-fg); display:grid; place-items:center; }
+  #nav button:disabled { opacity:.45; cursor:default; }
+  #nav svg { width:18px; height:18px; }
+  #marca { position:fixed; left:22px; bottom:26px; font-size:12px; color:var(--fg-30); z-index:4; text-decoration:none; }
+
+  .fim-ic { width:64px; height:64px; border-radius:50%; background:var(--ac-20); color:var(--ac); display:grid; place-items:center; margin:0 auto 22px; }
+  .fim-ic svg { width:30px; height:30px; }
+  .redir { color:var(--fg-60); font-size:14.5px; margin-top:18px; }
+  .spin { width:28px; height:28px; border-radius:50%; border:3px solid var(--fg-12); border-top-color:var(--ac); animation:gira .8s linear infinite; margin:auto; }
+  @keyframes gira { to { transform:rotate(360deg); } }
+
+  @media (max-width: 640px) {
+    body { font-size:16px; }
+    .tela { padding:84px 22px 140px; }
+    #logo { top:18px; left:20px; max-height:28px; }
+    .acoes .btn { flex:1; justify-content:center; }
+    .enter { display:none; }
+    .escala { gap:5px; }
+    .escala .op { min-width:0; min-height:48px; font-size:15px; }
+    .estrelas svg { width:38px; height:38px; }
+    #nav { right:16px; bottom:16px; }
+    #marca { display:none; }
+  }
+</style>
+</head>
+<body>
+<div id="barra" class="hide"><i></i></div>
+<img id="logo" class="hide" alt="">
+<div id="previa" class="hide">Pré-visualização</div>
+<main id="palco"><div class="tela"><div class="spin" role="status" aria-label="Carregando"></div></div></main>
+<div id="nav" class="hide">
+  <button id="nav-up" aria-label="Pergunta anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button>
+  <button id="nav-down" aria-label="Próxima pergunta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+</div>
+
+<script src="/config.js"></script>
+<script src="/core.js"></script>
+<script>
+(function () {
+  const CFG = window.FM_CONFIG;
+  const $ = (s) => document.querySelector(s);
+  const palco = $("#palco");
+  const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  const LETRAS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const IC = {
+    seta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    estrela: '<svg viewBox="0 0 24 24"><path stroke-linejoin="round" d="m12 2.8 2.83 5.74 6.33.92-4.58 4.46 1.08 6.3L12 17.25l-5.66 2.97 1.08-6.3L2.84 9.46l6.33-.92z"/></svg>'
+  };
+
+  const qs = new URLSearchParams(location.search);
+  const PREVIA = qs.has("preview");
+  const params = {};
+  qs.forEach((v, k) => { if (k !== "preview") params[k] = v.slice(0, 300); });
+  if (document.referrer && !document.referrer.startsWith(location.origin)) params.referrer = document.referrer.slice(0, 300);
+
+  function slugDaUrl() {
+    const q = qs.get("slug"); if (q) return q;
+    const p = location.pathname.split("/").filter(Boolean);
+    const i = p.indexOf("f");
+    return i >= 0 && p[i + 1] ? decodeURIComponent(p[i + 1]) : null;
+  }
+
+  async function rpc(fn, args, keepalive) {
+    const r = await fetch(CFG.url + "/rest/v1/rpc/" + fn, {
+      method: "POST", keepalive: !!keepalive,
+      headers: { apikey: CFG.anon, Authorization: "Bearer " + CFG.anon, "Content-Type": "application/json" },
+      body: JSON.stringify(args || {})
+    });
+    const t = await r.text(); let d = null; try { d = t ? JSON.parse(t) : null; } catch (e) { d = t; }
+    if (!r.ok) throw new Error((d && d.message) || r.statusText);
+    return d;
+  }
+
+  // ---------- estado ----------
+  let form = null, slug = null, token = null;
+  let respostas = {}, vistas = [], historico = [], atual = null; // atual: "inicio" | id pergunta | "fim:ID"
+  let fila = Promise.resolve();
+  let travado = false, avancoTimer = null, redirTimer = null;
+
+  function gravar(fn, args, keepalive) {
+    if (PREVIA || !token) return;
+    fila = fila.then(() => rpc(fn, args, keepalive)).catch(() => {});
+  }
+
+  function novoToken() {
+    const a = new Uint8Array(18); crypto.getRandomValues(a);
+    return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  // ---------- tema ----------
+  function luminancia(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || ""); if (!m) return 0;
+    const n = parseInt(m[1], 16); const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); });
+    return .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
+  }
+  function aplicarTema(t) {
+    t = t || {};
+    const r = document.documentElement.style;
+    if (t.fundo) r.setProperty("--bg", t.fundo);
+    if (t.texto) r.setProperty("--fg", t.texto);
+    if (t.destaque) r.setProperty("--ac", t.destaque);
+    r.setProperty("--btn-fg", luminancia(t.destaque || "#C9A96E") > .45 ? "#14110B" : "#FFFFFF");
+    document.body.classList.toggle("claro", luminancia(t.fundo || "#0a0b0c") > .5);
+    const fonte = t.fonte || "Hanken Grotesk";
+    $("#fonte").href = "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(fonte).replace(/%20/g, "+") + ":wght@400;500;600;700&display=swap";
+    r.setProperty("--font", "'" + fonte + "', system-ui, -apple-system, Segoe UI, sans-serif");
+    if (t.logo) { $("#logo").src = t.logo; $("#logo").classList.remove("hide"); } else $("#logo").classList.add("hide");
+    if (t.imagem_fundo) { document.body.style.backgroundImage = "url('" + t.imagem_fundo.replace(/'/g, "%27") + "')"; document.body.classList.add("bgimg"); }
+    else { document.body.style.backgroundImage = ""; document.body.classList.remove("bgimg"); }
+  }
+
+  // ---------- helpers ----------
+  const P = (id) => (form.perguntas || []).find((p) => p.id === id);
+  const F = (id) => (form.finais || []).find((f) => f.id === id) || (form.finais || [])[0];
+  const V = (txt, cod) => FM.variaveis(txt, form, respostas, params, cod);
+  const cfg = () => form.config || {};
+
+  function progresso() {
+    const ps = form.perguntas || [];
+    let pct = 0;
+    if (atual && atual.startsWith("fim:")) pct = 100;
+    else if (P(atual)) pct = Math.round((ps.findIndex((p) => p.id === atual)) / Math.max(1, ps.length) * 100);
+    $("#barra i").style.width = pct + "%";
+    $("#barra").classList.toggle("hide", cfg().mostrar_progresso === false || atual === "inicio");
+  }
+
+  function atualizarNav() {
+    const emPergunta = !!P(atual);
+    $("#nav").classList.toggle("hide", !emPergunta);
+    $("#nav-up").disabled = !historico.length || cfg().permitir_voltar === false;
+  }
+
+  function trocar(html, volta, centro) {
+    clearTimeout(avancoTimer); clearTimeout(redirTimer);
+    palco.innerHTML = '<div class="tela ' + (volta ? "entra-volta" : "entra") + (centro ? " centro" : "") + '">' + html + "</div>";
+    palco.scrollTop = 0;
+    progresso(); atualizarNav();
+  }
+
+  function erro(msg) {
+    const box = palco.querySelector(".erro-box");
+    if (box) box.innerHTML = msg ? '<div class="erro" role="alert">' + esc(msg) + "</div>" : "";
+  }
+
+  // ---------- telas ----------
+  function telaInicio() {
+    atual = "inicio";
+    const i = form.inicio || {};
+    trocar(
+      '<h1 class="tit">' + esc(V(i.titulo || form.titulo)) + "</h1>" +
+      (i.texto ? '<p class="desc">' + esc(V(i.texto)) + "</p>" : "") +
+      (i.imagem ? '<img class="img" src="' + esc(i.imagem) + '" alt="">' : "") +
+      '<div class="acoes" style="justify-content:center"><button class="btn" id="comecar">' + esc(i.botao || "Começar") + " " + IC.seta + '</button>' +
+      '<span class="enter">pressione <b>Enter ↵</b></span></div>' +
+      (i.tempo ? '<p class="redir">⏱ Leva ' + esc(i.tempo) + "</p>" : ""),
+      false, true);
+    $("#comecar").onclick = () => irPara(FM.proximo(form, null, respostas));
+    $("#comecar").focus();
+  }
+
+  function cabecalho(p) {
+    const ps = form.perguntas;
+    const n = ps.filter((x) => x.tipo !== "aviso").findIndex((x) => x.id === p.id) + 1;
+    const mostrarNum = cfg().mostrar_numero !== false && p.tipo !== "aviso";
+    return (mostrarNum ? '<div class="num">' + n + " " + IC.seta + "</div>" : "") +
+      '<h1 class="tit" id="tit">' + esc(V(p.titulo || "…")) + (p.obrigatorio && p.tipo !== "aviso" ? '&#8288;<span class="req" aria-label="obrigatória">*</span>' : "") + "</h1>" +
+      (p.descricao ? '<p class="desc">' + esc(V(p.descricao)) + "</p>" : "") +
+      (p.imagem ? '<img class="img" src="' + esc(p.imagem) + '" alt="">' : "");
+  }
+
+  function botaoOk(p, rotulo) {
+    return '<div class="acoes"><button class="btn" id="ok">' + esc(rotulo || cfg().texto_ok || "OK") + " " + IC.check + "</button>" +
+      '<span class="enter">' + (p && p.tipo === "longo" ? "<b>Shift ⇧ + Enter ↵</b> quebra linha" : "pressione <b>Enter ↵</b>") + "</span></div>" +
+      '<div class="erro-box" aria-live="polite"></div>';
+  }
+
+  function opcoesDe(p) {
+    if (p.tipo === "sim_nao") return [{ id: "sim", texto: "Sim" }, { id: "nao", texto: "Não" }];
+    return (p.opcoes || []).filter((o) => o.texto && o.texto.trim());
+  }
+
+  function telaPergunta(p, volta) {
+    atual = p.id;
+    if (!vistas.includes(p.id)) vistas.push(p.id);
+    gravar("fm_progresso", { p_token: token, p_respostas: respostas, p_vistas: vistas, p_atual: p.id });
+    const v = respostas[p.id];
+    let campo = "";
+    const t = p.tipo;
+
+    if (["curto", "email", "telefone", "numero"].includes(t)) {
+      const tipoInp = { curto: "text", email: "email", telefone: "tel", numero: "text" }[t];
+      const ph = p.placeholder || { curto: "Digite sua resposta aqui…", email: "nome@exemplo.com", telefone: "(51) 99999-9999", numero: "Digite um número" }[t];
+      const extra = t === "email" ? ' autocomplete="email" inputmode="email"' : t === "telefone" ? ' autocomplete="tel" inputmode="tel"' : t === "numero" ? ' inputmode="decimal"' : ' autocomplete="off"';
+      campo = '<input class="inp" id="inp" type="' + tipoInp + '"' + extra + ' placeholder="' + esc(ph) + '" value="' + esc(v == null ? "" : v) + '" aria-labelledby="tit">' + botaoOk(p);
+    } else if (t === "longo") {
+      campo = '<textarea class="inp" id="inp" rows="1" placeholder="' + esc(p.placeholder || "Digite sua resposta aqui…") + '" aria-labelledby="tit">' + esc(v || "") + "</textarea>" + botaoOk(p);
+    } else if (t === "data") {
+      campo = '<input class="inp" id="inp" type="date" value="' + esc(v || "") + '" aria-labelledby="tit">' + botaoOk(p);
+    } else if (t === "unica" || t === "multipla" || t === "sim_nao") {
+      const ops = opcoesDe(p);
+      const sel = Array.isArray(v) ? v : v != null ? [v] : [];
+      const textos = ops.map((o) => o.texto);
+      const outroVal = sel.find((x) => !textos.includes(x));
+      let dica = "";
+      if (t === "multipla") {
+        const mi = +p.min_sel || 0, ma = +p.max_sel || 0;
+        dica = ma && mi === ma ? "Escolha " + ma : ma ? "Escolha até " + ma : mi > 1 ? "Escolha pelo menos " + mi : "Escolha quantas quiser";
+      }
+      campo = (dica ? '<p class="dica">' + dica + "</p>" : "") + '<div class="ops" role="' + (t === "multipla" ? "group" : "radiogroup") + '" aria-labelledby="tit">' +
+        ops.map((o, i) => '<button type="button" class="op' + (sel.includes(o.texto) ? " sel" : "") + '" data-v="' + esc(o.texto) + '" role="' + (t === "multipla" ? "checkbox" : "radio") + '" aria-checked="' + sel.includes(o.texto) + '">' +
+          '<span class="k">' + (t === "sim_nao" ? o.texto[0] : LETRAS[i] || "") + '</span><span class="t">' + esc(o.texto) + '</span><span class="ok">' + IC.check + "</span></button>").join("") +
+        (p.permitir_outro && t !== "sim_nao" ? '<button type="button" class="op' + (outroVal ? " sel" : "") + '" data-outro="1"><span class="k">' + (LETRAS[ops.length] || "") + '</span><span class="t">Outro</span><span class="ok">' + IC.check + '</span></button>' +
+          '<input class="inp outro-inp' + (outroVal ? "" : " hide") + '" id="outro" placeholder="Escreva aqui…" value="' + esc(outroVal || "") + '">' : "") +
+        "</div>" + (t === "multipla" || p.permitir_outro ? botaoOk(p) : '<div class="erro-box" aria-live="polite"></div>');
+    } else if (t === "lista") {
+      const ops = opcoesDe(p);
+      campo = '<div class="busca"><input class="inp" id="busca" placeholder="Digite ou escolha uma opção" value="' + esc(v || "") + '" autocomplete="off" aria-labelledby="tit"><div class="lst" id="lst">' +
+        ops.map((o) => '<button type="button" class="op' + (v === o.texto ? " sel" : "") + '" data-v="' + esc(o.texto) + '"><span class="t">' + esc(o.texto) + '</span><span class="ok">' + IC.check + "</span></button>").join("") +
+        "</div></div>" + botaoOk(p);
+    } else if (t === "nps" || t === "escala") {
+      const mi = t === "nps" ? 0 : (p.escala_min != null && p.escala_min !== "" ? +p.escala_min : 1);
+      const ma = t === "nps" ? 10 : (p.escala_max ? +p.escala_max : 5);
+      let b = "";
+      for (let n = mi; n <= ma; n++) b += '<button type="button" class="op' + (v === n ? " sel" : "") + '" data-n="' + n + '" role="radio" aria-checked="' + (v === n) + '">' + n + "</button>";
+      const rmin = p.rot_min || (t === "nps" ? "Nada provável" : ""), rmax = p.rot_max || (t === "nps" ? "Muito provável" : "");
+      campo = '<div class="escala" role="radiogroup" aria-labelledby="tit">' + b + "</div>" +
+        (rmin || rmax ? '<div class="rotulos"><span>' + esc(rmin) + "</span><span>" + esc(rmax) + "</span></div>" : "") + '<div class="erro-box" aria-live="polite"></div>';
+    } else if (t === "estrelas") {
+      const ma = +p.escala_max || 5;
+      let b = "";
+      for (let n = 1; n <= ma; n++) b += '<button type="button" data-n="' + n + '" class="' + (v >= n ? "on" : "") + '" aria-label="' + n + ' estrela' + (n > 1 ? "s" : "") + '">' + IC.estrela + "</button>";
+      campo = '<div class="estrelas" role="radiogroup" aria-labelledby="tit">' + b + '</div><div class="erro-box" aria-live="polite"></div>';
+    } else if (t === "aviso") {
+      campo = botaoOk(null, p.botao || "Continuar");
+    }
+
+    trocar(cabecalho(p) + '<div class="campo">' + campo + "</div>", volta);
+    ligarPergunta(p);
+  }
+
+  function valorAtual(p) {
+    const t = p.tipo;
+    if (["curto", "email", "telefone", "numero", "longo", "data"].includes(t)) {
+      const s = ($("#inp").value || "").trim();
+      if (t === "numero" && s !== "") { const n = Number(s.replace(/\./g, "").replace(",", ".")); return isNaN(n) ? s : n; }
+      return s;
+    }
+    if (t === "lista") return ($("#busca").value || "").trim();
+    if (t === "unica" || t === "multipla" || t === "sim_nao") {
+      const sel = [...palco.querySelectorAll(".op.sel[data-v]")].map((b) => b.dataset.v);
+      const outroSel = palco.querySelector('.op.sel[data-outro]');
+      if (outroSel) { const o = ($("#outro").value || "").trim(); if (o) sel.push(o); }
+      return t === "multipla" ? sel : (sel[0] || "");
+    }
+    return respostas[p.id];
+  }
+
+  function validar(p, v) {
+    const t = p.tipo;
+    if (t === "aviso") return null;
+    if (FM.vazio(v)) {
+      if (t === "unica" || t === "multipla") { if (palco.querySelector('.op.sel[data-outro]')) return "Escreva sua resposta em “Outro”."; }
+      return p.obrigatorio ? (t === "multipla" || t === "unica" || t === "sim_nao" || t === "lista" ? "Escolha uma opção para continuar." : "Essa pergunta é obrigatória.") : null;
+    }
+    if (t === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return "Hmm… esse e-mail não parece válido.";
+    if (t === "telefone" && String(v).replace(/\D/g, "").length < 10) return "Coloca o número com DDD.";
+    if (t === "numero") {
+      if (typeof v !== "number") return "Digite apenas números.";
+      if (p.num_min !== "" && p.num_min != null && v < +p.num_min) return "O número precisa ser no mínimo " + p.num_min + ".";
+      if (p.num_max !== "" && p.num_max != null && v > +p.num_max) return "O número precisa ser no máximo " + p.num_max + ".";
+    }
+    if (t === "lista" && !opcoesDe(p).some((o) => o.texto === v)) return "Escolha uma das opções da lista.";
+    if (t === "multipla") {
+      if (+p.min_sel && v.length < +p.min_sel) return "Escolha pelo menos " + p.min_sel + ".";
+      if (+p.max_sel && v.length > +p.max_sel) return "Escolha no máximo " + p.max_sel + ".";
+    }
+    if ((t === "curto" || t === "longo") && +p.max_car && String(v).length > +p.max_car) return "Máximo de " + p.max_car + " caracteres.";
+    return null;
+  }
+
+  function confirmar() {
+    if (travado) return;
+    const p = P(atual); if (!p) return;
+    const v = valorAtual(p);
+    const e = validar(p, v);
+    if (e) { erro(e); return; }
+    if (p.tipo !== "aviso") { if (FM.vazio(v)) delete respostas[p.id]; else respostas[p.id] = v; }
+    historico.push(p.id);
+    irPara(FM.proximo(form, p.id, respostas));
+  }
+
+  function autoAvancar() {
+    clearTimeout(avancoTimer);
+    avancoTimer = setTimeout(confirmar, 380);
+  }
+
+  function ligarPergunta(p) {
+    const t = p.tipo;
+    const ok = $("#ok"); if (ok) ok.onclick = confirmar;
+    const inp = $("#inp");
+    if (inp) {
+      if (t === "longo") {
+        const ajusta = () => { inp.style.height = "auto"; inp.style.height = inp.scrollHeight + "px"; };
+        inp.addEventListener("input", ajusta); ajusta();
+      }
+      if (t === "telefone") inp.addEventListener("input", () => { inp.value = inp.value.replace(/[^\d+()\s-]/g, ""); });
+      inp.addEventListener("input", () => erro(""));
+      setTimeout(() => inp.focus({ preventScroll: true }), 60);
+    }
+    palco.querySelectorAll(".op[data-v], .op[data-outro]").forEach((b) => {
+      if (b.closest("#lst")) return;
+      b.onclick = () => {
+        erro("");
+        const outro = $("#outro");
+        if (t === "multipla") {
+          b.classList.toggle("sel"); b.setAttribute("aria-checked", b.classList.contains("sel"));
+          if (b.dataset.outro && outro) { outro.classList.toggle("hide", !b.classList.contains("sel")); if (b.classList.contains("sel")) outro.focus(); }
+          return;
+        }
+        palco.querySelectorAll(".op").forEach((x) => { x.classList.remove("sel"); x.setAttribute("aria-checked", "false"); });
+        b.classList.add("sel", "pisca"); b.setAttribute("aria-checked", "true");
+        if (outro) outro.classList.toggle("hide", !b.dataset.outro);
+        if (b.dataset.outro) { outro.focus(); return; }
+        if (!p.permitir_outro || t === "sim_nao") autoAvancar();
+      };
+    });
+    palco.querySelectorAll(".escala .op").forEach((b) => b.onclick = () => {
+      palco.querySelectorAll(".escala .op").forEach((x) => { x.classList.remove("sel"); x.setAttribute("aria-checked", "false"); });
+      b.classList.add("sel", "pisca"); b.setAttribute("aria-checked", "true");
+      respostas[p.id] = +b.dataset.n; erro(""); autoAvancar();
+    });
+    const est = palco.querySelectorAll(".estrelas button");
+    est.forEach((b) => {
+      b.onclick = () => { respostas[p.id] = +b.dataset.n; est.forEach((x) => x.classList.toggle("on", +x.dataset.n <= +b.dataset.n)); erro(""); autoAvancar(); };
+      b.onmouseenter = () => est.forEach((x) => x.classList.toggle("on", +x.dataset.n <= +b.dataset.n));
+      b.onmouseleave = () => est.forEach((x) => x.classList.toggle("on", +x.dataset.n <= (respostas[p.id] || 0)));
+    });
+    const busca = $("#busca");
+    if (busca) {
+      const filtra = () => {
+        const q = FM.norm(busca.value);
+        palco.querySelectorAll("#lst .op").forEach((b) => {
+          b.classList.toggle("hide", q && !FM.norm(b.dataset.v).includes(q));
+          b.classList.toggle("sel", b.dataset.v === busca.value);
+        });
+      };
+      busca.addEventListener("input", () => { erro(""); filtra(); });
+      palco.querySelectorAll("#lst .op").forEach((b) => b.onclick = () => { busca.value = b.dataset.v; filtra(); autoAvancar(); });
+      setTimeout(() => busca.focus({ preventScroll: true }), 60);
+      filtra();
+    }
+  }
+
+  function telaFim(id) {
+    const f = F(id) || { titulo: "Obrigado!", texto: "Sua resposta foi enviada." };
+    atual = "fim:" + (f.id || "");
+    gravar("fm_concluir", { p_token: token, p_respostas: respostas, p_vistas: vistas, p_final: f.id || null }, true);
+    const montaUrl = (u) => {
+      if (!u) return "";
+      let url = V(u, true).trim();
+      if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+      if (f.repassar_params) {
+        try { const x = new URL(url); Object.keys(params).forEach((k) => { if (k !== "referrer" && !x.searchParams.has(k)) x.searchParams.set(k, params[k]); }); url = x.toString(); } catch (e) {}
+      }
+      return url;
+    };
+    const urlBotao = montaUrl(f.botao_url);
+    const urlRedir = montaUrl(f.redirecionar);
+    const seg = Math.max(0, +f.segundos || 0);
+    trocar(
+      (f.mostrar_icone !== false ? '<div class="fim-ic">' + IC.check + "</div>" : "") +
+      '<h1 class="tit">' + esc(V(f.titulo || "Obrigado!")) + "</h1>" +
+      (f.texto ? '<p class="desc">' + esc(V(f.texto)) + "</p>" : "") +
+      (f.imagem ? '<img class="img" src="' + esc(f.imagem) + '" alt="">' : "") +
+      (urlBotao ? '<div class="acoes" style="justify-content:center"><a class="btn" id="fimbtn" target="_top" href="' + esc(urlBotao) + '">' + esc(V(f.botao_texto) || "Continuar") + " " + IC.seta + "</a></div>" : "") +
+      (urlRedir ? '<p class="redir" id="redir">' + (seg ? "Redirecionando em <b id=\"cont\">" + seg + "</b>s…" : "Redirecionando…") + "</p>" : ""),
+      false, true);
+    if (urlRedir) {
+      if (PREVIA) { $("#redir").textContent = "Na versão publicada, redireciona para " + urlRedir + (seg ? " em " + seg + "s" : ""); return; }
+      let falta = seg;
+      const vai = () => fila.finally(() => { try { window.top.location.href = urlRedir; } catch (e) { location.href = urlRedir; } });
+      if (!falta) vai();
+      else redirTimer = setInterval(() => { falta--; const c = $("#cont"); if (c) c.textContent = falta; if (falta <= 0) { clearInterval(redirTimer); vai(); } }, 1000);
+    }
+  }
+
+  function irPara(dest, volta) {
+    if (!dest) return;
+    if (dest.tipo === "fim") return telaFim(dest.id);
+    const p = P(dest.id);
+    if (p) telaPergunta(p, volta);
+  }
+
+  function voltar() {
+    if (!historico.length || cfg().permitir_voltar === false) return;
+    const id = historico.pop();
+    const p = P(id); if (p) telaPergunta(p, true);
+  }
+
+  function telaMsg(titulo, texto) {
+    atual = null;
+    trocar('<h1 class="tit">' + esc(titulo) + "</h1>" + (texto ? '<p class="desc">' + esc(texto) + "</p>" : ""), false, true);
+  }
+
+  // ---------- teclado ----------
+  document.addEventListener("keydown", (e) => {
+    if (!form || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (atual === "inicio" && e.key === "Enter") { e.preventDefault(); $("#comecar") && $("#comecar").click(); return; }
+    const p = P(atual); if (!p) return;
+    const alvo = e.target;
+    const digitando = alvo && (alvo.tagName === "INPUT" || alvo.tagName === "TEXTAREA");
+    if (e.key === "Enter") {
+      if (p.tipo === "longo" && e.shiftKey) return;
+      if (alvo && alvo.tagName === "BUTTON" && !alvo.id) return; // deixa o botão focado responder
+      e.preventDefault(); confirmar(); return;
+    }
+    if (digitando) return;
+    const k = e.key.toUpperCase();
+    if (p.tipo === "sim_nao" && (k === "S" || k === "N")) { const b = palco.querySelector('.op[data-v="' + (k === "S" ? "Sim" : "Não") + '"]'); b && b.click(); return; }
+    if (p.tipo === "unica" || p.tipo === "multipla") {
+      const i = LETRAS.indexOf(k);
+      const bs = palco.querySelectorAll(".ops > .op");
+      if (i >= 0 && bs[i]) { e.preventDefault(); bs[i].click(); }
+      return;
+    }
+    if ((p.tipo === "nps" || p.tipo === "escala" || p.tipo === "estrelas") && /^\d$/.test(e.key)) {
+      const b = palco.querySelector('[data-n="' + e.key + '"]'); b && b.click();
+    }
+  });
+  $("#nav-up").onclick = voltar;
+  $("#nav-down").onclick = confirmar;
+
+  // ---------- início ----------
+  function comecar(f, ir) {
+    form = f; respostas = respostas || {};
+    document.title = f.titulo || "Formulário";
+    aplicarTema(f.tema);
+    if (ir) {
+      if (ir === "inicio") return telaInicio();
+      if (ir.startsWith("fim:")) return telaFim(ir.slice(4));
+      const p = P(ir); if (p) return telaPergunta(p);
+    }
+    if (f.inicio && f.inicio.ativo !== false && (f.inicio.titulo || f.inicio.texto)) telaInicio();
+    else irPara(FM.proximo(form, null, respostas));
+  }
+
+  if (PREVIA) {
+    $("#previa").classList.remove("hide");
+    window.addEventListener("message", (ev) => {
+      const d = ev.data || {};
+      if (d.fm !== "preview" || !d.form) return;
+      if (ev.origin !== location.origin) return;
+      if (d.reiniciar) { respostas = {}; vistas = []; historico = []; }
+      comecar(d.form, d.ir);
+    });
+    const alvo = window.opener || (window.parent !== window ? window.parent : null);
+    if (alvo) alvo.postMessage({ fm: "pronto" }, location.origin);
+    else telaMsg("Pré-visualização", "Abra a pré-visualização pelo construtor.");
+    return;
+  }
+
+  slug = slugDaUrl();
+  if (!slug) { telaMsg("Formulário não encontrado", "Confere o link que você recebeu."); return; }
+  rpc("fm_publico", { p_slug: slug }).then((f) => {
+    if (f && f.encerrado) { aplicarTema(f.tema); document.title = f.titulo || "Formulário"; telaMsg(f.titulo || "Formulário encerrado", f.mensagem); return; }
+    const chave = "fm_tk_" + slug;
+    try { token = sessionStorage.getItem(chave); } catch (e) {}
+    if (!token) { token = novoToken(); try { sessionStorage.setItem(chave, token); } catch (e) {} }
+    const disp = /Mobi|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : (window.innerWidth < 1024 && /iPad|Tablet/i.test(navigator.userAgent) ? "tablet" : "desktop");
+    fila = rpc("fm_abrir", { p_slug: slug, p_token: token, p_params: params, p_dispositivo: disp }).catch(() => {});
+    comecar(f);
+  }).catch((e) => {
+    const m = e.message || "";
+    if (m.includes("form_indisponivel")) telaMsg("Formulário indisponível", "Este formulário ainda não foi publicado.");
+    else if (m.includes("form_inexistente")) telaMsg("Formulário não encontrado", "Confere o link que você recebeu.");
+    else telaMsg("Não conseguimos carregar", "Verifica tua conexão e tenta de novo em instantes.");
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>TB Forms</title>
+<script>try{if(localStorage.getItem("fm_tema")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#F6F7FA; --surface:#FFFFFF; --ink:#1B1F3B; --ink2:#2B3040; --muted:#5B6170; --line:#E6E8EE; --line2:#EEF0F4;
+    --field:#D9DCE4; --link:#2F44C8; --sel:#F2F4FF; --solid:#1B1F3B; --solid-h:#2A2F55; --pop:#1B1F3B;
+    --ok-bg:#DCF5E3; --ok-fg:#1E6B3A; --err-bg:#FBE1EC; --err-fg:#8F2756; --warn-bg:#FCEFD3; --warn-fg:#7A5310; --info-bg:#E3ECFF; --info-fg:#2F44C8; --lil-bg:#EEE6FB; --lil-fg:#5B3AA8;
+    --code:#EEF0F4; --shadow:0 12px 32px rgba(15,18,40,.14);
+    --bar1:#2F44C8; --bar2:#C9D0F5; --gold:#B8924A;
+  }
+  :root[data-theme="dark"] { color-scheme:dark;
+    --bg:#0E1117; --surface:#161A23; --ink:#E7E9F0; --ink2:#CDD1DC; --muted:#9CA3B4; --line:#2A303D; --line2:#212632;
+    --field:#3A4152; --link:#93A1F7; --sel:#1F2745; --solid:#4C5FDC; --solid-h:#5A6CE6; --pop:#2A3146;
+    --ok-bg:#15331F; --ok-fg:#7FD9A0; --err-bg:#3A1826; --err-fg:#F3A0C1; --warn-bg:#382B10; --warn-fg:#EEC56F; --info-bg:#1A2744; --info-fg:#93A1F7; --lil-bg:#2A2145; --lil-fg:#C4A9F5;
+    --code:#212632; --shadow:0 12px 32px rgba(0,0,0,.5);
+    --bar1:#7C8CF2; --bar2:#2C3555; --gold:#D9B878;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--ink); font:400 14px/1.45 'Hanken Grotesk',system-ui,-apple-system,Segoe UI,sans-serif; }
+  h1,h2,h3,h4 { letter-spacing:-.01em; font-weight:700; }
+  a { color:var(--link); }
+  .hide { display:none !important; }
+  button, .b { font:inherit; font-weight:600; cursor:pointer; border-radius:10px; height:40px; padding:0 16px; border:1px solid var(--field); background:var(--surface); color:var(--ink); text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:8px; white-space:nowrap; }
+  button:hover, .b:hover { border-color:#B9BECA; }
+  button:disabled { opacity:.55; cursor:default; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline:2px solid #4F6BED; outline-offset:2px; }
+  .pri { background:var(--solid); color:#fff; border-color:var(--solid); }
+  .pri:hover { background:var(--solid-h); border-color:var(--solid-h); }
+  a.b.pri { color:#fff; }
+  .perigo { color:var(--err-fg); border-color:color-mix(in srgb, var(--err-fg) 35%, var(--surface)); }
+  .mini { height:32px; padding:0 10px; font-size:12.5px; border-radius:8px; }
+  .ico { width:32px; height:32px; padding:0; border-radius:8px; flex:none; }
+  .ghost { border-color:transparent; background:transparent; color:var(--muted); }
+  .ghost:hover { background:var(--line2); color:var(--ink); border-color:transparent; }
+  input, select, textarea { font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--field); border-radius:10px; padding:0 12px; height:40px; width:100%; }
+  textarea { resize:vertical; min-height:64px; height:auto; padding:9px 12px; line-height:1.45; }
+  input[type=checkbox], input[type=radio] { width:auto; height:auto; padding:0; accent-color:var(--solid); }
+  input[type=color] { padding:3px; width:44px; flex:none; cursor:pointer; }
+  label.f { display:block; margin-bottom:14px; }
+  label.f > span { display:block; font-size:12.5px; font-weight:600; margin-bottom:6px; color:var(--ink2); }
+  label.f small, .ajuda { display:block; color:var(--muted); font-size:12px; margin-top:5px; line-height:1.5; }
+  .ajuda code, code { background:var(--code); padding:1px 6px; border-radius:5px; font-size:12px; color:var(--ink2); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .g2 { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+  .g3 { display:grid; grid-template-columns:repeat(3,1fr); gap:0 12px; }
+  .mut { color:var(--muted); }
+  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; }
+
+  /* toggle */
+  .tg { display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:12px; font-weight:500; user-select:none; }
+  .tg input { appearance:none; width:34px; height:20px; border-radius:99px; background:var(--field); position:relative; transition:background .15s; cursor:pointer; flex:none; border:0; }
+  .tg input::after { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; transition:transform .15s; box-shadow:0 1px 2px rgba(0,0,0,.2); }
+  .tg input:checked { background:var(--solid); }
+  .tg input:checked::after { transform:translateX(14px); }
+
+  #login { min-height:100vh; display:grid; place-items:center; padding:20px; }
+  #login form { width:100%; max-width:380px; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:28px; }
+  #login h1 { font-size:22px; margin:14px 0 4px; }
+  #login p { color:var(--muted); margin-bottom:20px; }
+  #lerr { color:var(--err-fg) !important; }
+
+  .topbar { position:sticky; top:0; z-index:20; background:var(--surface); border-bottom:1px solid var(--line); }
+  .topbar-in { margin:0 auto; padding:0 20px; display:flex; align-items:center; gap:16px; min-height:60px; }
+  .brand { font-weight:700; font-size:16px; letter-spacing:-.01em; display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--ink); }
+  .brand-dot { width:28px; height:28px; border-radius:8px; background:var(--solid); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+  .esp { flex:1; }
+  .who { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted); }
+  .tema-ic { width:34px; height:34px; padding:0; flex:none; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--muted); }
+  .tema-ic .sol { display:none; } [data-theme="dark"] .tema-ic .sol { display:block; } [data-theme="dark"] .tema-ic .lua { display:none; }
+
+  #view { min-width:0; }
+  .pagina { max-width:1240px; margin:0 auto; padding:28px 24px 80px; }
+  .topo { display:flex; align-items:center; gap:12px; margin-bottom:22px; flex-wrap:wrap; }
+  .topo h1 { font-size:26px; flex:1; min-width:200px; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px; margin-bottom:14px; }
+  .card h3 { font-size:15px; margin-bottom:14px; }
+  .card h3 small { font-weight:500; color:var(--muted); font-size:12.5px; margin-left:6px; }
+
+  /* lista de formulários */
+  .grade { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
+  .fcard { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:10px; cursor:pointer; position:relative; }
+  .fcard:hover { border-color:#B9BECA; }
+  .fcard h3 { font-size:16px; padding-right:36px; }
+  .fcard .meta { color:var(--muted); font-size:12.5px; }
+  .fcard .nums { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px 0 2px; border-top:1px solid var(--line2); }
+  .fcard .nums b { display:block; font-size:19px; }
+  .fcard .nums span { color:var(--muted); font-size:12px; }
+  .fcard .mais { position:absolute; top:12px; right:12px; }
+  .st { font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px; display:inline-flex; align-items:center; gap:6px; }
+  .st::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .st.publicado { background:var(--ok-bg); color:var(--ok-fg); }
+  .st.rascunho { background:var(--line2); color:var(--muted); }
+  .st.encerrado { background:var(--warn-bg); color:var(--warn-fg); }
+  .vazio { color:var(--muted); text-align:center; padding:60px 20px; }
+  .vazio h3 { color:var(--ink); font-size:18px; margin-bottom:6px; }
+
+  /* menu suspenso */
+  .menu { position:fixed; z-index:70; background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); padding:5px; min-width:180px; }
+  .menu button { display:flex; width:100%; justify-content:flex-start; border:0; height:34px; font-weight:500; padding:0 10px; border-radius:7px; background:transparent; }
+  .menu button:hover { background:var(--line2); }
+  .menu button.perigo { color:var(--err-fg); }
+
+  /* editor */
+  .ed-top { position:sticky; top:60px; z-index:15; background:var(--surface); border-bottom:1px solid var(--line); }
+  .ed-top-in { display:flex; align-items:center; gap:10px; padding:8px 20px; flex-wrap:wrap; }
+  .ed-tit { font-size:16px; font-weight:700; border:1px solid transparent; background:transparent; height:36px; max-width:340px; padding:0 8px; }
+  .ed-tit:hover { border-color:var(--line); }
+  .ed-tit:focus { border-color:var(--field); background:var(--surface); }
+  .abas { display:flex; gap:2px; background:var(--line2); border-radius:10px; padding:3px; }
+  .abas a { height:32px; padding:0 13px; display:inline-flex; align-items:center; color:var(--muted); text-decoration:none; font-weight:600; border-radius:8px; white-space:nowrap; font-size:13.5px; }
+  .abas a:hover { color:var(--ink); }
+  .abas a.on { color:var(--ink); background:var(--surface); box-shadow:0 1px 2px rgba(15,18,40,.08); }
+  .salvo { font-size:12.5px; color:var(--muted); min-width:74px; text-align:right; }
+  .salvo.erro { color:var(--err-fg); font-weight:600; }
+
+  .construir { display:grid; grid-template-columns:290px minmax(0,1fr) 400px; height:calc(100vh - 113px); }
+  .lado { border-right:1px solid var(--line); background:var(--surface); overflow-y:auto; padding:14px 10px 40px; }
+  .lado h4 { font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:10px 8px 6px; display:flex; align-items:center; justify-content:space-between; }
+  .item { display:flex; align-items:center; gap:10px; padding:8px; border-radius:10px; cursor:pointer; border:1px solid transparent; position:relative; }
+  .item:hover { background:var(--line2); }
+  .item.on { background:var(--sel); border-color:color-mix(in srgb, var(--link) 30%, transparent); }
+  .item .ic { flex:none; width:30px; height:30px; border-radius:8px; display:grid; place-items:center; font-size:13px; font-weight:700; background:var(--info-bg); color:var(--info-fg); }
+  .item .ic.t-escolha { background:var(--lil-bg); color:var(--lil-fg); }
+  .item .ic.t-avaliacao { background:var(--warn-bg); color:var(--warn-fg); }
+  .item .ic.t-contato { background:var(--ok-bg); color:var(--ok-fg); }
+  .item .ic.t-outros, .item .ic.t-tela { background:var(--line2); color:var(--muted); }
+  .item .ic.t-fim { background:var(--ok-bg); color:var(--ok-fg); }
+  .item .tx { flex:1; min-width:0; }
+  .item .tx b { display:block; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13.5px; }
+  .item .tx small { color:var(--muted); font-size:11.5px; display:flex; gap:6px; align-items:center; }
+  .item .n { font-size:11.5px; color:var(--muted); font-weight:700; width:16px; text-align:right; flex:none; }
+  .item .logica { color:var(--link); font-weight:700; }
+  .item.arrastando { opacity:.4; }
+  .item.alvo-cima { box-shadow:inset 0 2px 0 var(--link); }
+  .item.alvo-baixo { box-shadow:inset 0 -2px 0 var(--link); }
+  .add { width:100%; justify-content:flex-start; border-style:dashed; color:var(--muted); margin-top:6px; height:38px; }
+  .add:hover { color:var(--ink); }
+
+  .painel { overflow-y:auto; padding:24px 28px 80px; }
+  .painel-in { max-width:640px; margin:0 auto; }
+  .painel-cab { display:flex; align-items:center; gap:8px; margin-bottom:18px; }
+  .painel-cab h2 { font-size:18px; flex:1; display:flex; align-items:center; gap:10px; }
+  .painel-cab .ic { width:32px; height:32px; border-radius:8px; display:grid; place-items:center; font-size:14px; }
+  .opcoes { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
+  .opc { display:flex; gap:6px; align-items:center; }
+  .opc .l { width:26px; height:26px; flex:none; border-radius:6px; display:grid; place-items:center; font-size:12px; font-weight:700; background:var(--line2); color:var(--muted); }
+  .opc input { height:36px; }
+  .regra { background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; }
+  .regra-cab { display:flex; align-items:center; justify-content:space-between; font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+  .cond { display:grid; grid-template-columns:auto 1.3fr 1fr 1fr auto; gap:6px; align-items:center; margin-bottom:6px; }
+  .cond .pre { font-weight:700; font-size:12.5px; color:var(--muted); width:34px; }
+  .cond select, .cond input, .destino select { height:36px; font-size:13px; }
+  .destino { display:flex; align-items:center; gap:8px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); }
+  .destino b { font-size:12.5px; white-space:nowrap; color:var(--link); }
+  .juncao { display:inline-flex; gap:2px; background:var(--line2); border-radius:7px; padding:2px; }
+  .juncao button { height:24px; padding:0 9px; font-size:11.5px; border:0; border-radius:5px; background:transparent; color:var(--muted); }
+  .juncao button.on { background:var(--surface); color:var(--ink); }
+  details.mais-op { margin:4px 0 14px; }
+  details.mais-op summary { cursor:pointer; font-weight:600; color:var(--muted); font-size:13px; padding:4px 0; }
+  details.mais-op[open] summary { margin-bottom:12px; }
+
+  .prev { border-left:1px solid var(--line); background:var(--bg); display:flex; flex-direction:column; padding:14px; gap:10px; min-width:0; }
+  .prev-bar { display:flex; align-items:center; gap:6px; }
+  .prev-bar span { flex:1; font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .prev-moldura { flex:1; border-radius:14px; overflow:hidden; border:1px solid var(--line); background:#000; margin:0 auto; width:100%; transition:max-width .25s; box-shadow:0 8px 24px rgba(15,18,40,.08); }
+  .prev-moldura.cel { max-width:340px; }
+  .prev-moldura iframe { width:100%; height:100%; border:0; display:block; }
+
+  .seg { display:inline-flex; gap:2px; background:var(--line2); border-radius:9px; padding:3px; }
+  .seg button { height:28px; padding:0 10px; font-size:12.5px; border:0; border-radius:7px; background:transparent; color:var(--muted); }
+  .seg button.on { background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(15,18,40,.08); }
+
+  /* tipos (modal) */
+  .tipos { display:grid; grid-template-columns:repeat(2,1fr); gap:6px 18px; }
+  .tipos h5 { grid-column:1/-1; font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:10px 0 2px; }
+  .tipos button { justify-content:flex-start; border-color:transparent; background:transparent; font-weight:500; height:40px; padding:0 8px; }
+  .tipos button:hover { background:var(--line2); }
+  .tipos .ic { width:28px; height:28px; border-radius:7px; display:grid; place-items:center; font-size:12.5px; font-weight:700; }
+
+  /* design */
+  .design { display:grid; grid-template-columns:420px minmax(0,1fr); height:calc(100vh - 113px); }
+  .design .cfg { overflow-y:auto; padding:22px; border-right:1px solid var(--line); background:var(--surface); }
+  .presets { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:18px; }
+  .preset { height:64px; border-radius:10px; border:2px solid var(--line); padding:8px; display:flex; flex-direction:column; justify-content:space-between; align-items:flex-start; cursor:pointer; font-size:11.5px; font-weight:700; }
+  .preset.on { border-color:var(--link); }
+  .preset i { display:block; width:34px; height:8px; border-radius:99px; }
+  .cor { display:flex; gap:8px; align-items:center; }
+  .cores { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .cor-linha { display:grid; grid-template-columns:1fr 170px; align-items:center; gap:10px; font-size:13px; font-weight:600; color:var(--ink2); }
+  .cor input[type=text] { font-family:ui-monospace,monospace; font-size:13px; text-transform:uppercase; }
+
+  /* compartilhar */
+  .copy { display:flex; gap:8px; margin-bottom:10px; }
+  .copy input { color:var(--ink2); background:var(--bg); font-family:ui-monospace,monospace; font-size:12.5px; }
+  .copy button { height:40px; }
+  .statusbox { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .statusbox label { border:1px solid var(--line); border-radius:12px; padding:12px; cursor:pointer; display:flex; gap:10px; align-items:flex-start; }
+  .statusbox label:has(input:checked) { border-color:var(--link); background:var(--sel); }
+  .statusbox b { display:block; margin-bottom:2px; }
+  .statusbox small { color:var(--muted); font-size:12px; line-height:1.4; display:block; }
+  pre { background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:12px; overflow:auto; font-size:12px; color:var(--ink2); white-space:pre-wrap; word-break:break-all; }
+
+  /* resultados */
+  .kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:14px; }
+  .kpi { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .kpi span { color:var(--muted); font-size:12.5px; font-weight:600; }
+  .kpi b { display:block; font-size:28px; font-weight:700; margin-top:2px; letter-spacing:-.01em; }
+  .kpi small { color:var(--muted); font-size:12px; }
+  .funil { display:flex; flex-direction:column; gap:4px; }
+  .fl { display:grid; grid-template-columns:28px minmax(0,2.2fr) minmax(0,3fr) 90px 92px; gap:12px; align-items:center; padding:8px 6px; border-radius:8px; }
+  .fl:hover { background:var(--bg); }
+  .fl.cab { font-size:11.5px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding-top:0; }
+  .fl.cab:hover { background:transparent; }
+  .fl .n { color:var(--muted); font-weight:700; font-size:12.5px; text-align:right; }
+  .fl .q { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:500; }
+  .fl .q small { display:block; color:var(--muted); font-weight:400; font-size:11.5px; }
+  .trilho { position:relative; height:22px; background:var(--line2); border-radius:6px; overflow:hidden; }
+  .trilho i { position:absolute; left:0; top:0; bottom:0; border-radius:6px; }
+  .trilho i.v { background:var(--bar2); }
+  .trilho i.r { background:var(--bar1); }
+  .trilho em { position:absolute; left:8px; top:0; line-height:22px; font-size:11.5px; font-style:normal; font-weight:700; color:#fff; mix-blend-mode:normal; text-shadow:0 0 3px rgba(0,0,0,.35); }
+  .fl .num { text-align:right; font-variant-numeric:tabular-nums; font-size:13px; }
+  .fl .num small { display:block; color:var(--muted); font-size:11.5px; }
+  .aband { display:inline-block; font-size:12px; font-weight:700; padding:3px 8px; border-radius:99px; background:var(--line2); color:var(--muted); }
+  .aband.alto { background:var(--err-bg); color:var(--err-fg); }
+  .aband.medio { background:var(--warn-bg); color:var(--warn-fg); }
+  .legenda { display:flex; gap:16px; font-size:12px; color:var(--muted); margin-bottom:10px; flex-wrap:wrap; }
+  .legenda i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+  .alerta { background:var(--warn-bg); color:var(--warn-fg); border-radius:10px; padding:10px 14px; font-weight:500; margin-bottom:12px; font-size:13.5px; }
+  .resumos { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .rq h4 { font-size:14px; margin-bottom:2px; }
+  .rq .sub { color:var(--muted); font-size:12px; margin-bottom:14px; }
+  .barh { display:grid; grid-template-columns:minmax(0,1fr) 110px 96px; gap:10px; align-items:center; margin-bottom:8px; font-size:13px; }
+  .barh .lb { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .barh .tr { height:10px; background:var(--line2); border-radius:99px; overflow:hidden; }
+  .barh .tr i { display:block; height:100%; background:var(--bar1); border-radius:99px; }
+  .barh .vl { white-space:nowrap; text-align:right; font-variant-numeric:tabular-nums; color:var(--muted); }
+  .barh .vl b { color:var(--ink); }
+  .nps-top { display:flex; align-items:baseline; gap:12px; margin-bottom:12px; }
+  .nps-top b { font-size:34px; letter-spacing:-.02em; }
+  .nps-faixa { display:flex; height:12px; border-radius:99px; overflow:hidden; margin-bottom:8px; background:var(--line2); }
+  .nps-leg { display:flex; gap:14px; font-size:12px; color:var(--muted); flex-wrap:wrap; }
+  .nps-leg i { display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:5px; }
+  .colunas { display:flex; align-items:flex-end; gap:4px; height:90px; margin:12px 0 4px; }
+  .colunas div { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end; }
+  .colunas i { width:100%; border-radius:4px 4px 0 0; background:var(--bar1); min-height:2px; }
+  .colunas span { font-size:11px; color:var(--muted); }
+  .textos { display:flex; flex-direction:column; gap:6px; max-height:260px; overflow-y:auto; }
+  .textos p { background:var(--bg); border-radius:8px; padding:8px 10px; font-size:13px; white-space:pre-line; }
+  .textos p small { display:block; color:var(--muted); font-size:11px; margin-top:2px; }
+  .diag { width:100%; height:150px; display:block; }
+  .diag text { fill:var(--muted); font-size:10px; font-family:inherit; }
+  .diag line { stroke:var(--line); }
+  .tab-wrap { background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:auto; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:12px; color:var(--muted); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--line); background:var(--bg); white-space:nowrap; position:sticky; top:0; }
+  td { padding:10px 12px; border-bottom:1px solid var(--line2); vertical-align:top; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  tbody tr { cursor:pointer; }
+  tbody tr:hover td { background:var(--sel); }
+  .pill { font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px; display:inline-block; }
+  .pill.concluida { background:var(--ok-bg); color:var(--ok-fg); }
+  .pill.parcial { background:var(--warn-bg); color:var(--warn-fg); }
+  .pill.visita { background:var(--line2); color:var(--muted); }
+  .barra { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
+  .barra select, .barra input { width:auto; height:36px; font-size:13px; }
+  .pag { display:flex; justify-content:flex-end; gap:8px; align-items:center; padding:12px; font-size:13px; color:var(--muted); }
+
+  .gaveta { position:fixed; inset:0; z-index:55; background:rgba(15,18,40,.35); display:flex; justify-content:flex-end; }
+  .gaveta > div { width:100%; max-width:520px; background:var(--surface); height:100%; overflow-y:auto; padding:22px; box-shadow:var(--shadow); }
+  .resp-item { padding:12px 0; border-bottom:1px solid var(--line2); }
+  .resp-item span { display:block; color:var(--muted); font-size:12px; font-weight:600; margin-bottom:3px; }
+  .resp-item p { white-space:pre-line; }
+
+  .modal { position:fixed; inset:0; background:rgba(15,18,40,.45); display:grid; place-items:center; z-index:60; padding:20px; }
+  .modal > div { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:24px; width:100%; max-width:620px; max-height:90vh; overflow:auto; box-shadow:var(--shadow); }
+  .modal h3 { margin-bottom:16px; font-size:18px; }
+  .modal .rod { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+  .modelos { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:6px; }
+  .modelos label { border:1px solid var(--line); border-radius:12px; padding:12px; cursor:pointer; display:block; }
+  .modelos label:has(input:checked) { border-color:var(--link); background:var(--sel); }
+  .modelos input { position:absolute; opacity:0; }
+  .modelos b { display:block; margin-bottom:2px; }
+  .modelos small { color:var(--muted); font-size:12px; line-height:1.4; }
+  #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--pop); color:#fff; padding:11px 18px; border-radius:10px; z-index:80; box-shadow:var(--shadow); font-weight:600; }
+  #toast.erro { background:#8F2756; }
+
+  @media (max-width: 1280px) { .construir { grid-template-columns:260px minmax(0,1fr) 340px; } }
+  @media (max-width: 1080px) {
+    .construir { grid-template-columns:240px minmax(0,1fr); }
+    .construir .prev { display:none; }
+    .kpis { grid-template-columns:repeat(3,1fr); }
+    .resumos { grid-template-columns:1fr; }
+    .design { grid-template-columns:1fr; height:auto; }
+    .design .prevbox { height:640px; }
+  }
+  @media (max-width: 760px) {
+    .construir { grid-template-columns:1fr; height:auto; }
+    .lado { border-right:0; border-bottom:1px solid var(--line); max-height:40vh; }
+    .pagina { padding:18px 14px 60px; }
+    .g2, .g3, .statusbox, .modelos { grid-template-columns:1fr; }
+    .kpis { grid-template-columns:repeat(2,1fr); }
+    .fl { grid-template-columns:22px minmax(0,1fr) 80px; }
+    .fl .trilho, .fl .num.v { display:none; }
+    .cond { grid-template-columns:1fr; }
+    .who span { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="login" class="hide">
+  <form id="lf">
+    <div class="brand"><span class="brand-dot">TF</span>TB Forms</div>
+    <h1>Entrar</h1>
+    <p>Use o mesmo e-mail e senha do Disparador / Webnario.</p>
+    <label class="f"><span>E-mail</span><input name="email" type="email" required autocomplete="username"></label>
+    <label class="f"><span>Senha</span><input name="senha" type="password" required autocomplete="current-password"></label>
+    <button class="pri" style="width:100%">Entrar</button>
+    <p id="lerr" style="margin:12px 0 0;min-height:18px"></p>
+  </form>
+</div>
+
+<div id="app" class="hide">
+  <header class="topbar"><div class="topbar-in">
+    <a class="brand" href="#/"><span class="brand-dot">TF</span>TB Forms</a>
+    <div class="esp"></div>
+    <div class="who">
+      <button class="tema-ic" id="tema" title="Tema claro/escuro" aria-label="Alternar tema">
+        <svg class="lua" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="sol" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>
+      </button>
+      <span id="quem"></span>
+      <button class="mini" id="sair">Sair</button>
+    </div>
+  </div></header>
+  <main id="view"></main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/config.js"></script>
+<script src="/core.js"></script>
+<script>
+(function () {
+"use strict";
+const CFG = window.FM_CONFIG;
+const sb = window.supabase.createClient(CFG.url, CFG.anon);
+const $ = (s, el) => (el || document).querySelector(s);
+const $$ = (s, el) => [...(el || document).querySelectorAll(s)];
+const h = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+const view = $("#view");
+const T = FM.TIPOS;
+const LETRAS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const GRUPO_CLS = { Texto: "t-texto", Contato: "t-contato", Escolha: "t-escolha", "Avaliação": "t-avaliacao", Outros: "t-outros" };
+const fmtN = (n) => Number(n || 0).toLocaleString("pt-BR");
+const pct = (a, b) => b ? Math.round(a / b * 1000) / 10 : 0;
+const fmtPct = (a, b) => (b ? pct(a, b).toLocaleString("pt-BR") : "0") + "%";
+
+// ---------------- utilidades de interface ----------------
+let toastT;
+function toast(msg, erro) {
+  let t = $("#toast"); if (!t) { t = document.createElement("div"); t.id = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
+  t.textContent = msg; t.className = erro ? "erro" : ""; t.style.display = "block";
+  clearTimeout(toastT); toastT = setTimeout(() => t.style.display = "none", 2800);
+}
+function modal(html, aoMontar) {
+  const m = document.createElement("div"); m.className = "modal";
+  m.innerHTML = '<div role="dialog" aria-modal="true">' + html + "</div>";
+  document.body.appendChild(m);
+  const fechar = () => { m.remove(); document.removeEventListener("keydown", tecla); };
+  const tecla = (e) => { if (e.key === "Escape") fechar(); };
+  document.addEventListener("keydown", tecla);
+  m.addEventListener("mousedown", (e) => { if (e.target === m) fechar(); });
+  $$("[data-fechar]", m).forEach((b) => b.onclick = fechar);
+  if (aoMontar) aoMontar(m.firstChild, fechar);
+  const f = $("input, textarea, select", m); if (f) setTimeout(() => f.focus(), 30);
+  return fechar;
+}
+function confirmar(msg, botao, perigo) {
+  return new Promise((ok) => {
+    modal('<h3>' + h(msg) + '</h3><div class="rod"><button data-fechar>Cancelar</button><button class="' + (perigo ? "pri perigo" : "pri") + '" id="sim">' + h(botao || "Confirmar") + "</button></div>",
+      (el, fechar) => { $("#sim", el).onclick = () => { fechar(); ok(true); }; $("[data-fechar]", el).addEventListener("click", () => ok(false)); });
+  });
+}
+function menu(ancora, itens) {
+  $$(".menu").forEach((m) => m.remove());
+  const m = document.createElement("div"); m.className = "menu";
+  m.innerHTML = itens.map((it, i) => '<button data-i="' + i + '" class="' + (it.perigo ? "perigo" : "") + '">' + h(it.rot) + "</button>").join("");
+  document.body.appendChild(m);
+  const r = ancora.getBoundingClientRect();
+  m.style.top = Math.min(r.bottom + 4, innerHeight - m.offsetHeight - 8) + "px";
+  m.style.left = Math.max(8, Math.min(r.right - m.offsetWidth, innerWidth - m.offsetWidth - 8)) + "px";
+  m.onclick = (e) => { const b = e.target.closest("button"); if (!b) return; m.remove(); itens[+b.dataset.i].fn(); };
+  setTimeout(() => document.addEventListener("mousedown", function f(e) { if (!m.contains(e.target)) { m.remove(); document.removeEventListener("mousedown", f); } }), 0);
+}
+function tempoRel(iso) {
+  if (!iso) return "";
+  const s = (Date.now() - new Date(iso)) / 1000;
+  if (s < 60) return "agora";
+  if (s < 3600) return "há " + Math.floor(s / 60) + " min";
+  if (s < 86400) return "há " + Math.floor(s / 3600) + " h";
+  if (s < 86400 * 30) return "há " + Math.floor(s / 86400) + " d";
+  return new Date(iso).toLocaleDateString("pt-BR");
+}
+const dataHora = (iso) => iso ? new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+async function copiar(txt) {
+  try { await navigator.clipboard.writeText(txt); toast("Copiado!"); }
+  catch (e) { const t = document.createElement("textarea"); t.value = txt; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); toast("Copiado!"); }
+}
+const baseUrl = () => location.origin;
+const linkForm = (f) => baseUrl() + "/f/" + f.slug;
+
+// ---------------- autenticação ----------------
+$("#tema").onclick = () => {
+  const d = document.documentElement.dataset.theme === "dark";
+  if (d) delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = "dark";
+  try { localStorage.setItem("fm_tema", d ? "light" : "dark"); } catch (e) {}
+};
+$("#lf").onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  $("#lerr").textContent = "Entrando…";
+  const { error } = await sb.auth.signInWithPassword({ email: fd.get("email"), password: fd.get("senha") });
+  if (error) { $("#lerr").textContent = "E-mail ou senha incorretos."; return; }
+  $("#lerr").textContent = "";
+  iniciar();
+};
+$("#sair").onclick = async () => { await sb.auth.signOut(); location.hash = "#/"; location.reload(); };
+
+async function iniciar() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { $("#login").classList.remove("hide"); $("#app").classList.add("hide"); return; }
+  const { data: adm } = await sb.rpc("fm_is_admin");
+  if (!adm) {
+    $("#login").classList.remove("hide"); $("#app").classList.add("hide");
+    $("#lerr").textContent = "Esse usuário não tem acesso de administrador."; await sb.auth.signOut(); return;
+  }
+  $("#login").classList.add("hide"); $("#app").classList.remove("hide");
+  $("#quem").textContent = session.user.email;
+  rotear();
+}
+window.addEventListener("hashchange", () => rotear());
+
+// ---------------- roteamento ----------------
+let ED = null; // estado do editor
+async function rotear() {
+  const p = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
+  if (p[0] === "f" && p[1]) {
+    const aba = p[2] || "construir";
+    if (!ED || ED.form.id !== p[1]) {
+      if (ED) await salvarAgora();
+      view.innerHTML = '<div class="pagina mut">Carregando…</div>';
+      const { data, error } = await sb.from("fm_forms").select("*").eq("id", p[1]).maybeSingle();
+      if (error || !data) { view.innerHTML = '<div class="pagina"><div class="vazio"><h3>Formulário não encontrado</h3><a href="#/">Voltar para a lista</a></div></div>'; return; }
+      ED = { form: normalizar(data), sel: null, aba, dirty: false, timer: null, prevTimer: null, salvando: null, resultados: null, cel: false };
+      ED.sel = ED.form.perguntas[0] ? ED.form.perguntas[0].id : (ED.form.inicio.ativo !== false ? "inicio" : null);
+    }
+    ED.aba = aba;
+    return renderEditor();
+  }
+  if (ED) { await salvarAgora(); ED = null; }
+  renderLista();
+}
+window.addEventListener("beforeunload", (e) => { if (ED && ED.dirty) { salvarAgora(); e.preventDefault(); e.returnValue = ""; } });
+
+function normalizar(f) {
+  f.perguntas = Array.isArray(f.perguntas) ? f.perguntas : [];
+  f.inicio = f.inicio || {};
+  f.finais = Array.isArray(f.finais) && f.finais.length ? f.finais : [novoFinal("Obrigado!")];
+  f.tema = f.tema || {};
+  f.config = f.config || {};
+  return f;
+}
+function novoFinal(titulo) {
+  return { id: FM.uid("f"), nome: titulo || "Final", titulo: titulo || "Obrigado!", texto: "Sua resposta foi enviada.", botao_texto: "", botao_url: "", redirecionar: "", segundos: 3, repassar_params: false, mostrar_icone: true };
+}
+
+// ---------------- modelos ----------------
+const TEMA_PADRAO = { fundo: "#0a0b0c", texto: "#F2EEE6", destaque: "#C9A96E", fonte: "Hanken Grotesk" };
+function modelo(tipo) {
+  const q = (o) => Object.assign({ id: FM.uid("q"), obrigatorio: false, regras: [], depois: "" }, o);
+  const op = (...txt) => txt.map((t) => ({ id: FM.uid("o"), texto: t }));
+  if (tipo === "nps") {
+    const f1 = novoFinal("Obrigado pela resposta!"); f1.nome = "Obrigado"; f1.texto = "Sua opinião ajuda a gente a melhorar todo dia.";
+    const f2 = novoFinal("Show! Vamos te chamar 🙌"); f2.nome = "Topou depoimento"; f2.texto = "Nosso time vai te chamar no WhatsApp para combinar o depoimento.";
+    const nota = q({ tipo: "nps", titulo: "De 0 a 10, o quanto você indicaria a gente para um amigo?", obrigatorio: true, chave: "nota" });
+    const det = q({ tipo: "longo", titulo: "Poxa, sentimos muito. O que fez você dar essa nota?", chave: "motivo_detrator" });
+    const neu = q({ tipo: "longo", titulo: "O que faltou para ser um 10?", chave: "motivo_neutro" });
+    const pro = q({ tipo: "longo", titulo: "Que bom! O que você mais gostou?", chave: "motivo_promotor" });
+    const dep = q({ tipo: "sim_nao", titulo: "Topa gravar um depoimento curtinho contando sua experiência?", chave: "depoimento" });
+    const tel = q({ tipo: "telefone", titulo: "Qual seu WhatsApp? (com DDD)", descricao: "Só para a gente te chamar, prometo não mandar spam.", chave: "whatsapp" });
+    nota.regras = [
+      { id: FM.uid("r"), conds: [{ pergunta: nota.id, op: "maior_igual", valor: "9" }], juncao: "e", destino: pro.id },
+      { id: FM.uid("r"), conds: [{ pergunta: nota.id, op: "menor_igual", valor: "6" }], juncao: "e", destino: det.id }
+    ];
+    nota.depois = neu.id;
+    det.depois = "fim:" + f1.id; neu.depois = "fim:" + f1.id;
+    dep.regras = [{ id: FM.uid("r"), conds: [{ pergunta: dep.id, op: "igual", valor: "Sim" }], juncao: "e", destino: tel.id }];
+    dep.depois = "fim:" + f1.id;
+    tel.depois = "fim:" + f2.id; tel.obrigatorio = true;
+    return { perguntas: [nota, det, neu, pro, dep, tel], finais: [f1, f2], inicio: { ativo: true, titulo: "Sua opinião vale ouro", texto: "São só 3 perguntas rápidas.", botao: "Bora", tempo: "1 minuto" } };
+  }
+  if (tipo === "perfil") {
+    const nome = q({ tipo: "curto", titulo: "Pra começar, qual seu nome?", obrigatorio: true, chave: "nome" });
+    const tempo = q({ tipo: "unica", titulo: "Prazer, {{nome}}! Há quanto tempo você trabalha com marketing digital?", obrigatorio: true, chave: "tempo", opcoes: op("Ainda não comecei", "Menos de 6 meses", "De 6 meses a 2 anos", "Mais de 2 anos") });
+    const fat = q({ tipo: "sim_nao", titulo: "Você já fez alguma venda como afiliado?", obrigatorio: true, chave: "ja_vendeu" });
+    const faixa = q({ tipo: "unica", titulo: "Quanto você fatura por mês hoje, em média?", chave: "faturamento", opcoes: op("Até R$ 1 mil", "R$ 1 mil a R$ 5 mil", "R$ 5 mil a R$ 20 mil", "Mais de R$ 20 mil") });
+    const desafio = q({ tipo: "multipla", titulo: "Qual seu maior desafio hoje?", descricao: "Pode marcar mais de um.", chave: "desafios", permitir_outro: true, opcoes: op("Tráfego pago (Google Ads)", "Escolher o produto certo", "Copy e páginas", "Falta de tempo", "Dinheiro para investir") });
+    const zap = q({ tipo: "telefone", titulo: "Qual seu WhatsApp?", chave: "whatsapp" });
+    fat.regras = [{ id: FM.uid("r"), conds: [{ pergunta: fat.id, op: "igual", valor: "Não" }], juncao: "e", destino: desafio.id }];
+    const f1 = novoFinal("Valeu, {{nome}}!"); f1.nome = "Obrigado"; f1.texto = "Com isso a gente consegue preparar conteúdos do jeito que você precisa.";
+    return { perguntas: [nome, tempo, fat, faixa, desafio, zap], finais: [f1], inicio: { ativo: true, titulo: "Queremos te conhecer melhor", texto: "Responde rapidinho pra gente montar conteúdos sob medida pra você.", botao: "Começar", tempo: "2 minutos" } };
+  }
+  if (tipo === "evento") {
+    const geral = q({ tipo: "estrelas", titulo: "No geral, como você avalia o encontro?", obrigatorio: true, escala_max: 5, chave: "nota_geral" });
+    const cont = q({ tipo: "escala", titulo: "O conteúdo foi útil para o seu momento?", escala_min: 1, escala_max: 5, rot_min: "Nada útil", rot_max: "Muito útil", chave: "utilidade" });
+    const gostou = q({ tipo: "multipla", titulo: "O que você mais gostou?", chave: "gostou", permitir_outro: true, opcoes: op("Conteúdo das aulas", "Networking", "Estrutura do local", "Palestrantes", "Bônus e materiais") });
+    const melhorar = q({ tipo: "longo", titulo: "Se pudesse mudar uma coisa, o que seria?", chave: "melhoria" });
+    const f1 = novoFinal("Obrigado pelo feedback!"); f1.nome = "Obrigado";
+    return { perguntas: [geral, cont, gostou, melhorar], finais: [f1], inicio: { ativo: true, titulo: "Como foi pra você?", texto: "Teu feedback molda o próximo encontro.", botao: "Responder", tempo: "1 minuto" } };
+  }
+  const f1 = novoFinal("Obrigado!");
+  return { perguntas: [q({ tipo: "curto", titulo: "", chave: "" })], finais: [f1], inicio: { ativo: false, titulo: "", texto: "", botao: "Começar" } };
+}
+
+// ---------------- LISTA ----------------
+async function renderLista() {
+  view.innerHTML = '<div class="pagina"><div class="topo"><h1>Formulários</h1><button class="pri" id="novo">+ Novo formulário</button></div><div id="lista" class="mut">Carregando…</div></div>';
+  $("#novo").onclick = novoForm;
+  const [{ data: forms, error }, { data: res }] = await Promise.all([
+    sb.from("fm_forms").select("id,slug,titulo,status,perguntas,atualizado_em,criado_em").order("atualizado_em", { ascending: false }),
+    sb.rpc("fm_resumo")
+  ]);
+  if (error) { $("#lista").innerHTML = '<p class="perigo">Erro ao carregar: ' + h(error.message) + "</p>"; return; }
+  const R = {}; (res || []).forEach((r) => R[r.form_id] = r);
+  if (!forms.length) {
+    $("#lista").innerHTML = '<div class="card vazio"><h3>Nenhum formulário ainda</h3><p style="margin-bottom:16px">Crie sua primeira pesquisa a partir de um modelo pronto ou do zero.</p><button class="pri" id="novo2">+ Criar formulário</button></div>';
+    $("#novo2").onclick = novoForm; return;
+  }
+  $("#lista").className = "grade";
+  $("#lista").innerHTML = forms.map((f) => {
+    const r = R[f.id] || {};
+    const nq = (f.perguntas || []).filter((p) => p.tipo !== "aviso").length;
+    return '<div class="fcard" data-id="' + f.id + '">' +
+      '<button class="ico ghost mais" data-mais="' + f.id + '" aria-label="Mais ações">⋯</button>' +
+      "<div><span class=\"st " + f.status + '">' + h(f.status) + "</span></div>" +
+      "<h3>" + h(f.titulo) + "</h3>" +
+      '<div class="meta">' + nq + " pergunta" + (nq === 1 ? "" : "s") + " · editado " + tempoRel(f.atualizado_em) + (r.ultima ? " · última resposta " + tempoRel(r.ultima) : "") + "</div>" +
+      '<div class="nums"><div><b>' + fmtN(r.visitas) + "</b><span>Visitas</span></div><div><b>" + fmtN(r.concluidas) + "</b><span>Respostas</span></div><div><b>" + fmtPct(r.concluidas, r.iniciadas) + "</b><span>Conclusão</span></div></div>" +
+      "</div>";
+  }).join("");
+  $$(".fcard").forEach((c) => c.onclick = (e) => {
+    if (e.target.closest("[data-mais]")) return;
+    location.hash = "#/f/" + c.dataset.id + "/construir";
+  });
+  $$("[data-mais]").forEach((b) => b.onclick = () => {
+    const f = forms.find((x) => x.id === b.dataset.mais);
+    menu(b, [
+      { rot: "Editar", fn: () => location.hash = "#/f/" + f.id + "/construir" },
+      { rot: "Ver resultados", fn: () => location.hash = "#/f/" + f.id + "/resultados" },
+      { rot: "Copiar link", fn: () => copiar(linkForm(f)) },
+      { rot: "Duplicar", fn: () => duplicar(f.id) },
+      { rot: "Excluir", perigo: true, fn: () => excluir(f) }
+    ]);
+  });
+}
+
+async function slugLivre(base) {
+  base = FM.slugify(base);
+  for (let i = 0; i < 6; i++) {
+    const s = i === 0 ? base : base.slice(0, 34) + "-" + Math.random().toString(36).slice(2, 6);
+    const { data } = await sb.from("fm_forms").select("id").eq("slug", s).maybeSingle();
+    if (!data && s.length >= 2) return s;
+  }
+  return "form-" + Date.now().toString(36);
+}
+
+function novoForm() {
+  modal('<h3>Novo formulário</h3>' +
+    '<label class="f"><span>Nome</span><input id="nf-nome" placeholder="Ex.: Pesquisa de satisfação novembro" maxlength="120"></label>' +
+    '<span style="display:block;font-size:12.5px;font-weight:600;margin-bottom:8px;color:var(--ink2)">Começar com</span>' +
+    '<div class="modelos">' +
+    '<label><input type="radio" name="mod" value="nps" checked><b>Pesquisa NPS</b><small>Nota de 0 a 10 com perguntas diferentes para promotores, neutros e detratores.</small></label>' +
+    '<label><input type="radio" name="mod" value="perfil"><b>Perfil do aluno</b><small>Experiência, faturamento e desafios, com lógica condicional.</small></label>' +
+    '<label><input type="radio" name="mod" value="evento"><b>Feedback de evento/aula</b><small>Estrelas, escala de utilidade e sugestões.</small></label>' +
+    '<label><input type="radio" name="mod" value="branco"><b>Em branco</b><small>Comece do zero.</small></label>' +
+    "</div>" +
+    '<div class="rod"><button data-fechar>Cancelar</button><button class="pri" id="nf-ok">Criar</button></div>',
+    (el, fechar) => {
+      $("#nf-ok", el).onclick = async () => {
+        const mod = $("input[name=mod]:checked", el).value;
+        const nomes = { nps: "Pesquisa NPS", perfil: "Perfil do aluno", evento: "Feedback do evento", branco: "Novo formulário" };
+        const titulo = $("#nf-nome", el).value.trim() || nomes[mod];
+        $("#nf-ok", el).disabled = true;
+        const m = modelo(mod);
+        const slug = await slugLivre(titulo);
+        const { data, error } = await sb.from("fm_forms").insert({
+          titulo, slug, perguntas: m.perguntas, finais: m.finais, inicio: m.inicio,
+          tema: Object.assign({}, TEMA_PADRAO), config: { mostrar_progresso: true, mostrar_numero: true, permitir_voltar: true }
+        }).select("id").single();
+        if (error) { toast("Não deu para criar: " + error.message, true); $("#nf-ok", el).disabled = false; return; }
+        fechar(); location.hash = "#/f/" + data.id + "/construir";
+      };
+    });
+}
+
+async function duplicar(id) {
+  const { data: f } = await sb.from("fm_forms").select("*").eq("id", id).single();
+  if (!f) return;
+  const slug = await slugLivre(f.slug + "-copia");
+  const { error } = await sb.from("fm_forms").insert({ titulo: f.titulo + " (cópia)", slug, perguntas: f.perguntas, finais: f.finais, inicio: f.inicio, tema: f.tema, config: f.config });
+  if (error) return toast("Erro ao duplicar: " + error.message, true);
+  toast("Formulário duplicado"); renderLista();
+}
+async function excluir(f) {
+  if (!await confirmar('Excluir "' + f.titulo + '" e todas as respostas?', "Excluir", true)) return;
+  const { error } = await sb.from("fm_forms").delete().eq("id", f.id);
+  if (error) return toast("Erro ao excluir: " + error.message, true);
+  toast("Formulário excluído"); renderLista();
+}
+
+// ---------------- EDITOR: estrutura ----------------
+function P(id) { return ED.form.perguntas.find((p) => p.id === id); }
+function Fim(id) { return ED.form.finais.find((f) => f.id === id); }
+
+function marcarSujo(semPrevia) {
+  ED.dirty = true;
+  const s = $("#salvo"); if (s) { s.textContent = "Editando…"; s.className = "salvo"; }
+  clearTimeout(ED.timer); ED.timer = setTimeout(salvarAgora, 900);
+  if (!semPrevia) atualizarPrevia();
+}
+async function salvarAgora() {
+  if (!ED || !ED.dirty) return ED && ED.salvando;
+  clearTimeout(ED.timer);
+  const ed = ED, f = ed.form;
+  ed.dirty = false;
+  const s = $("#salvo"); if (s) { s.textContent = "Salvando…"; s.className = "salvo"; }
+  ed.salvando = sb.from("fm_forms").update({ titulo: f.titulo, perguntas: f.perguntas, finais: f.finais, inicio: f.inicio, tema: f.tema, config: f.config }).eq("id", f.id)
+    .then(({ error }) => {
+      const s2 = $("#salvo");
+      if (error) { ed.dirty = true; if (s2) { s2.textContent = "Erro ao salvar"; s2.className = "salvo erro"; } toast("Não salvou: " + error.message, true); }
+      else if (s2 && !ed.dirty) { s2.textContent = "Salvo ✓"; s2.className = "salvo"; }
+    });
+  return ed.salvando;
+}
+
+function renderEditor() {
+  const f = ED.form;
+  const abas = [["construir", "Construir"], ["design", "Design"], ["compartilhar", "Compartilhar"], ["resultados", "Resultados"]];
+  view.innerHTML =
+    '<div class="ed-top"><div class="ed-top-in">' +
+    '<a class="b ico ghost" href="#/" aria-label="Voltar para a lista" title="Voltar">←</a>' +
+    '<input class="ed-tit" id="ed-tit" value="' + h(f.titulo) + '" aria-label="Nome do formulário" maxlength="120">' +
+    '<span class="st ' + f.status + '" id="ed-st">' + h(f.status) + "</span>" +
+    '<span class="salvo" id="salvo">' + (ED.dirty ? "Editando…" : "Salvo ✓") + "</span>" +
+    '<div class="esp"></div>' +
+    '<nav class="abas">' + abas.map(([k, r]) => '<a href="#/f/' + f.id + "/" + k + '" class="' + (ED.aba === k ? "on" : "") + '">' + r + "</a>").join("") + "</nav>" +
+    '<div class="esp"></div>' +
+    '<button id="ed-ver" class="mini" style="height:36px">Visualizar ↗</button>' +
+    (f.status === "publicado" ? '<button id="ed-link" class="mini" style="height:36px">Copiar link</button>' : '<button id="ed-pub" class="pri mini" style="height:36px">Publicar</button>') +
+    "</div></div><div id=\"ed-corpo\"></div>";
+  $("#ed-tit").oninput = (e) => { f.titulo = e.target.value; marcarSujo(true); };
+  $("#ed-ver").onclick = abrirPreviaNova;
+  if ($("#ed-pub")) $("#ed-pub").onclick = () => mudarStatus("publicado");
+  if ($("#ed-link")) $("#ed-link").onclick = () => copiar(linkForm(f));
+  ({ construir: renderConstruir, design: renderDesign, compartilhar: renderCompartilhar, resultados: renderResultados })[ED.aba]();
+}
+
+async function mudarStatus(st) {
+  const f = ED.form;
+  if (st === "publicado") {
+    const ps = f.perguntas.filter((p) => p.tipo !== "aviso");
+    if (!ps.length) return toast("Adicione pelo menos uma pergunta antes de publicar.", true);
+    const sem = f.perguntas.find((p) => !String(p.titulo || "").trim());
+    if (sem) { ED.sel = sem.id; if (ED.aba !== "construir") location.hash = "#/f/" + f.id + "/construir"; else renderConstruir(); return toast("Tem pergunta sem texto. Preencha antes de publicar.", true); }
+    const semOp = f.perguntas.find((p) => T[p.tipo] && T[p.tipo].opcoes && !(p.opcoes || []).some((o) => o.texto && o.texto.trim()));
+    if (semOp) { ED.sel = semOp.id; if (ED.aba !== "construir") location.hash = "#/f/" + f.id + "/construir"; else renderConstruir(); return toast("Tem pergunta de escolha sem opções.", true); }
+  }
+  await salvarAgora();
+  const { error } = await sb.from("fm_forms").update({ status: st }).eq("id", f.id);
+  if (error) return toast("Erro: " + error.message, true);
+  f.status = st;
+  toast(st === "publicado" ? "Publicado! O link já está no ar." : st === "encerrado" ? "Formulário encerrado." : "Voltou para rascunho.");
+  renderEditor();
+}
+
+// ---------------- prévia ----------------
+let previaJanela = null;
+function formParaPrevia() {
+  const f = ED.form;
+  return JSON.parse(JSON.stringify({ id: f.id, slug: f.slug, titulo: f.titulo, perguntas: f.perguntas, inicio: f.inicio, finais: f.finais, tema: f.tema, config: f.config }));
+}
+function irDaSelecao() {
+  if (!ED.sel) return null;
+  if (ED.sel === "inicio") return "inicio";
+  if (ED.sel.startsWith("fim:")) return ED.sel;
+  return ED.sel;
+}
+function enviarPrevia(alvo, reiniciar) {
+  if (!alvo) return;
+  try { alvo.postMessage({ fm: "preview", form: formParaPrevia(), ir: irDaSelecao(), reiniciar: !!reiniciar }, location.origin); } catch (e) {}
+}
+function atualizarPrevia(reiniciar) {
+  clearTimeout(ED.prevTimer);
+  ED.prevTimer = setTimeout(() => {
+    const fr = $("#prev-frame"); if (fr) enviarPrevia(fr.contentWindow, reiniciar);
+  }, 250);
+}
+window.addEventListener("message", (ev) => {
+  if (ev.origin !== location.origin || !ev.data || ev.data.fm !== "pronto" || !ED) return;
+  enviarPrevia(ev.source, true);
+});
+function abrirPreviaNova() {
+  previaJanela = window.open("/f.html?preview=1", "fm_previa");
+  if (!previaJanela) toast("O navegador bloqueou a janela. Libere pop-ups para este site.", true);
+}
+function htmlPrevia(titulo) {
+  return '<div class="prev"><div class="prev-bar"><span>' + (titulo || "Pré-visualização") + "</span>" +
+    '<div class="seg"><button data-tela="pc" class="' + (ED.cel ? "" : "on") + '">Desktop</button><button data-tela="cel" class="' + (ED.cel ? "on" : "") + '">Celular</button></div>' +
+    '<button class="ico ghost" id="prev-rein" title="Reiniciar do começo" aria-label="Reiniciar prévia">↺</button></div>' +
+    '<div class="prev-moldura' + (ED.cel ? " cel" : "") + '" id="prev-mold"><iframe id="prev-frame" src="/f.html?preview=1" title="Pré-visualização do formulário"></iframe></div></div>';
+}
+function ligarPrevia() {
+  $$("[data-tela]").forEach((b) => b.onclick = () => {
+    ED.cel = b.dataset.tela === "cel";
+    $$("[data-tela]").forEach((x) => x.classList.toggle("on", x === b));
+    $("#prev-mold").classList.toggle("cel", ED.cel);
+  });
+  const r = $("#prev-rein");
+  if (r) r.onclick = () => { const fr = $("#prev-frame"); if (fr) fr.contentWindow.postMessage({ fm: "preview", form: formParaPrevia(), ir: null, reiniciar: true }, location.origin); };
+}
+
+// ---------------- CONSTRUIR ----------------
+function renderConstruir() {
+  $("#ed-corpo").innerHTML = '<div class="construir"><aside class="lado" id="lado"></aside><section class="painel" id="painel"></section>' + htmlPrevia() + "</div>";
+  renderLado(); renderPainel(); ligarPrevia();
+}
+
+function temLogica(p) { return (p.regras || []).length > 0 || !!p.depois; }
+
+function renderLado() {
+  const f = ED.form;
+  let n = 0;
+  const lado = $("#lado");
+  lado.innerHTML =
+    '<h4>Início</h4>' +
+    '<div class="item' + (ED.sel === "inicio" ? " on" : "") + '" data-sel="inicio"><span class="ic t-tela">▶</span><span class="tx"><b>Tela de boas-vindas</b><small>' + (f.inicio.ativo !== false && (f.inicio.titulo || f.inicio.texto) ? "Ativa" : "Desligada") + "</small></span></div>" +
+    '<h4>Perguntas <span>' + f.perguntas.length + "</span></h4>" +
+    '<div id="lista-q">' + f.perguntas.map((p) => {
+      const t = T[p.tipo] || T.curto;
+      if (p.tipo !== "aviso") n++;
+      return '<div class="item' + (ED.sel === p.id ? " on" : "") + '" data-sel="' + p.id + '" draggable="true">' +
+        '<span class="n">' + (p.tipo === "aviso" ? "" : n) + "</span>" +
+        '<span class="ic ' + GRUPO_CLS[t.grupo] + '">' + t.ic + "</span>" +
+        '<span class="tx"><b data-tit="' + p.id + '">' + h(p.titulo || "Sem título") + "</b><small>" + t.nome + (p.obrigatorio ? " · obrigatória" : "") + (temLogica(p) ? ' · <span class="logica" title="Tem lógica condicional">⤳ lógica</span>' : "") + "</small></span></div>";
+    }).join("") + "</div>" +
+    '<button class="add" id="add-q">+ Adicionar pergunta</button>' +
+    '<h4>Telas finais</h4>' +
+    f.finais.map((fi, i) => '<div class="item' + (ED.sel === "fim:" + fi.id ? " on" : "") + '" data-sel="fim:' + fi.id + '"><span class="ic t-fim">✓</span><span class="tx"><b>' + h(fi.nome || fi.titulo || "Final") + "</b><small>" + (i === 0 ? "Padrão" : "Por lógica") + (fi.redirecionar ? " · redireciona" : "") + "</small></span></div>").join("") +
+    '<button class="add" id="add-fim">+ Tela final</button>';
+
+  $$(".item[data-sel]", lado).forEach((it) => it.onclick = () => { ED.sel = it.dataset.sel; renderLado(); renderPainel(); atualizarPrevia(); });
+  $("#add-q").onclick = () => escolherTipo((tipo) => adicionarPergunta(tipo));
+  $("#add-fim").onclick = () => {
+    const fi = novoFinal("Obrigado!"); fi.nome = "Final " + (f.finais.length + 1);
+    f.finais.push(fi); ED.sel = "fim:" + fi.id; marcarSujo(); renderLado(); renderPainel();
+  };
+  // arrastar para reordenar
+  let origem = null;
+  $$("#lista-q .item", lado).forEach((it) => {
+    it.addEventListener("dragstart", (e) => { origem = it.dataset.sel; it.classList.add("arrastando"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", origem); });
+    it.addEventListener("dragend", () => { it.classList.remove("arrastando"); $$(".alvo-cima,.alvo-baixo", lado).forEach((x) => x.classList.remove("alvo-cima", "alvo-baixo")); });
+    it.addEventListener("dragover", (e) => {
+      e.preventDefault(); const r = it.getBoundingClientRect(); const cima = e.clientY < r.top + r.height / 2;
+      it.classList.toggle("alvo-cima", cima); it.classList.toggle("alvo-baixo", !cima);
+    });
+    it.addEventListener("dragleave", () => it.classList.remove("alvo-cima", "alvo-baixo"));
+    it.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const alvo = it.dataset.sel; if (!origem || origem === alvo) return;
+      const r = it.getBoundingClientRect(); const cima = e.clientY < r.top + r.height / 2;
+      const ps = f.perguntas; const i = ps.findIndex((p) => p.id === origem); const [m] = ps.splice(i, 1);
+      let j = ps.findIndex((p) => p.id === alvo); if (!cima) j++;
+      ps.splice(j, 0, m); marcarSujo(); renderLado(); renderPainel();
+    });
+  });
+}
+
+function escolherTipo(cb, atual) {
+  const grupos = {};
+  Object.entries(T).forEach(([k, t]) => (grupos[t.grupo] = grupos[t.grupo] || []).push([k, t]));
+  modal("<h3>" + (atual ? "Mudar tipo da pergunta" : "Adicionar pergunta") + '</h3><div class="tipos">' +
+    Object.entries(grupos).map(([g, arr]) => "<h5>" + g + "</h5>" + arr.map(([k, t]) => '<button data-tipo="' + k + '"' + (k === atual ? ' style="background:var(--sel)"' : "") + '><span class="ic ' + GRUPO_CLS[g] + '" style="background:var(--' + ({ Texto: "info", Contato: "ok", Escolha: "lil", "Avaliação": "warn", Outros: "line2" }[g]) + '-bg)">' + t.ic + "</span>" + t.nome + "</button>").join("")).join("") +
+    '</div><div class="rod"><button data-fechar>Cancelar</button></div>',
+    (el, fechar) => $$("[data-tipo]", el).forEach((b) => b.onclick = () => { fechar(); cb(b.dataset.tipo); }));
+}
+
+function adicionarPergunta(tipo) {
+  const f = ED.form;
+  const p = { id: FM.uid("q"), tipo, titulo: "", descricao: "", obrigatorio: false, chave: "", regras: [], depois: "" };
+  prepararTipo(p);
+  let idx = f.perguntas.findIndex((x) => x.id === ED.sel);
+  idx = idx >= 0 ? idx + 1 : f.perguntas.length;
+  f.perguntas.splice(idx, 0, p);
+  ED.sel = p.id; marcarSujo(); renderLado(); renderPainel();
+  setTimeout(() => { const t = $("#q-titulo"); if (t) t.focus(); }, 40);
+}
+function prepararTipo(p) {
+  if (T[p.tipo].opcoes && !(p.opcoes || []).length) p.opcoes = [{ id: FM.uid("o"), texto: "" }, { id: FM.uid("o"), texto: "" }];
+  if (p.tipo === "escala") { if (p.escala_min == null || p.escala_min === "") p.escala_min = 1; if (!p.escala_max || p.escala_max > 10) p.escala_max = 5; }
+  if (p.tipo === "estrelas" && (!p.escala_max || p.escala_max > 10)) p.escala_max = 5;
+  if (p.tipo === "aviso") p.obrigatorio = false;
+}
+
+function removerReferencias(id, ehFinal) {
+  const f = ED.form;
+  const alvo = ehFinal ? "fim:" + id : id;
+  f.perguntas.forEach((p) => {
+    p.regras = (p.regras || []).filter((r) => r.destino !== alvo && !(r.conds || []).some((c) => c.pergunta === id));
+    if (p.depois === alvo) p.depois = "";
+  });
+}
+
+// ---------- painel de edição ----------
+function renderPainel() {
+  const pn = $("#painel");
+  const f = ED.form;
+  if (!ED.sel) { pn.innerHTML = '<div class="painel-in vazio"><h3>Selecione um item</h3><p>Escolha uma pergunta à esquerda ou adicione uma nova.</p></div>'; return; }
+  if (ED.sel === "inicio") return painelInicio(pn);
+  if (ED.sel.startsWith("fim:")) { const fi = Fim(ED.sel.slice(4)); if (!fi) { ED.sel = null; return renderPainel(); } return painelFim(pn, fi); }
+  const p = P(ED.sel); if (!p) { ED.sel = null; return renderPainel(); }
+  painelPergunta(pn, p);
+}
+
+function campo(rot, html, ajuda) { return '<label class="f"><span>' + rot + "</span>" + html + (ajuda ? "<small>" + ajuda + "</small>" : "") + "</label>"; }
+function inp(k, v, attrs) { return '<input data-k="' + k + '" value="' + h(v == null ? "" : v) + '" ' + (attrs || "") + ">"; }
+function txa(k, v, attrs) { return '<textarea data-k="' + k + '" ' + (attrs || "") + ">" + h(v || "") + "</textarea>"; }
+function tog(k, v, rot) { return '<label class="tg"><input type="checkbox" data-k="' + k + '" data-bool="1"' + (v ? " checked" : "") + "> " + rot + "</label>"; }
+
+// liga inputs com data-k ao objeto
+function ligarCampos(el, obj, aoMudar) {
+  $$("[data-k]", el).forEach((i) => {
+    const ev = i.type === "checkbox" || i.tagName === "SELECT" ? "change" : "input";
+    i.addEventListener(ev, () => {
+      let v = i.dataset.bool ? i.checked : i.value;
+      if (i.dataset.num) v = i.value === "" ? "" : Number(i.value);
+      obj[i.dataset.k] = v;
+      marcarSujo();
+      if (aoMudar) aoMudar(i.dataset.k, v, i);
+    });
+  });
+}
+
+function painelInicio(pn) {
+  const i = ED.form.inicio;
+  if (i.ativo == null) i.ativo = !!(i.titulo || i.texto);
+  pn.innerHTML = '<div class="painel-in"><div class="painel-cab"><h2><span class="ic" style="background:var(--line2)">▶</span>Tela de boas-vindas</h2></div>' +
+    '<div class="card">' + tog("ativo", i.ativo !== false, "Mostrar tela de boas-vindas antes da primeira pergunta") +
+    campo("Título", txa("titulo", i.titulo, 'rows="2" placeholder="Ex.: Sua opinião vale ouro"')) +
+    campo("Texto", txa("texto", i.texto, 'rows="3" placeholder="Ex.: São só 3 perguntas rápidas."')) +
+    '<div class="g2">' + campo("Texto do botão", inp("botao", i.botao || "Começar")) + campo("Tempo estimado", inp("tempo", i.tempo, 'placeholder="Ex.: 2 minutos"'), "Aparece embaixo do botão.") + "</div>" +
+    campo("Imagem (link)", inp("imagem", i.imagem, 'placeholder="https://…"'), "Opcional. Cole o endereço de uma imagem.") +
+    "</div></div>";
+  ligarCampos(pn, i, (k) => { if (k === "ativo") renderLado(); });
+}
+
+function painelFim(pn, fi) {
+  const f = ED.form;
+  const idx = f.finais.indexOf(fi);
+  pn.innerHTML = '<div class="painel-in"><div class="painel-cab"><h2><span class="ic" style="background:var(--ok-bg);color:var(--ok-fg)">✓</span>Tela final' + (idx === 0 ? ' <span class="st publicado" style="font-size:11px">Padrão</span>' : "") + "</h2>" +
+    (f.finais.length > 1 ? '<button class="mini perigo" id="fim-del">Excluir</button>' : "") + "</div>" +
+    '<div class="card">' +
+    campo("Nome interno", inp("nome", fi.nome, 'placeholder="Ex.: Promotores"'), idx === 0 ? "É a tela que aparece quando nenhuma regra de lógica manda para outra." : "Use a lógica das perguntas para mandar pessoas para esta tela.") +
+    campo("Título", txa("titulo", fi.titulo, 'rows="2"')) +
+    campo("Texto", txa("texto", fi.texto, 'rows="3"')) +
+    tog("mostrar_icone", fi.mostrar_icone !== false, "Mostrar ícone de confirmação") +
+    "</div>" +
+    '<div class="card"><h3>Botão <small>opcional</small></h3><div class="g2">' + campo("Texto do botão", inp("botao_texto", fi.botao_texto, 'placeholder="Ex.: Falar no WhatsApp"')) + campo("Link do botão", inp("botao_url", fi.botao_url, 'placeholder="https://…"')) + "</div></div>" +
+    '<div class="card"><h3>Redirecionamento <small>opcional</small></h3>' +
+    '<div class="g2" style="grid-template-columns:1fr 120px">' + campo("Redirecionar para", inp("redirecionar", fi.redirecionar, 'placeholder="https://pay.kiwify.com.br/…"')) + campo("Depois de (s)", inp("segundos", fi.segundos, 'type="number" min="0" max="30" data-num="1"')) + "</div>" +
+    tog("repassar_params", fi.repassar_params, "Repassar os parâmetros da URL (utm, sck, src…) para o link") +
+    '<p class="ajuda">Dá para usar respostas no link: <code>https://site.com/?email={{email}}&amp;nome={{nome}}</code>. Variáveis disponíveis: ' + variaveisDisponiveis() + "</p></div>" +
+    "</div>";
+  ligarCampos(pn, fi, (k) => { if (["nome", "titulo", "redirecionar"].includes(k)) renderLadoLeve(); });
+  const d = $("#fim-del");
+  if (d) d.onclick = async () => {
+    if (!await confirmar("Excluir esta tela final?", "Excluir", true)) return;
+    f.finais.splice(idx, 1); removerReferencias(fi.id, true); ED.sel = null; marcarSujo(); renderLado(); renderPainel();
+  };
+}
+
+function variaveisDisponiveis() {
+  const ks = ED.form.perguntas.filter((p) => p.chave).map((p) => "<code>{{" + h(p.chave) + "}}</code>");
+  return ks.length ? ks.join(" ") : '<span class="mut">nenhuma ainda (defina a "variável" nas perguntas)</span>';
+}
+
+let ladoLeveT;
+function renderLadoLeve() { clearTimeout(ladoLeveT); ladoLeveT = setTimeout(renderLado, 400); }
+
+function painelPergunta(pn, p) {
+  const f = ED.form;
+  const t = T[p.tipo] || T.curto;
+  const i = f.perguntas.indexOf(p);
+  let extra = "";
+  if (t.opcoes) {
+    extra += '<div class="card"><h3>Opções</h3><div class="opcoes" id="opcoes">' + (p.opcoes || []).map((o, j) =>
+      '<div class="opc" data-j="' + j + '"><span class="l">' + LETRAS[j] + '</span><input data-op="' + j + '" value="' + h(o.texto) + '" placeholder="Opção ' + (j + 1) + '">' +
+      '<button class="ico ghost" data-op-up="' + j + '" aria-label="Subir"' + (j === 0 ? " disabled" : "") + ">↑</button>" +
+      '<button class="ico ghost" data-op-del="' + j + '" aria-label="Remover opção">×</button></div>').join("") + "</div>" +
+      '<div style="display:flex;gap:8px;margin-bottom:12px"><button class="mini" id="op-add">+ Opção</button><button class="mini ghost" id="op-colar">Colar várias</button></div>' +
+      (p.tipo !== "lista" ? tog("permitir_outro", p.permitir_outro, 'Incluir opção “Outro” com campo de texto') : "") +
+      (p.tipo === "multipla" ? '<div class="g2">' + campo("Mínimo de escolhas", inp("min_sel", p.min_sel, 'type="number" min="0" data-num="1" placeholder="0"')) + campo("Máximo de escolhas", inp("max_sel", p.max_sel, 'type="number" min="0" data-num="1" placeholder="Sem limite"')) + "</div>" : "") +
+      '<p class="ajuda">Dica: aperte Enter numa opção para criar a próxima.</p></div>';
+  }
+  if (p.tipo === "escala") extra += '<div class="card"><h3>Escala</h3><div class="g2">' + campo("De", '<select data-k="escala_min" data-num="1"><option value="0"' + (+p.escala_min === 0 ? " selected" : "") + '>0</option><option value="1"' + (+p.escala_min !== 0 ? " selected" : "") + ">1</option></select>") +
+    campo("Até", '<select data-k="escala_max" data-num="1">' + [3, 4, 5, 6, 7, 8, 9, 10].map((n) => '<option' + (+p.escala_max === n ? " selected" : "") + ">" + n + "</option>").join("") + "</select>") + "</div>" +
+    '<div class="g2">' + campo("Rótulo do menor", inp("rot_min", p.rot_min, 'placeholder="Ex.: Discordo"')) + campo("Rótulo do maior", inp("rot_max", p.rot_max, 'placeholder="Ex.: Concordo"')) + "</div></div>";
+  if (p.tipo === "nps") extra += '<div class="card"><h3>Rótulos</h3><div class="g2">' + campo("Rótulo do 0", inp("rot_min", p.rot_min, 'placeholder="Nada provável"')) + campo("Rótulo do 10", inp("rot_max", p.rot_max, 'placeholder="Muito provável"')) + "</div><p class=\"ajuda\">No relatório, o NPS é calculado automaticamente: % de promotores (9–10) menos % de detratores (0–6).</p></div>";
+  if (p.tipo === "estrelas") extra += '<div class="card"><h3>Estrelas</h3>' + campo("Quantidade", '<select data-k="escala_max" data-num="1">' + [3, 4, 5, 6, 7, 10].map((n) => '<option' + ((+p.escala_max || 5) === n ? " selected" : "") + ">" + n + "</option>").join("") + "</select>") + "</div>";
+  if (["curto", "longo", "email", "telefone", "numero"].includes(p.tipo)) {
+    extra += '<details class="mais-op"><summary>Mais opções do campo</summary><div class="card">' + campo("Texto de exemplo no campo (placeholder)", inp("placeholder", p.placeholder, 'placeholder="Ex.: Digite sua resposta aqui…"')) +
+      (p.tipo === "curto" || p.tipo === "longo" ? campo("Máximo de caracteres", inp("max_car", p.max_car, 'type="number" min="0" data-num="1" placeholder="Sem limite"')) : "") +
+      (p.tipo === "numero" ? '<div class="g2">' + campo("Mínimo", inp("num_min", p.num_min, 'type="number" data-num="1"')) + campo("Máximo", inp("num_max", p.num_max, 'type="number" data-num="1"')) + "</div>" : "") +
+      "</div></details>";
+  }
+  if (p.tipo === "aviso") extra += '<div class="card">' + campo("Texto do botão", inp("botao", p.botao, 'placeholder="Continuar"')) + "</div>";
+
+  const usadas = new Set(f.perguntas.filter((x) => x !== p && x.chave).map((x) => x.chave));
+  pn.innerHTML = '<div class="painel-in">' +
+    '<div class="painel-cab"><h2><span class="ic ' + GRUPO_CLS[t.grupo] + '" style="background:var(--' + ({ Texto: "info", Contato: "ok", Escolha: "lil", "Avaliação": "warn", Outros: "line2" }[t.grupo]) + '-bg)">' + t.ic + "</span>" +
+    '<button class="mini" id="q-tipo" title="Mudar tipo">' + t.nome + " ▾</button></h2>" +
+    '<button class="ico ghost" id="q-up" title="Subir" aria-label="Subir"' + (i === 0 ? " disabled" : "") + ">↑</button>" +
+    '<button class="ico ghost" id="q-down" title="Descer" aria-label="Descer"' + (i === f.perguntas.length - 1 ? " disabled" : "") + ">↓</button>" +
+    '<button class="ico ghost" id="q-dup" title="Duplicar" aria-label="Duplicar">⧉</button>' +
+    '<button class="ico ghost perigo" id="q-del" title="Excluir" aria-label="Excluir">🗑</button></div>' +
+    '<div class="card">' +
+    campo(p.tipo === "aviso" ? "Texto" : "Pergunta", txa("titulo", p.titulo, 'id="q-titulo" rows="2" placeholder="' + (p.tipo === "aviso" ? "Ex.: Agora vamos falar sobre o seu negócio" : "Escreva sua pergunta aqui") + '"'), "Use <code>{{variável}}</code> para puxar respostas anteriores, ex.: Prazer, {{nome}}!") +
+    campo("Descrição", txa("descricao", p.descricao, 'rows="2" placeholder="Opcional"')) +
+    (p.tipo !== "aviso" ? tog("obrigatorio", p.obrigatorio, "Resposta obrigatória") : "") +
+    '<details class="mais-op"' + (p.chave || p.imagem ? " open" : "") + "><summary>Variável e imagem</summary>" +
+    (p.tipo !== "aviso" ? campo("Variável", inp("chave", p.chave, 'id="q-chave" placeholder="' + h(FM.chaveSugerida(p.titulo || "pergunta", usadas)) + '" pattern="[a-zA-Z0-9_]+"'), "Nome curto para usar como <code>{{" + h(p.chave || "variavel") + "}}</code> em textos e links, e como coluna no Excel.") : "") +
+    campo("Imagem (link)", inp("imagem", p.imagem, 'placeholder="https://…"')) +
+    "</details></div>" + extra +
+    (p.tipo !== "aviso" || true ? '<div class="card" id="logica"></div>' : "") +
+    "</div>";
+
+  ligarCampos(pn, p, (k, v, el) => {
+    if (k === "titulo") { const b = $('[data-tit="' + p.id + '"]'); if (b) b.textContent = v || "Sem título"; if (!p._chaveManual && !p.chave) { const c = $("#q-chave"); if (c) c.placeholder = FM.chaveSugerida(v || "pergunta", usadas); } }
+    if (k === "chave") { const lim = String(v).replace(/[^a-zA-Z0-9_]/g, "").slice(0, 30); if (lim !== v) { el.value = lim; p.chave = lim; } if (usadas.has(p.chave)) toast("Já existe outra pergunta com essa variável.", true); }
+    if (k === "obrigatorio" || k === "permitir_outro") renderLadoLeve();
+    if (k === "escala_min" || k === "escala_max") renderLogica(p);
+  });
+  // ao sair do título sem variável definida, cria uma automaticamente
+  const tit = $("#q-titulo");
+  tit.addEventListener("blur", () => {
+    if (p.tipo !== "aviso" && !p.chave && p.titulo.trim()) { p.chave = FM.chaveSugerida(p.titulo, usadas); const c = $("#q-chave"); if (c) c.value = p.chave; marcarSujo(true); }
+  });
+  const autoAlt = (el) => { el.style.height = "auto"; el.style.height = Math.max(el.scrollHeight + 2, 40) + "px"; };
+  $$("textarea", pn).forEach((el) => { autoAlt(el); el.addEventListener("input", () => autoAlt(el)); });
+
+  $("#q-tipo").onclick = () => escolherTipo((novo) => {
+    if (novo === p.tipo) return;
+    const tinhaOp = T[p.tipo].opcoes;
+    p.tipo = novo; prepararTipo(p);
+    if (!T[novo].opcoes && tinhaOp) delete p.opcoes;
+    removerReferencias(p.id, false); // condições sobre esta pergunta podem não fazer mais sentido
+    marcarSujo(); renderLado(); renderPainel();
+  }, p.tipo);
+  $("#q-up").onclick = () => mover(p, -1);
+  $("#q-down").onclick = () => mover(p, 1);
+  $("#q-dup").onclick = () => {
+    const c = JSON.parse(JSON.stringify(p)); c.id = FM.uid("q"); c.chave = p.chave ? FM.chaveSugerida(p.chave, new Set(f.perguntas.map((x) => x.chave))) : "";
+    (c.opcoes || []).forEach((o) => o.id = FM.uid("o"));
+    c.regras = (c.regras || []).map((r) => Object.assign(r, { id: FM.uid("r"), conds: (r.conds || []).map((cd) => cd.pergunta === p.id ? Object.assign(cd, { pergunta: c.id }) : cd) }));
+    f.perguntas.splice(i + 1, 0, c); ED.sel = c.id; marcarSujo(); renderLado(); renderPainel(); toast("Pergunta duplicada");
+  };
+  $("#q-del").onclick = async () => {
+    const qtd = f.perguntas.filter((x) => x !== p && ((x.regras || []).some((r) => r.destino === p.id || (r.conds || []).some((c) => c.pergunta === p.id)) || x.depois === p.id)).length;
+    if (!await confirmar("Excluir esta pergunta?" + (qtd ? " Regras de lógica que usam ela também serão removidas." : ""), "Excluir", true)) return;
+    f.perguntas.splice(i, 1); removerReferencias(p.id, false);
+    ED.sel = f.perguntas[Math.min(i, f.perguntas.length - 1)] ? f.perguntas[Math.min(i, f.perguntas.length - 1)].id : null;
+    marcarSujo(); renderLado(); renderPainel();
+  };
+
+  if (t.opcoes) ligarOpcoes(pn, p);
+  renderLogica(p);
+}
+
+function mover(p, d) {
+  const ps = ED.form.perguntas; const i = ps.indexOf(p); const j = i + d;
+  if (j < 0 || j >= ps.length) return;
+  ps.splice(i, 1); ps.splice(j, 0, p); marcarSujo(); renderLado(); renderPainel();
+}
+
+function ligarOpcoes(pn, p) {
+  const redesenhar = (foco) => { renderPainel(); if (foco != null) setTimeout(() => { const el = $('[data-op="' + foco + '"]'); if (el) el.focus(); }, 20); };
+  $$("[data-op]", pn).forEach((el) => {
+    const j = +el.dataset.op;
+    el.addEventListener("input", () => { const antigo = p.opcoes[j].texto; p.opcoes[j].texto = el.value; trocarValorEmRegras(p.id, antigo, el.value); marcarSujo(); });
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); p.opcoes.splice(j + 1, 0, { id: FM.uid("o"), texto: "" }); marcarSujo(); redesenhar(j + 1); }
+      if (e.key === "Backspace" && !el.value && p.opcoes.length > 1) { e.preventDefault(); p.opcoes.splice(j, 1); marcarSujo(); redesenhar(Math.max(0, j - 1)); }
+    });
+    el.addEventListener("blur", () => renderLogica(p));
+  });
+  $$("[data-op-del]", pn).forEach((b) => b.onclick = () => { if (p.opcoes.length <= 1) return toast("Precisa de pelo menos uma opção.", true); p.opcoes.splice(+b.dataset.opDel, 1); marcarSujo(); redesenhar(); });
+  $$("[data-op-up]", pn).forEach((b) => b.onclick = () => { const j = +b.dataset.opUp; const [o] = p.opcoes.splice(j, 1); p.opcoes.splice(j - 1, 0, o); marcarSujo(); redesenhar(); });
+  $("#op-add").onclick = () => { p.opcoes.push({ id: FM.uid("o"), texto: "" }); marcarSujo(); redesenhar(p.opcoes.length - 1); };
+  $("#op-colar").onclick = () => modal('<h3>Colar opções</h3>' + campo("Uma opção por linha", '<textarea id="cl" rows="8" placeholder="Opção 1\nOpção 2\nOpção 3"></textarea>') +
+    tog("_subst", true, "Substituir as opções atuais").replace('data-k="_subst"', 'id="cl-subst"') +
+    '<div class="rod"><button data-fechar>Cancelar</button><button class="pri" id="cl-ok">Adicionar</button></div>', (el, fechar) => {
+      $("#cl-ok", el).onclick = () => {
+        const linhas = $("#cl", el).value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+        if (!linhas.length) return fechar();
+        const novas = linhas.map((t) => ({ id: FM.uid("o"), texto: t }));
+        if ($("#cl-subst", el).checked) p.opcoes = novas; else p.opcoes = p.opcoes.filter((o) => o.texto.trim()).concat(novas);
+        fechar(); marcarSujo(); redesenhar();
+      };
+    });
+}
+function trocarValorEmRegras(qid, antigo, novo) {
+  if (!antigo) return;
+  ED.form.perguntas.forEach((x) => (x.regras || []).forEach((r) => (r.conds || []).forEach((c) => { if (c.pergunta === qid && c.valor === antigo) c.valor = novo; })));
+}
+
+// ---------- lógica condicional ----------
+function opsPara(q) {
+  if (!q) return [];
+  const t = q.tipo;
+  let base;
+  if (t === "multipla") base = [["igual", "inclui"], ["diferente", "não inclui"]];
+  else if (["unica", "lista", "sim_nao"].includes(t)) base = [["igual", "é"], ["diferente", "não é"]];
+  else if (["nps", "escala", "estrelas", "numero"].includes(t)) base = [["igual", "é igual a"], ["diferente", "é diferente de"], ["maior", "é maior que"], ["menor", "é menor que"], ["maior_igual", "é maior ou igual a"], ["menor_igual", "é menor ou igual a"]];
+  else base = [["igual", "é igual a"], ["diferente", "é diferente de"], ["contem", "contém"], ["nao_contem", "não contém"]];
+  return base.concat([["respondeu", "foi respondida"], ["nao_respondeu", "não foi respondida"]]);
+}
+function valoresPossiveis(q) {
+  if (!q) return null;
+  if (q.tipo === "sim_nao") return ["Sim", "Não"];
+  if (T[q.tipo] && T[q.tipo].opcoes) return (q.opcoes || []).map((o) => o.texto).filter((s) => s && s.trim());
+  if (q.tipo === "nps") return Array.from({ length: 11 }, (_, i) => String(i));
+  if (q.tipo === "escala") { const a = []; for (let n = +q.escala_min || 0; n <= (+q.escala_max || 5); n++) a.push(String(n)); return a; }
+  if (q.tipo === "estrelas") return Array.from({ length: +q.escala_max || 5 }, (_, i) => String(i + 1));
+  return null;
+}
+function rotuloQ(q) {
+  const ps = ED.form.perguntas.filter((x) => x.tipo !== "aviso");
+  const n = ps.indexOf(q) + 1;
+  const t = (q.titulo || "Sem título").replace(/\{\{|\}\}/g, "");
+  return (n ? n + ". " : "") + (t.length > 46 ? t.slice(0, 46) + "…" : t);
+}
+function opcoesDestino(atualId, sel, comPadrao) {
+  const f = ED.form;
+  const i = f.perguntas.findIndex((x) => x.id === atualId);
+  let o = comPadrao ? '<option value=""' + (!sel ? " selected" : "") + ">Próxima pergunta</option>" : "";
+  o += '<optgroup label="Perguntas">' + f.perguntas.map((q, j) => j === i ? "" : '<option value="' + q.id + '"' + (sel === q.id ? " selected" : "") + ">" + h(rotuloQ(q) || "Texto") + (j < i ? " (volta)" : "") + "</option>").join("") + "</optgroup>";
+  o += '<optgroup label="Telas finais">' + f.finais.map((fi) => '<option value="fim:' + fi.id + '"' + (sel === "fim:" + fi.id ? " selected" : "") + ">✓ " + h(fi.nome || fi.titulo || "Final") + "</option>").join("") + "</optgroup>";
+  return o;
+}
+
+function renderLogica(p) {
+  const box = $("#logica"); if (!box) return;
+  const f = ED.form;
+  const i = f.perguntas.indexOf(p);
+  const candidatas = f.perguntas.slice(0, i + 1).filter((q) => q.tipo !== "aviso");
+  p.regras = p.regras || [];
+  box.innerHTML = '<h3>Lógica condicional <small>para onde a pessoa vai depois desta pergunta</small></h3>' +
+    p.regras.map((r, ri) => {
+      r.conds = r.conds || (r.cond ? [r.cond] : []); delete r.cond;
+      return '<div class="regra" data-ri="' + ri + '"><div class="regra-cab"><span>Regra ' + (ri + 1) + "</span>" +
+        '<span style="display:flex;gap:6px;align-items:center">' + (r.conds.length > 1 ? '<span class="juncao"><button data-jn="e" class="' + (r.juncao !== "ou" ? "on" : "") + '">E</button><button data-jn="ou" class="' + (r.juncao === "ou" ? "on" : "") + '">OU</button></span>' : "") +
+        '<button class="ico ghost mini" data-rdel="' + ri + '" aria-label="Remover regra">×</button></span></div>' +
+        r.conds.map((c, ci) => {
+          const q = P(c.pergunta);
+          const ops = opsPara(q);
+          if (q && !ops.some(([k]) => k === c.op)) c.op = ops[0][0];
+          const semValor = ["respondeu", "nao_respondeu"].includes(c.op);
+          const vals = valoresPossiveis(q);
+          let campoV = "";
+          if (!semValor) {
+            if (vals) { if (!vals.includes(String(c.valor))) c.valor = vals[0] || ""; campoV = '<select data-cv="' + ci + '">' + vals.map((v) => '<option' + (String(c.valor) === v ? " selected" : "") + ">" + h(v) + "</option>").join("") + "</select>"; }
+            else campoV = '<input data-cv="' + ci + '" value="' + h(c.valor || "") + '" placeholder="valor"' + (q && q.tipo === "numero" ? ' type="number"' : "") + ">";
+          }
+          return '<div class="cond"><span class="pre">' + (ci === 0 ? "Se" : (r.juncao === "ou" ? "ou" : "e")) + "</span>" +
+            '<select data-cq="' + ci + '">' + candidatas.map((q2) => '<option value="' + q2.id + '"' + (c.pergunta === q2.id ? " selected" : "") + ">" + h(q2 === p ? "esta pergunta" : rotuloQ(q2)) + "</option>").join("") + "</select>" +
+            '<select data-co="' + ci + '">' + ops.map(([k, l]) => '<option value="' + k + '"' + (c.op === k ? " selected" : "") + ">" + l + "</option>").join("") + "</select>" +
+            (semValor ? "<span></span>" : campoV) +
+            (r.conds.length > 1 ? '<button class="ico ghost mini" data-cdel="' + ci + '" aria-label="Remover condição">×</button>' : "<span></span>") + "</div>";
+        }).join("") +
+        '<button class="mini ghost" data-cadd>+ condição</button>' +
+        '<div class="destino"><b>→ ir para</b><select data-rdest>' + opcoesDestino(p.id, r.destino, false) + "</select></div></div>";
+    }).join("") +
+    '<button class="mini" id="r-add" style="margin-bottom:14px">+ Adicionar regra</button>' +
+    campo(p.regras.length ? "Caso nenhuma regra bata, ir para" : "Depois desta pergunta, ir para", '<select id="q-depois">' + opcoesDestino(p.id, p.depois, true) + "</select>",
+      "“Próxima pergunta” segue a ordem da lista. Se for a última, vai para a tela final padrão.");
+
+  const mud = () => { marcarSujo(); renderLadoLeve(); };
+  $("#q-depois", box).onchange = (e) => { p.depois = e.target.value; mud(); };
+  $("#r-add", box).onclick = () => {
+    const vals = valoresPossiveis(p);
+    const ops = opsPara(p.tipo === "aviso" ? candidatas[candidatas.length - 1] : p);
+    const qRef = p.tipo === "aviso" ? candidatas[candidatas.length - 1] : p;
+    if (!qRef) return toast("Adicione uma pergunta antes para criar regras.", true);
+    const valsRef = valoresPossiveis(qRef);
+    p.regras.push({ id: FM.uid("r"), juncao: "e", conds: [{ pergunta: qRef.id, op: ops[0][0], valor: valsRef ? valsRef[0] : "" }], destino: f.finais[0] ? "fim:" + f.finais[0].id : "" });
+    const prox = f.perguntas[i + 1]; if (prox) p.regras[p.regras.length - 1].destino = prox.id;
+    void vals; mud(); renderLogica(p);
+  };
+  $$(".regra", box).forEach((el) => {
+    const r = p.regras[+el.dataset.ri];
+    $("[data-rdel]", el).onclick = () => { p.regras.splice(+el.dataset.ri, 1); mud(); renderLogica(p); };
+    $("[data-rdest]", el).onchange = (e) => { r.destino = e.target.value; mud(); };
+    $("[data-cadd]", el).onclick = () => { const q = P(r.conds[r.conds.length - 1].pergunta) || p; const v = valoresPossiveis(q); r.conds.push({ pergunta: q.id, op: opsPara(q)[0][0], valor: v ? v[0] : "" }); mud(); renderLogica(p); };
+    $$("[data-jn]", el).forEach((b) => b.onclick = () => { r.juncao = b.dataset.jn; mud(); renderLogica(p); });
+    $$("[data-cq]", el).forEach((s) => s.onchange = () => { const c = r.conds[+s.dataset.cq]; c.pergunta = s.value; const q = P(s.value); c.op = opsPara(q)[0][0]; const v = valoresPossiveis(q); c.valor = v ? v[0] : ""; mud(); renderLogica(p); });
+    $$("[data-co]", el).forEach((s) => s.onchange = () => { r.conds[+s.dataset.co].op = s.value; mud(); renderLogica(p); });
+    $$("[data-cv]", el).forEach((s) => s.addEventListener(s.tagName === "SELECT" ? "change" : "input", () => { r.conds[+s.dataset.cv].valor = s.value; mud(); }));
+    $$("[data-cdel]", el).forEach((b) => b.onclick = () => { r.conds.splice(+b.dataset.cdel, 1); mud(); renderLogica(p); });
+  });
+}
+
+// ---------------- DESIGN ----------------
+const PRESETS = [
+  { nome: "TB Escuro", fundo: "#0a0b0c", texto: "#F2EEE6", destaque: "#C9A96E", fonte: "Hanken Grotesk" },
+  { nome: "TB Verde", fundo: "#0B1410", texto: "#EAF2EC", destaque: "#5FB07C", fonte: "Hanken Grotesk" },
+  { nome: "Noite", fundo: "#0E1430", texto: "#E8ECFF", destaque: "#7C9BFF", fonte: "Archivo" },
+  { nome: "Claro", fundo: "#FFFFFF", texto: "#1B1F3B", destaque: "#2F44C8", fonte: "Hanken Grotesk" },
+  { nome: "Areia", fundo: "#F5F0E6", texto: "#2A241A", destaque: "#8A6A2F", fonte: "Lora" },
+  { nome: "Rosa", fundo: "#FFF4F6", texto: "#3A1022", destaque: "#D6336C", fonte: "Poppins" }
+];
+const FONTES = ["Hanken Grotesk", "Archivo", "Inter", "Poppins", "Montserrat", "DM Sans", "Manrope", "Space Grotesk", "Playfair Display", "Lora"];
+function renderDesign() {
+  const f = ED.form, t = f.tema, c = f.config;
+  const cor = (k, rot) => '<div class="cor-linha"><span>' + rot + '</span><div class="cor"><input type="color" data-cor="' + k + '" value="' + h(t[k] || TEMA_PADRAO[k]) + '" aria-label="' + rot + '"><input type="text" data-cort="' + k + '" value="' + h(t[k] || TEMA_PADRAO[k]) + '" maxlength="7" aria-label="' + rot + ' (hex)"></div></div>';
+  $("#ed-corpo").innerHTML = '<div class="design"><div class="cfg" id="dcfg">' +
+    '<div class="card"><h3>Tema</h3><div class="presets">' + PRESETS.map((p, i) => '<button class="preset' + (t.fundo === p.fundo && t.destaque === p.destaque ? " on" : "") + '" data-pre="' + i + '" style="background:' + p.fundo + ";color:" + p.texto + '">' + p.nome + '<i style="background:' + p.destaque + '"></i></button>').join("") + "</div>" +
+    '<div class="cores">' + cor("fundo", "Fundo") + cor("texto", "Texto") + cor("destaque", "Destaque (botões)") + "</div>" +
+    campo("Fonte", '<select data-tk="fonte">' + FONTES.map((n) => '<option' + ((t.fonte || TEMA_PADRAO.fonte) === n ? " selected" : "") + ">" + n + "</option>").join("") + "</select>") +
+    campo("Logo (link da imagem)", '<input data-tk="logo" value="' + h(t.logo || "") + '" placeholder="https://…/logo.png">', "PNG com fundo transparente fica melhor.") +
+    campo("Imagem de fundo (link)", '<input data-tk="imagem_fundo" value="' + h(t.imagem_fundo || "") + '" placeholder="https://…">', "Opcional. Escurecemos a imagem com a cor de fundo para o texto continuar legível.") +
+    "</div>" +
+    '<div class="card"><h3>Comportamento</h3>' +
+    tog("mostrar_progresso", c.mostrar_progresso !== false, "Mostrar barra de progresso") +
+    tog("mostrar_numero", c.mostrar_numero !== false, "Numerar as perguntas") +
+    tog("permitir_voltar", c.permitir_voltar !== false, "Permitir voltar para a pergunta anterior") +
+    campo("Texto do botão de confirmar", inp("texto_ok", c.texto_ok, 'placeholder="OK"')) +
+    campo("Mensagem quando encerrado", txa("msg_encerrado", c.msg_encerrado, 'rows="2" placeholder="Este formulário não está mais recebendo respostas."')) +
+    "</div></div>" +
+    '<div class="prevbox" style="display:flex;min-height:0">' + htmlPrevia() + "</div></div>";
+  const box = $("#dcfg");
+  const set = (k, v) => { t[k] = v; marcarSujo(); $$(".preset", box).forEach((b) => { const p = PRESETS[+b.dataset.pre]; b.classList.toggle("on", t.fundo === p.fundo && t.destaque === p.destaque); }); };
+  $$("[data-pre]", box).forEach((b) => b.onclick = () => {
+    const p = PRESETS[+b.dataset.pre]; Object.assign(t, { fundo: p.fundo, texto: p.texto, destaque: p.destaque, fonte: p.fonte });
+    marcarSujo(); renderDesign();
+  });
+  $$("[data-cor]", box).forEach((el) => el.oninput = () => { $('[data-cort="' + el.dataset.cor + '"]', box).value = el.value.toUpperCase(); set(el.dataset.cor, el.value); });
+  $$("[data-cort]", box).forEach((el) => el.oninput = () => { if (/^#[0-9a-f]{6}$/i.test(el.value)) { $('[data-cor="' + el.dataset.cort + '"]', box).value = el.value; set(el.dataset.cort, el.value); } });
+  $$("[data-tk]", box).forEach((el) => el.addEventListener(el.tagName === "SELECT" ? "change" : "input", () => set(el.dataset.tk, el.value.trim())));
+  ligarCampos(box, c);
+  $(".prevbox .prev").style.flex = "1"; $(".prevbox .prev").style.borderLeft = "0";
+  ligarPrevia();
+}
+
+// ---------------- COMPARTILHAR ----------------
+function renderCompartilhar() {
+  const f = ED.form;
+  const link = linkForm(f);
+  const st = (k, rot, txt) => '<label><input type="radio" name="st" value="' + k + '"' + (f.status === k ? " checked" : "") + '><span><b>' + rot + "</b><small>" + txt + "</small></span></label>";
+  const embed = '<iframe src="' + link + '" style="width:100%;height:600px;border:0;border-radius:12px" allow="clipboard-write" title="' + h(f.titulo) + '"></iframe>';
+  $("#ed-corpo").innerHTML = '<div class="pagina" style="max-width:860px">' +
+    '<div class="card"><h3>Status</h3><div class="statusbox">' +
+    st("rascunho", "Rascunho", "Só você vê. O link mostra “indisponível”.") +
+    st("publicado", "Publicado", "O link está no ar e recebe respostas.") +
+    st("encerrado", "Encerrado", "Para de receber respostas e mostra a mensagem de encerrado.") + "</div></div>" +
+    '<div class="card"><h3>Link do formulário</h3>' +
+    '<div class="copy"><input readonly value="' + h(link) + '" id="lk"><button id="lk-c">Copiar</button><a class="b" href="' + h(link) + '" target="_blank" rel="noopener">Abrir ↗</a></div>' +
+    '<label class="f" style="margin-top:12px"><span>Endereço (slug)</span><div style="display:flex;gap:8px"><span class="mut mono" style="align-self:center;white-space:nowrap">' + h(baseUrl()) + '/f/</span><input id="slug" value="' + h(f.slug) + '" maxlength="60"><button id="slug-ok">Salvar</button></div><small>Só letras minúsculas, números e hífen. Se mudar, o link antigo para de funcionar.</small></label>' +
+    "</div>" +
+    '<div class="card"><h3>Link com rastreamento <small>UTM e SCK ficam salvos em cada resposta</small></h3>' +
+    '<div class="g3">' + campo("utm_source", '<input data-utm="utm_source" placeholder="instagram">') + campo("utm_medium", '<input data-utm="utm_medium" placeholder="stories">') + campo("utm_campaign", '<input data-utm="utm_campaign" placeholder="pesquisa-nov">') + "</div>" +
+    '<div class="g3">' + campo("sck", '<input data-utm="sck" placeholder="opcional">') + campo("utm_content", '<input data-utm="utm_content" placeholder="opcional">') + campo("Outros", '<input data-utm="_extra" placeholder="email=x@y.com">') + "</div>" +
+    '<div class="copy"><input readonly id="lk-utm" value="' + h(link) + '"><button id="lk-utm-c">Copiar</button></div>' +
+    '<p class="ajuda">Qualquer parâmetro na URL fica salvo junto da resposta e pode ser usado como <code>{{nome_do_parametro}}</code> nos textos e no redirecionamento.</p></div>' +
+    '<div class="card"><h3>Incorporar no site</h3><p class="ajuda" style="margin:0 0 10px">Cole este código na página (WordPress, Flow Pages, Elementor…):</p><pre id="emb">' + h(embed) + '</pre><button class="mini" id="emb-c" style="margin-top:10px">Copiar código</button></div>' +
+    "</div>";
+  $$("input[name=st]").forEach((r) => r.onchange = () => mudarStatus(r.value));
+  $("#lk-c").onclick = () => copiar(link);
+  $("#emb-c").onclick = () => copiar(embed);
+  $("#slug-ok").onclick = async () => {
+    const s = $("#slug").value.trim().toLowerCase();
+    if (!/^[a-z0-9][a-z0-9-]{1,60}$/.test(s)) return toast("Use só letras minúsculas, números e hífen (mín. 2).", true);
+    if (s === f.slug) return;
+    const { error } = await sb.from("fm_forms").update({ slug: s }).eq("id", f.id);
+    if (error) return toast(error.message.includes("duplicate") || error.code === "23505" ? "Esse endereço já está em uso." : "Erro: " + error.message, true);
+    f.slug = s; toast("Endereço salvo"); renderCompartilhar();
+  };
+  const montar = () => {
+    const u = new URL(link);
+    $$("[data-utm]").forEach((i) => {
+      const v = i.value.trim(); if (!v) return;
+      if (i.dataset.utm === "_extra") v.split("&").forEach((par) => { const [k, ...r] = par.split("="); if (k) u.searchParams.set(k.trim(), r.join("=").trim()); });
+      else u.searchParams.set(i.dataset.utm, v);
+    });
+    $("#lk-utm").value = u.toString();
+  };
+  $$("[data-utm]").forEach((i) => i.oninput = montar);
+  $("#lk-utm-c").onclick = () => copiar($("#lk-utm").value);
+}
+
+// ---------------- RESULTADOS ----------------
+const PERIODOS = [["7", "Últimos 7 dias"], ["30", "Últimos 30 dias"], ["90", "Últimos 90 dias"], ["tudo", "Todo o período"]];
+async function carregarRespostas(periodo) {
+  const f = ED.form;
+  let desde = null;
+  if (periodo !== "tudo") { desde = new Date(); desde.setHours(0, 0, 0, 0); desde.setDate(desde.getDate() - (+periodo - 1)); }
+  const todas = [];
+  for (let de = 0; de < 100000; de += 1000) {
+    let q = sb.from("fm_respostas").select("id,status,respostas,vistas,atual,final_id,params,dispositivo,iniciado_em,atualizado_em,concluido_em").eq("form_id", f.id).order("iniciado_em", { ascending: false }).range(de, de + 999);
+    if (desde) q = q.gte("iniciado_em", desde.toISOString());
+    const { data, error } = await q;
+    if (error) throw error;
+    todas.push(...data);
+    if (data.length < 1000) break;
+  }
+  return todas;
+}
+
+async function renderResultados() {
+  const f = ED.form;
+  const R = ED.resultados = ED.resultados || { periodo: "30", filtro: "concluida", busca: "", pagina: 0, linhas: null };
+  $("#ed-corpo").innerHTML = '<div class="pagina">' +
+    '<div class="barra"><select id="rs-per" aria-label="Período">' + PERIODOS.map(([k, l]) => '<option value="' + k + '"' + (R.periodo === k ? " selected" : "") + ">" + l + "</option>").join("") + "</select>" +
+    '<button class="mini" id="rs-at" style="height:36px">↻ Atualizar</button><div class="esp"></div>' +
+    '<button class="mini" id="rs-xls" style="height:36px">⬇ Exportar Excel</button><button class="ico ghost" id="rs-mais" aria-label="Mais ações" style="height:36px;width:36px">⋯</button></div>' +
+    '<div id="rs-corpo" class="mut">Carregando respostas…</div></div>';
+  $("#rs-per").onchange = (e) => { R.periodo = e.target.value; R.linhas = null; renderResultados(); };
+  $("#rs-at").onclick = () => { R.linhas = null; renderResultados(); };
+  $("#rs-xls").onclick = () => exportarExcel();
+  $("#rs-mais").onclick = (e) => menu(e.currentTarget, [
+    { rot: "Exportar CSV", fn: exportarCSV },
+    { rot: "Apagar respostas do período", perigo: true, fn: apagarPeriodo }
+  ]);
+  try { if (!R.linhas) R.linhas = await carregarRespostas(R.periodo); }
+  catch (e) { $("#rs-corpo").innerHTML = '<p style="color:var(--err-fg)">Erro ao carregar: ' + h(e.message) + "</p>"; return; }
+  if (!ED || ED.aba !== "resultados") return;
+  desenharResultados();
+}
+
+function desenharResultados() {
+  const f = ED.form, R = ED.resultados, L = R.linhas;
+  const visitas = L.length;
+  const inic = L.filter((r) => r.status !== "visita");
+  const conc = L.filter((r) => r.status === "concluida");
+  const durs = conc.map((r) => (new Date(r.concluido_em) - new Date(r.iniciado_em)) / 1000).filter((s) => s > 0 && s < 86400).sort((a, b) => a - b);
+  const mediana = durs.length ? durs[Math.floor(durs.length / 2)] : 0;
+  const fmtDur = (s) => !s ? "—" : s < 60 ? Math.round(s) + "s" : Math.floor(s / 60) + "min " + Math.round(s % 60) + "s";
+  const temInicio = f.inicio.ativo !== false && (f.inicio.titulo || f.inicio.texto);
+
+  if (!visitas) {
+    $("#rs-corpo").className = "";
+    $("#rs-corpo").innerHTML = '<div class="card vazio"><h3>Nenhuma visita neste período</h3><p>' + (f.status === "publicado" ? "Compartilhe o link para começar a receber respostas." : "Publique o formulário na aba Compartilhar para começar a receber respostas.") + "</p></div>";
+    return;
+  }
+
+  // ----- funil -----
+  const ps = f.perguntas;
+  const linhasF = ps.map((q) => {
+    const viram = L.filter((r) => (r.vistas || []).includes(q.id)).length;
+    const responderam = q.tipo === "aviso" ? L.filter((r) => (r.vistas || []).includes(q.id) && (r.status === "concluida" || r.atual !== q.id)).length : L.filter((r) => !FM.vazio((r.respostas || {})[q.id])).length;
+    const sairam = L.filter((r) => r.status !== "concluida" && r.atual === q.id).length;
+    return { q, viram, responderam, sairam };
+  });
+  const sairamInicio = L.filter((r) => r.status === "visita" && !r.atual).length;
+  const maxV = Math.max(visitas, 1);
+  let pior = null;
+  linhasF.forEach((l) => { if (l.viram >= 5 && l.sairam > 0 && (!pior || l.sairam / l.viram > pior.sairam / pior.viram)) pior = l; });
+  const nivel = (a, b) => { const p = pct(a, b); return p >= 25 ? "alto" : p >= 10 ? "medio" : ""; };
+  let nq = 0;
+  const funilHtml = '<div class="card"><h3>Funil de respostas <small>onde as pessoas desistem</small></h3>' +
+    '<div class="legenda"><span><i style="background:var(--bar2)"></i>Viram a pergunta</span><span><i style="background:var(--bar1)"></i>Responderam</span><span>Abandono = saíram nessa pergunta ÷ viram</span></div>' +
+    (pior && pct(pior.sairam, pior.viram) >= 10 ? '<div class="alerta">Maior ponto de abandono: “' + h(pior.q.titulo || "Sem título") + "” — " + fmtPct(pior.sairam, pior.viram) + " de quem viu saiu ali.</div>" : "") +
+    '<div class="funil"><div class="fl cab"><span></span><span>Etapa</span><span></span><span style="text-align:right">Viram → resp.</span><span style="text-align:right">Abandono</span></div>' +
+    '<div class="fl"><span class="n">↘</span><span class="q">' + (temInicio ? "Tela de boas-vindas" : "Abriram o formulário") + "<small>visitas</small></span>" +
+    '<div class="trilho"><i class="v" style="width:100%"></i><i class="r" style="width:' + pct(inic.length, maxV) + '%"></i><em>' + fmtN(visitas) + "</em></div>" +
+    '<span class="num v">' + fmtN(visitas) + "<small>" + fmtN(inic.length) + " começaram</small></span>" +
+    '<span style="text-align:right"><span class="aband ' + nivel(sairamInicio, visitas) + '" title="' + fmtN(sairamInicio) + ' saíram sem responder nada">' + fmtPct(sairamInicio, visitas) + "</span></span></div>" +
+    linhasF.map((l) => {
+      if (l.q.tipo !== "aviso") nq++;
+      return '<div class="fl"><span class="n">' + (l.q.tipo === "aviso" ? "i" : nq) + '</span><span class="q" title="' + h(l.q.titulo) + '">' + h(l.q.titulo || "Sem título") + "<small>" + (T[l.q.tipo] || T.curto).nome + "</small></span>" +
+        '<div class="trilho"><i class="v" style="width:' + pct(l.viram, maxV) + '%"></i><i class="r" style="width:' + pct(l.responderam, maxV) + '%"></i><em>' + (l.viram ? fmtN(l.viram) : "") + "</em></div>" +
+        '<span class="num v">' + fmtN(l.viram) + " → " + fmtN(l.responderam) + "<small>" + (l.viram ? fmtPct(l.responderam, l.viram) + " responderam" : "ninguém chegou") + "</small></span>" +
+        '<span style="text-align:right">' + (l.viram ? '<span class="aband ' + nivel(l.sairam, l.viram) + '" title="' + fmtN(l.sairam) + ' saíram aqui">' + fmtPct(l.sairam, l.viram) + "</span>" : '<span class="mut">—</span>') + "</span></div>";
+    }).join("") +
+    '<div class="fl"><span class="n">✓</span><span class="q">Concluíram<small>chegaram numa tela final</small></span><div class="trilho"><i class="r" style="width:' + pct(conc.length, maxV) + '%"></i><em>' + fmtN(conc.length) + "</em></div>" +
+    '<span class="num v">' + fmtN(conc.length) + "<small>" + fmtPct(conc.length, visitas) + " das visitas</small></span><span></span></div>" +
+    "</div></div>";
+
+  // finais
+  const porFinal = {};
+  conc.forEach((r) => { porFinal[r.final_id || ""] = (porFinal[r.final_id || ""] || 0) + 1; });
+  const finaisHtml = f.finais.length > 1 ? '<div class="card rq"><h4>Telas finais</h4><div class="sub">Para onde a lógica mandou quem concluiu</div>' +
+    f.finais.map((fi) => barh(fi.nome || fi.titulo, porFinal[fi.id] || 0, conc.length)).join("") + "</div>" : "";
+
+  // por dia
+  const diasHtml = graficoDias(L);
+
+  // ----- resumo por pergunta -----
+  const base = R.filtro === "todas" ? inic : conc;
+  const resumos = ps.filter((q) => q.tipo !== "aviso").map((q) => resumoPergunta(q, base)).join("");
+
+  $("#rs-corpo").className = "";
+  $("#rs-corpo").innerHTML =
+    '<div class="kpis">' +
+    kpi("Visitas", fmtN(visitas), "abriram o link") +
+    kpi("Começaram", fmtN(inic.length), fmtPct(inic.length, visitas) + " das visitas") +
+    kpi("Concluíram", fmtN(conc.length), fmtPct(conc.length, visitas) + " das visitas") +
+    kpi("Taxa de conclusão", fmtPct(conc.length, inic.length), "de quem começou") +
+    kpi("Tempo mediano", fmtDur(mediana), "para concluir") + "</div>" +
+    funilHtml +
+    '<div class="resumos" style="margin-bottom:14px">' + diasHtml + finaisHtml + "</div>" +
+    '<div class="barra" style="margin-top:22px"><h3 style="font-size:17px;flex:1">Resumo por pergunta</h3>' +
+    '<div class="seg"><button data-flt="concluida" class="' + (R.filtro !== "todas" ? "on" : "") + '">Só concluídas</button><button data-flt="todas" class="' + (R.filtro === "todas" ? "on" : "") + '">Incluir parciais</button></div></div>' +
+    '<div class="resumos">' + (resumos || '<div class="card mut">Sem perguntas.</div>') + "</div>" +
+    '<div class="barra" style="margin-top:22px"><h3 style="font-size:17px;flex:1">Respostas individuais</h3>' +
+    '<input id="rs-busca" placeholder="Buscar…" value="' + h(R.busca) + '" style="width:200px">' +
+    '<select id="rs-st"><option value="todas">Todos os status</option><option value="concluida">Concluídas</option><option value="parcial">Parciais</option><option value="visita">Só visitaram</option></select></div>' +
+    '<div id="rs-tab"></div>';
+  $$("[data-flt]").forEach((b) => b.onclick = () => { R.filtro = b.dataset.flt; desenharResultados(); });
+  R.stTab = R.stTab || "concluida";
+  $("#rs-st").value = R.stTab;
+  $("#rs-st").onchange = (e) => { R.stTab = e.target.value; R.pagina = 0; tabela(); };
+  let bt; $("#rs-busca").oninput = (e) => { clearTimeout(bt); bt = setTimeout(() => { R.busca = e.target.value; R.pagina = 0; tabela(); }, 250); };
+  tabela();
+}
+
+function kpi(rot, val, sub) { return '<div class="kpi"><span>' + rot + "</span><b>" + val + "</b><small>" + sub + "</small></div>"; }
+function barh(rot, n, total) {
+  return '<div class="barh"><span class="lb" title="' + h(rot) + '">' + h(rot) + '</span><span class="tr"><i style="width:' + pct(n, Math.max(total, 1)) + '%"></i></span><span class="vl"><b>' + fmtN(n) + "</b> · " + fmtPct(n, total) + "</span></div>";
+}
+
+function graficoDias(L) {
+  const dias = {};
+  L.forEach((r) => { const d = r.iniciado_em.slice(0, 10); dias[d] = dias[d] || { v: 0, c: 0 }; dias[d].v++; if (r.status === "concluida") dias[d].c++; });
+  const chaves = Object.keys(dias).sort();
+  if (!chaves.length) return "";
+  const ini = new Date(chaves[0] + "T12:00:00"), fim = new Date();
+  const serie = [];
+  for (let d = new Date(ini); d <= fim && serie.length < 120; d.setDate(d.getDate() + 1)) { const k = d.toISOString().slice(0, 10); serie.push([k, dias[k] || { v: 0, c: 0 }]); }
+  const W = 560, H = 150, pad = 22, max = Math.max(1, ...serie.map(([, x]) => x.v));
+  const bw = (W - pad) / serie.length;
+  const bars = serie.map(([k, x], i) => {
+    const hv = x.v / max * (H - 30), hc = x.c / max * (H - 30);
+    const xx = pad + i * bw + bw * .15, w = Math.max(1, bw * .7);
+    return '<g><title>' + k.split("-").reverse().join("/") + ": " + x.v + " visitas, " + x.c + " concluídas</title>" +
+      '<rect x="' + xx + '" y="' + (H - 18 - hv) + '" width="' + w + '" height="' + hv + '" rx="2" fill="var(--bar2)"/>' +
+      '<rect x="' + xx + '" y="' + (H - 18 - hc) + '" width="' + w + '" height="' + hc + '" rx="2" fill="var(--bar1)"/></g>';
+  }).join("");
+  const rot = [0, Math.floor(serie.length / 2), serie.length - 1].filter((v, i, a) => a.indexOf(v) === i).map((i) => '<text x="' + (pad + i * bw + bw / 2) + '" y="' + (H - 4) + '" text-anchor="middle">' + serie[i][0].slice(8, 10) + "/" + serie[i][0].slice(5, 7) + "</text>").join("");
+  return '<div class="card rq"><h4>Por dia</h4><div class="sub"><span style="color:var(--bar1)">■</span> concluídas &nbsp; <span style="color:var(--bar2)">■</span> visitas</div>' +
+    '<svg class="diag" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img" aria-label="Visitas e respostas por dia"><line x1="' + pad + '" x2="' + W + '" y1="' + (H - 18) + '" y2="' + (H - 18) + '"/>' +
+    '<text x="0" y="12">' + max + "</text>" + bars + rot + "</svg></div>";
+}
+
+function resumoPergunta(q, base) {
+  const vals = base.map((r) => (r.respostas || {})[q.id]).filter((v) => !FM.vazio(v));
+  const n = vals.length;
+  const cab = '<div class="card rq"><h4>' + h(q.titulo || "Sem título") + '</h4><div class="sub">' + (T[q.tipo] || T.curto).nome + " · " + fmtN(n) + " resposta" + (n === 1 ? "" : "s") + (base.length ? " · " + fmtPct(n, base.length) + " responderam" : "") + "</div>";
+  if (!n) return cab + '<p class="mut">Nenhuma resposta ainda.</p></div>';
+  const t = q.tipo;
+  if (["unica", "multipla", "lista", "sim_nao"].includes(t)) {
+    const ops = t === "sim_nao" ? ["Sim", "Não"] : (q.opcoes || []).map((o) => o.texto).filter(Boolean);
+    const cont = {}; ops.forEach((o) => cont[o] = 0);
+    const outros = [];
+    vals.forEach((v) => (Array.isArray(v) ? v : [v]).forEach((x) => { if (x in cont) cont[x]++; else { outros.push(x); } }));
+    let html = ops.map((o) => [o, cont[o]]).sort((a, b) => b[1] - a[1]).map(([o, c]) => barh(o, c, n)).join("");
+    if (outros.length) html += barh("Outro", outros.length, n) + '<div class="textos" style="margin-top:8px">' + outros.slice(0, 30).map((o) => "<p>" + h(o) + "</p>").join("") + "</div>";
+    if (t === "multipla") html += '<p class="ajuda">Percentual sobre quem respondeu (cada pessoa pode marcar várias).</p>';
+    return cab + html + "</div>";
+  }
+  if (t === "nps") {
+    const ns = vals.map(Number).filter((x) => !isNaN(x));
+    const pro = ns.filter((x) => x >= 9).length, neu = ns.filter((x) => x >= 7 && x <= 8).length, det = ns.filter((x) => x <= 6).length;
+    const score = Math.round((pro - det) / ns.length * 100);
+    const zona = score >= 75 ? "Excelência" : score >= 50 ? "Qualidade" : score >= 0 ? "Aperfeiçoamento" : "Crítica";
+    const dist = Array.from({ length: 11 }, (_, i) => ns.filter((x) => x === i).length);
+    const mx = Math.max(1, ...dist);
+    return cab + '<div class="nps-top"><b>' + (score > 0 ? "+" : "") + score + "</b><span class=\"mut\">NPS · zona de " + zona + "</span></div>" +
+      '<div class="nps-faixa"><i style="width:' + pct(det, ns.length) + '%;background:#E5484D"></i><i style="width:' + pct(neu, ns.length) + '%;background:#F5B942"></i><i style="width:' + pct(pro, ns.length) + '%;background:#30A46C"></i></div>' +
+      '<div class="nps-leg"><span><i style="background:#E5484D"></i>Detratores ' + fmtPct(det, ns.length) + " (" + det + ")</span><span><i style=\"background:#F5B942\"></i>Neutros " + fmtPct(neu, ns.length) + " (" + neu + ")</span><span><i style=\"background:#30A46C\"></i>Promotores " + fmtPct(pro, ns.length) + " (" + pro + ")</span></div>" +
+      '<div class="colunas">' + dist.map((c, i) => '<div title="Nota ' + i + ": " + c + '"><i style="height:' + (c / mx * 100) + "%;background:" + (i <= 6 ? "#E5484D" : i <= 8 ? "#F5B942" : "#30A46C") + '"></i><span>' + i + "</span></div>").join("") + "</div></div>";
+  }
+  if (["escala", "estrelas", "numero"].includes(t)) {
+    const ns = vals.map(Number).filter((x) => !isNaN(x));
+    const media = ns.reduce((a, b) => a + b, 0) / Math.max(1, ns.length);
+    let html = '<div class="nps-top"><b>' + media.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "</b><span class=\"mut\">média" + (t === "estrelas" ? " de " + (q.escala_max || 5) + " estrelas" : t === "escala" ? " (escala " + (q.escala_min ?? 1) + "–" + (q.escala_max || 5) + ")" : "") + "</span></div>";
+    if (t !== "numero") {
+      const mi = t === "estrelas" ? 1 : (+q.escala_min || 0), ma = +q.escala_max || 5;
+      const dist = []; for (let i = mi; i <= ma; i++) dist.push([i, ns.filter((x) => x === i).length]);
+      const mx = Math.max(1, ...dist.map((d) => d[1]));
+      html += '<div class="colunas">' + dist.map(([i, c]) => '<div title="' + i + ": " + c + '"><i style="height:' + (c / mx * 100) + '%"></i><span>' + (t === "estrelas" ? i + "★" : i) + "</span></div>").join("") + "</div>";
+    } else {
+      const s = ns.slice().sort((a, b) => a - b);
+      html += '<p class="mut">Mínimo ' + s[0].toLocaleString("pt-BR") + " · Mediana " + s[Math.floor(s.length / 2)].toLocaleString("pt-BR") + " · Máximo " + s[s.length - 1].toLocaleString("pt-BR") + "</p>";
+    }
+    return cab + html + "</div>";
+  }
+  // texto
+  const comData = base.filter((r) => !FM.vazio((r.respostas || {})[q.id]));
+  return cab + '<div class="textos">' + comData.slice(0, 50).map((r) => "<p>" + h(FM.textoResposta(r.respostas[q.id])) + "<small>" + dataHora(r.concluido_em || r.atualizado_em) + "</small></p>").join("") + "</div>" +
+    (comData.length > 50 ? '<p class="ajuda">Mostrando as 50 mais recentes. Exporte para ver todas.</p>' : "") + "</div>";
+}
+
+function linhasFiltradas() {
+  const R = ED.resultados;
+  let L = R.linhas;
+  if (R.stTab !== "todas") L = L.filter((r) => r.status === R.stTab);
+  if (R.busca) {
+    const b = FM.norm(R.busca);
+    L = L.filter((r) => FM.norm(JSON.stringify(r.respostas) + " " + JSON.stringify(r.params)).includes(b));
+  }
+  return L;
+}
+
+function tabela() {
+  const f = ED.form, R = ED.resultados;
+  const L = linhasFiltradas();
+  const POR = 50;
+  const tot = L.length, pags = Math.max(1, Math.ceil(tot / POR));
+  R.pagina = Math.min(R.pagina, pags - 1);
+  const fatia = L.slice(R.pagina * POR, R.pagina * POR + POR);
+  const qs = f.perguntas.filter((q) => q.tipo !== "aviso");
+  const nomeFinal = (id) => { const fi = f.finais.find((x) => x.id === id); return fi ? fi.nome || fi.titulo : ""; };
+  const stRot = { concluida: "Concluída", parcial: "Parcial", visita: "Só visitou" };
+  if (!tot) { $("#rs-tab").innerHTML = '<div class="card vazio" style="padding:30px">Nenhuma resposta com esse filtro.</div>'; return; }
+  $("#rs-tab").innerHTML = '<div class="tab-wrap"><table><thead><tr><th>Data</th><th>Status</th>' + qs.map((q) => '<th title="' + h(q.titulo) + '">' + h((q.chave || q.titulo || "").slice(0, 24)) + "</th>").join("") + "<th>Final</th><th>Origem</th></tr></thead><tbody>" +
+    fatia.map((r) => '<tr data-id="' + r.id + '"><td>' + dataHora(r.iniciado_em) + '</td><td><span class="pill ' + r.status + '">' + stRot[r.status] + "</span></td>" +
+      qs.map((q) => "<td>" + h(FM.textoResposta((r.respostas || {})[q.id])) + "</td>").join("") +
+      "<td>" + h(nomeFinal(r.final_id)) + '</td><td class="mut">' + h((r.params || {}).utm_source || (r.params || {}).sck || "") + "</td></tr>").join("") +
+    "</tbody></table>" +
+    '<div class="pag">' + fmtN(R.pagina * POR + 1) + "–" + fmtN(Math.min(tot, R.pagina * POR + POR)) + " de " + fmtN(tot) +
+    '<button class="mini" id="pg-a"' + (R.pagina === 0 ? " disabled" : "") + '>‹</button><button class="mini" id="pg-p"' + (R.pagina >= pags - 1 ? " disabled" : "") + ">›</button></div></div>";
+  $("#pg-a").onclick = () => { R.pagina--; tabela(); };
+  $("#pg-p").onclick = () => { R.pagina++; tabela(); };
+  $$("#rs-tab tbody tr").forEach((tr) => tr.onclick = () => detalhe(R.linhas.find((x) => x.id === tr.dataset.id)));
+}
+
+function detalhe(r) {
+  const f = ED.form;
+  const g = document.createElement("div"); g.className = "gaveta";
+  const dur = r.concluido_em ? Math.round((new Date(r.concluido_em) - new Date(r.iniciado_em)) / 1000) : null;
+  const fi = f.finais.find((x) => x.id === r.final_id);
+  const stRot = { concluida: "Concluída", parcial: "Parcial", visita: "Só visitou" };
+  const parou = r.status !== "concluida" && r.atual ? P(r.atual) : null;
+  g.innerHTML = '<div role="dialog" aria-modal="true"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><h3 style="flex:1;font-size:18px">Resposta</h3><button class="ico ghost" id="dt-x" aria-label="Fechar">×</button></div>' +
+    '<p class="mut" style="margin-bottom:12px"><span class="pill ' + r.status + '">' + stRot[r.status] + "</span> · " + dataHora(r.iniciado_em) + (dur ? " · " + (dur < 60 ? dur + "s" : Math.floor(dur / 60) + "min " + dur % 60 + "s") : "") + (r.dispositivo ? " · " + h(r.dispositivo) : "") + (fi ? " · final: " + h(fi.nome || fi.titulo) : "") + "</p>" +
+    (parou ? '<div class="alerta">Parou em: “' + h(parou.titulo) + "”</div>" : "") +
+    f.perguntas.filter((q) => q.tipo !== "aviso").map((q) => {
+      const v = (r.respostas || {})[q.id];
+      return '<div class="resp-item"><span>' + h(q.titulo || "Sem título") + "</span><p>" + (FM.vazio(v) ? '<i class="mut">' + ((r.vistas || []).includes(q.id) ? "não respondeu" : "não viu") + "</i>" : h(FM.textoResposta(v))) + "</p></div>";
+    }).join("") +
+    (Object.keys(r.params || {}).length ? '<h4 style="margin:18px 0 6px">Origem</h4>' + Object.entries(r.params).map(([k, v]) => '<div class="resp-item" style="padding:6px 0"><span>' + h(k) + '</span><p class="mono">' + h(v) + "</p></div>").join("") : "") +
+    '<div style="margin-top:18px"><button class="mini perigo" id="dt-del">Excluir esta resposta</button></div></div>';
+  document.body.appendChild(g);
+  const fechar = () => { g.remove(); document.removeEventListener("keydown", tecla); };
+  const tecla = (e) => { if (e.key === "Escape") fechar(); };
+  document.addEventListener("keydown", tecla);
+  g.addEventListener("mousedown", (e) => { if (e.target === g) fechar(); });
+  $("#dt-x", g).onclick = fechar;
+  $("#dt-del", g).onclick = async () => {
+    if (!await confirmar("Excluir esta resposta?", "Excluir", true)) return;
+    const { error } = await sb.from("fm_respostas").delete().eq("id", r.id);
+    if (error) return toast("Erro: " + error.message, true);
+    ED.resultados.linhas = ED.resultados.linhas.filter((x) => x.id !== r.id);
+    fechar(); desenharResultados(); toast("Resposta excluída");
+  };
+}
+
+async function apagarPeriodo() {
+  const R = ED.resultados;
+  const n = R.linhas.length;
+  if (!n) return toast("Não há respostas neste período.");
+  if (!await confirmar("Apagar " + fmtN(n) + " registro" + (n > 1 ? "s" : "") + " (" + PERIODOS.find((p) => p[0] === R.periodo)[1].toLowerCase() + ")? Não dá para desfazer.", "Apagar", true)) return;
+  const ids = R.linhas.map((r) => r.id);
+  for (let i = 0; i < ids.length; i += 200) {
+    const { error } = await sb.from("fm_respostas").delete().in("id", ids.slice(i, i + 200));
+    if (error) return toast("Erro: " + error.message, true);
+  }
+  R.linhas = null; toast("Respostas apagadas"); renderResultados();
+}
+
+function tabelaExport() {
+  const f = ED.form;
+  const qs = f.perguntas.filter((q) => q.tipo !== "aviso");
+  const L = ED.resultados.linhas;
+  const pks = [...new Set(L.flatMap((r) => Object.keys(r.params || {})))].sort();
+  const stRot = { concluida: "Concluída", parcial: "Parcial", visita: "Só visitou" };
+  const cab = ["Início", "Status", "Concluído em", "Tempo (s)", "Tela final", "Parou em"].concat(qs.map((q) => q.titulo || q.chave || q.id)).concat(pks).concat(["Dispositivo", "ID"]);
+  const linhas = L.filter((r) => r.status !== "visita").map((r) => {
+    const fi = f.finais.find((x) => x.id === r.final_id);
+    const parou = r.status !== "concluida" && r.atual ? P(r.atual) : null;
+    return [new Date(r.iniciado_em), stRot[r.status], r.concluido_em ? new Date(r.concluido_em) : "", r.concluido_em ? Math.round((new Date(r.concluido_em) - new Date(r.iniciado_em)) / 1000) : "",
+      fi ? fi.nome || fi.titulo : "", parou ? parou.titulo : ""]
+      .concat(qs.map((q) => { const v = (r.respostas || {})[q.id]; return typeof v === "number" ? v : FM.textoResposta(v); }))
+      .concat(pks.map((k) => (r.params || {})[k] || "")).concat([r.dispositivo || "", r.id]);
+  });
+  return { cab, linhas };
+}
+function nomeArquivo(ext) { return FM.slugify(ED.form.titulo) + "-respostas-" + new Date().toISOString().slice(0, 10) + "." + ext; }
+function exportarCSV() {
+  const { cab, linhas } = tabelaExport();
+  const cel = (v) => { if (v instanceof Date) v = v.toLocaleString("pt-BR"); v = String(v == null ? "" : v); return /[";\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const csv = "﻿" + [cab].concat(linhas).map((l) => l.map(cel).join(";")).join("\r\n");
+  baixar(new Blob([csv], { type: "text/csv;charset=utf-8" }), nomeArquivo("csv"));
+}
+function carregarXLSX() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((ok, erro) => { const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"; s.onload = ok; s.onerror = erro; document.head.appendChild(s); });
+}
+async function exportarExcel() {
+  const R = ED.resultados; if (!R || !R.linhas) return;
+  try { await carregarXLSX(); } catch (e) { toast("Não carregou o Excel, baixando CSV.", true); return exportarCSV(); }
+  const { cab, linhas } = tabelaExport();
+  const ws = XLSX.utils.aoa_to_sheet([cab].concat(linhas), { cellDates: true, dateNF: "dd/mm/yyyy hh:mm" });
+  ws["!cols"] = cab.map((c, i) => ({ wch: i < 2 ? 17 : Math.min(40, Math.max(12, String(c).length)) }));
+  ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: linhas.length, c: cab.length - 1 } }) };
+  ws["!freeze"] = { xSplit: 0, ySplit: 1 };
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Respostas");
+  // aba de funil
+  const f = ED.form, L = R.linhas;
+  const fun = [["Etapa", "Viram", "Responderam", "Saíram aqui", "Abandono %"], ["Abriram o formulário", L.length, L.filter((r) => r.status !== "visita").length, L.filter((r) => r.status === "visita" && !r.atual).length, ""]];
+  f.perguntas.forEach((q) => {
+    const v = L.filter((r) => (r.vistas || []).includes(q.id)).length;
+    const re = L.filter((r) => !FM.vazio((r.respostas || {})[q.id])).length;
+    const s = L.filter((r) => r.status !== "concluida" && r.atual === q.id).length;
+    fun.push([q.titulo || "Sem título", v, q.tipo === "aviso" ? "" : re, s, v ? Math.round(s / v * 1000) / 10 : ""]);
+  });
+  fun.push(["Concluíram", L.filter((r) => r.status === "concluida").length, "", "", ""]);
+  const ws2 = XLSX.utils.aoa_to_sheet(fun); ws2["!cols"] = [{ wch: 50 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
+  XLSX.utils.book_append_sheet(wb, ws2, "Funil");
+  XLSX.writeFile(wb, nomeArquivo("xlsx"));
+}
+function baixar(blob, nome) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+// atalho: Ctrl/Cmd+S salva
+document.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && ED) { e.preventDefault(); salvarAgora(); } });
+
+iniciar();
+})();
+</script>
+</body>
+</html>
