@@ -16,6 +16,7 @@
     --code:#EEF0F4; --shadow:0 12px 32px rgba(15,18,40,.14);
     --bar1:#2F44C8; --bar2:#C9D0F5; --gold:#B8924A;
     --int-bg:#FFE9D6; --int-fg:#B54708;
+    --log-bg:#DDF3F1; --log-fg:#0F766E;
   }
   :root[data-theme="dark"] { color-scheme:dark;
     --bg:#0E1117; --surface:#161A23; --ink:#E7E9F0; --ink2:#CDD1DC; --muted:#9CA3B4; --line:#2A303D; --line2:#212632;
@@ -24,6 +25,7 @@
     --code:#212632; --shadow:0 12px 32px rgba(0,0,0,.5);
     --bar1:#7C8CF2; --bar2:#2C3555; --gold:#D9B878;
     --int-bg:#3A2414; --int-fg:#F5A86B;
+    --log-bg:#133331; --log-fg:#5EEAD4;
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { background:var(--bg); color:var(--ink); font:400 14px/1.45 'Hanken Grotesk',system-ui,-apple-system,Segoe UI,sans-serif; }
@@ -307,6 +309,17 @@
 
   .item .ic.t-integ, .fx-ic.t-integ { background:var(--int-bg); color:var(--int-fg); font-size:11px; }
   .fx-no.fx-integ { border-left:3px solid var(--int-fg); }
+  .item .ic.t-logica, .fx-ic.t-logica { background:var(--log-bg); color:var(--log-fg); font-size:13px; }
+  .fx-no.fx-logica { border-left:3px solid var(--log-fg); }
+  .pts { display:flex; align-items:center; gap:8px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); }
+  .pts b { font-size:12.5px; white-space:nowrap; color:var(--log-fg); }
+  .pts input { width:110px; height:36px; font-size:13px; }
+  .fxa { display:grid; grid-template-columns:minmax(0,1.2fr) 90px 90px minmax(0,1.4fr) 32px; gap:6px; align-items:center; margin-bottom:6px; }
+  .fxa input, .fxa select { height:36px; font-size:13px; }
+  .fxa-cab { display:grid; grid-template-columns:minmax(0,1.2fr) 90px 90px minmax(0,1.4fr) 32px; gap:6px; font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
+  .score-total { display:flex; gap:14px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin-top:10px; }
+  .score-total b { color:var(--ink); }
+  @media (max-width: 760px) { .fxa, .fxa-cab { grid-template-columns:1fr 1fr; } .fxa-cab { display:none; } .fxa > :nth-child(4) { grid-column:1 / span 2; } }
   .fx-resumo { display:block; margin-top:5px; font-size:11.5px; color:var(--muted); }
   .map { display:grid; grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr) 32px; gap:6px; align-items:center; margin-bottom:6px; }
   .map select, .map input { height:36px; font-size:13px; }
@@ -360,6 +373,8 @@
   .fx-dot:hover { transform:scale(1.3); }
   .fx-dot.ligado { background:var(--link); }
   .fx-dot.impl { border-color:var(--muted); border-style:dashed; }
+  .fx-porta.faixa .fx-dot { border-color:var(--log-fg); } .fx-porta.faixa .fx-dot.ligado { background:var(--log-fg); }
+  .fx-linha.faixa { stroke:var(--log-fg); }
   .fx-porta.padrao .fx-dot { border-color:var(--ink2); } .fx-porta.padrao .fx-dot.ligado { background:var(--ink2); }
   .fx-porta.nps-det .fx-dot { border-color:#E5484D; } .fx-porta.nps-det .fx-dot.ligado { background:#E5484D; }
   .fx-porta.nps-neu .fx-dot { border-color:#D9A21B; } .fx-porta.nps-neu .fx-dot.ligado { background:#D9A21B; }
@@ -514,8 +529,8 @@ const h = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g,
 const view = $("#view");
 const T = FM.TIPOS;
 const LETRAS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const GRUPO_CLS = { Texto: "t-texto", Contato: "t-contato", Escolha: "t-escolha", "Avaliação": "t-avaliacao", Outros: "t-outros", "Integrações": "t-integ" };
-const GRUPO_COR = { Texto: "info", Contato: "ok", Escolha: "lil", "Avaliação": "warn", Outros: "line2", "Integrações": "int" };
+const GRUPO_CLS = { Texto: "t-texto", Contato: "t-contato", Escolha: "t-escolha", "Avaliação": "t-avaliacao", Outros: "t-outros", "Integrações": "t-integ", "Lógica": "t-logica" };
+const GRUPO_COR = { Texto: "info", Contato: "ok", Escolha: "lil", "Avaliação": "warn", Outros: "line2", "Integrações": "int", "Lógica": "log" };
 const fmtN = (n) => Number(n || 0).toLocaleString("pt-BR");
 const pct = (a, b) => b ? Math.round(a / b * 1000) / 10 : 0;
 const fmtPct = (a, b) => (b ? pct(a, b).toLocaleString("pt-BR") : "0") + "%";
@@ -1039,7 +1054,7 @@ function renderLado() {
       return '<div class="item' + (ED.sel === p.id ? " on" : "") + '" data-sel="' + p.id + '" draggable="true">' +
         '<span class="n">' + (FM.ehPergunta(p) ? n : "") + "</span>" +
         '<span class="ic ' + GRUPO_CLS[t.grupo] + '">' + t.ic + "</span>" +
-        '<span class="tx"><b data-tit="' + p.id + '">' + h(p.titulo || "Sem título") + "</b><small>" + (p.tipo === "active" ? "ActiveCampaign · " + resumoActive(p) : t.nome) + (p.obrigatorio ? " · obrigatória" : "") + (temLogica(p) ? ' · <span class="logica" title="Tem lógica condicional">⤳ lógica</span>' : "") + "</small></span></div>";
+        '<span class="tx"><b data-tit="' + p.id + '">' + h(p.titulo || "Sem título") + "</b><small>" + (FM.ehInterno(p) ? t.nome + " · " + resumoBloco(p) : t.nome) + (p.obrigatorio ? " · obrigatória" : "") + (temLogica(p) ? ' · <span class="logica" title="Tem lógica condicional">⤳ lógica</span>' : "") + "</small></span></div>";
     }).join("") + "</div>" +
     '<button class="add" id="add-q">+ Adicionar pergunta</button>' +
     '<h4>Telas finais</h4>' +
@@ -1100,6 +1115,23 @@ function prepararTipo(p) {
   if (p.tipo === "escala") { if (p.escala_min == null || p.escala_min === "") p.escala_min = 1; if (!p.escala_max || p.escala_max > 10) p.escala_max = 5; }
   if (p.tipo === "estrelas" && (!p.escala_max || p.escala_max > 10)) p.escala_max = 5;
   if (p.tipo === "aviso") p.obrigatorio = false;
+  if (p.tipo === "score") {
+    p.obrigatorio = false; p.chave = "";
+    if (!p.titulo) p.titulo = "Calcular Lead Score";
+    if (!p.score_var) p.score_var = "score";
+    if (p.zerar == null) p.zerar = true;
+    p.pontuacao = p.pontuacao || [];
+  }
+  if (p.tipo === "faixa") {
+    p.obrigatorio = false; p.chave = "";
+    if (!p.titulo) p.titulo = "Separar por score";
+    if (!p.score_var) p.score_var = (ED && ED.form ? FM.varsDoForm(ED.form)[0] : "") || "score";
+    if (!p.faixas) p.faixas = [
+      { id: FM.uid("x"), rotulo: "Quente", min: 70, max: "", destino: "" },
+      { id: FM.uid("x"), rotulo: "Morno", min: 40, max: 69.99, destino: "" },
+      { id: FM.uid("x"), rotulo: "Frio", min: "", max: 39.99, destino: "" }
+    ];
+  }
   if (p.tipo === "active") {
     p.obrigatorio = false; p.chave = "";
     if (!p.titulo) p.titulo = "Enviar para o ActiveCampaign";
@@ -1121,6 +1153,8 @@ function removerReferencias(id, ehFinal) {
   f.perguntas.forEach((p) => {
     p.regras = (p.regras || []).filter((r) => r.destino !== alvo && !(r.conds || []).some((c) => c.pergunta === id));
     if (p.depois === alvo) p.depois = "";
+    (p.faixas || []).forEach((x) => { if (x.destino === alvo) x.destino = ""; });
+    if (p.pontuacao) p.pontuacao = p.pontuacao.filter((r) => r.pergunta !== id && !(r.conds || []).some((c) => c.pergunta === id));
   });
 }
 
@@ -1202,6 +1236,8 @@ function renderLadoLeve() { clearTimeout(ladoLeveT); ladoLeveT = setTimeout(rend
 
 function painelPergunta(pn, p) {
   if (p.tipo === "active") return painelActive(pn, p);
+  if (p.tipo === "score") return painelScore(pn, p);
+  if (p.tipo === "faixa") return painelFaixa(pn, p);
   const f = ED.form;
   const t = T[p.tipo] || T.curto;
   const i = f.perguntas.indexOf(p);
@@ -1327,7 +1363,7 @@ function ligarOpcoes(pn, p) {
 }
 function trocarValorEmRegras(qid, antigo, novo) {
   if (!antigo) return;
-  ED.form.perguntas.forEach((x) => (x.regras || []).forEach((r) => (r.conds || []).forEach((c) => { if (c.pergunta === qid && c.valor === antigo) c.valor = novo; })));
+  ED.form.perguntas.forEach((x) => (x.regras || []).concat(x.pontuacao || []).forEach((r) => (r.conds || []).forEach((c) => { if (c.pergunta === qid && c.valor === antigo) c.valor = novo; })));
 }
 
 // ---------- lógica condicional ----------
@@ -1350,7 +1386,10 @@ function valoresPossiveis(q) {
   if (q.tipo === "estrelas") return Array.from({ length: +q.escala_max || 5 }, (_, i) => String(i + 1));
   return null;
 }
+function qVar(nome) { return { id: "$" + nome, tipo: "numero", titulo: "Lead Score (" + nome + ")", _var: true }; }
+function Pq(id) { return id && id[0] === "$" ? qVar(id.slice(1)) : P(id); }
 function rotuloQ(q) {
+  if (q && q._var) return "Σ " + q.titulo;
   const ps = ED.form.perguntas.filter(FM.ehPergunta);
   const n = ps.indexOf(q) + 1;
   const t = (q.titulo || "Sem título").replace(/\{\{|\}\}/g, "");
@@ -1369,7 +1408,7 @@ function renderLogica(p) {
   const box = $("#logica"); if (!box) return;
   const f = ED.form;
   const i = f.perguntas.indexOf(p);
-  const candidatas = f.perguntas.slice(0, i + 1).filter(FM.ehPergunta);
+  const candidatas = f.perguntas.slice(0, i + 1).filter(FM.ehPergunta).concat(FM.varsDoForm(f).map(qVar));
   p.regras = p.regras || [];
   box.innerHTML = '<h3>Lógica condicional <small>para onde a pessoa vai depois desta pergunta</small></h3>' +
     p.regras.map((r, ri) => {
@@ -1378,7 +1417,7 @@ function renderLogica(p) {
         '<span style="display:flex;gap:6px;align-items:center">' + (r.conds.length > 1 ? '<span class="juncao"><button data-jn="e" class="' + (r.juncao !== "ou" ? "on" : "") + '">E</button><button data-jn="ou" class="' + (r.juncao === "ou" ? "on" : "") + '">OU</button></span>' : "") +
         '<button class="ico ghost mini" data-rdel="' + ri + '" aria-label="Remover regra">×</button></span></div>' +
         r.conds.map((c, ci) => {
-          const q = P(c.pergunta);
+          const q = Pq(c.pergunta);
           const ops = opsPara(q);
           if (q && !ops.some(([k]) => k === c.op)) c.op = ops[0][0];
           const semValor = ["respondeu", "nao_respondeu"].includes(c.op);
@@ -1417,9 +1456,9 @@ function renderLogica(p) {
     const r = p.regras[+el.dataset.ri];
     $("[data-rdel]", el).onclick = () => { p.regras.splice(+el.dataset.ri, 1); mud(); renderLogica(p); };
     $("[data-rdest]", el).onchange = (e) => { r.destino = e.target.value; mud(); };
-    $("[data-cadd]", el).onclick = () => { const q = P(r.conds[r.conds.length - 1].pergunta) || p; const v = valoresPossiveis(q); r.conds.push({ pergunta: q.id, op: opsPara(q)[0][0], valor: v ? v[0] : "" }); mud(); renderLogica(p); };
+    $("[data-cadd]", el).onclick = () => { const q = Pq(r.conds[r.conds.length - 1].pergunta) || p; const v = valoresPossiveis(q); r.conds.push({ pergunta: q.id, op: opsPara(q)[0][0], valor: v ? v[0] : "" }); mud(); renderLogica(p); };
     $$("[data-jn]", el).forEach((b) => b.onclick = () => { r.juncao = b.dataset.jn; mud(); renderLogica(p); });
-    $$("[data-cq]", el).forEach((s) => s.onchange = () => { const c = r.conds[+s.dataset.cq]; c.pergunta = s.value; const q = P(s.value); c.op = opsPara(q)[0][0]; const v = valoresPossiveis(q); c.valor = v ? v[0] : ""; mud(); renderLogica(p); });
+    $$("[data-cq]", el).forEach((s) => s.onchange = () => { const c = r.conds[+s.dataset.cq]; c.pergunta = s.value; const q = Pq(s.value); c.op = opsPara(q)[0][0]; const v = valoresPossiveis(q); c.valor = v ? v[0] : ""; mud(); renderLogica(p); });
     $$("[data-co]", el).forEach((s) => s.onchange = () => { r.conds[+s.dataset.co].op = s.value; mud(); renderLogica(p); });
     $$("[data-cv]", el).forEach((s) => s.addEventListener(s.tagName === "SELECT" ? "change" : "input", () => { r.conds[+s.dataset.cv].valor = s.value; mud(); }));
     $$("[data-cdel]", el).forEach((b) => b.onclick = () => { r.conds.splice(+b.dataset.cdel, 1); mud(); renderLogica(p); });
@@ -1473,18 +1512,20 @@ function fxPortas(p) {
       portas.push({ chave: "nps:" + k, rot, alvo: r && fxExiste(r.destino) ? r.destino : null, rid: r ? r.id : null, spec: { tipo: "nps", faixa: k }, cls: "nps-" + k });
     });
   }
+  if (t === "faixa") (p.faixas || []).forEach((x) => portas.push({ chave: "fx:" + x.id, rot: (x.rotulo || "Faixa") + " (" + FM.rotuloFaixa(x) + ")", alvo: fxExiste(x.destino) ? x.destino : null, spec: { tipo: "faixa", id: x.id }, cls: "faixa" }));
   regras.forEach((r) => { if (!usadas.has(r.id)) portas.push({ chave: "r:" + r.id, rot: resumoRegra(r, p), alvo: fxExiste(r.destino) ? r.destino : null, rid: r.id, spec: { tipo: "regra" }, cls: "regra" }); });
   const i = f.perguntas.indexOf(p);
   let alvo = p.depois, impl = false;
   if (p.depois === "fim") alvo = null;
   else if (!fxExiste(alvo)) { impl = true; alvo = f.perguntas[i + 1] ? f.perguntas[i + 1].id : (f.finais[0] ? "fim:" + f.finais[0].id : null); }
-  portas.push({ chave: "padrao", rot: portas.length ? "Qualquer outra resposta" : (p.tipo === "aviso" ? "Continuar" : p.tipo === "active" ? "Depois de enviar" : "Depois de responder"), alvo, impl, spec: { tipo: "padrao" }, cls: "padrao" });
+  portas.push({ chave: "padrao", rot: p.tipo === "faixa" ? "Nenhuma faixa" : portas.length ? "Qualquer outra resposta" : (p.tipo === "aviso" ? "Continuar" : p.tipo === "active" ? "Depois de enviar" : p.tipo === "score" ? "Depois de calcular" : "Depois de responder"), alvo, impl, spec: { tipo: "padrao" }, cls: "padrao" });
   return portas;
 }
 function fxLigar(p, chave, alvo) {
   const porta = fxPortas(p).find((x) => x.chave === chave); if (!porta) return;
   p.regras = p.regras || [];
   if (porta.spec.tipo === "padrao") p.depois = alvo;
+  else if (porta.spec.tipo === "faixa") { const x = (p.faixas || []).find((y) => y.id === porta.spec.id); if (x) x.destino = alvo; }
   else if (porta.rid) { const r = p.regras.find((x) => x.id === porta.rid); if (r) r.destino = alvo; }
   else {
     let conds, juncao = "e";
@@ -1499,6 +1540,7 @@ function fxLigar(p, chave, alvo) {
 function fxDesligar(p, chave) {
   const porta = fxPortas(p).find((x) => x.chave === chave); if (!porta) return;
   if (porta.spec.tipo === "padrao") p.depois = "fim";
+  else if (porta.spec.tipo === "faixa") { const x = (p.faixas || []).find((y) => y.id === porta.spec.id); if (x) x.destino = ""; }
   else if (porta.rid) p.regras = (p.regras || []).filter((x) => x.id !== porta.rid);
   marcarSujo();
 }
@@ -1607,9 +1649,9 @@ function desenharFluxo() {
     const p = no.p, t = T[p.tipo] || T.curto;
     if (FM.ehPergunta(p)) n++;
     const portas = fxPortas(p);
-    return '<div class="fx-no' + on + (FM.ehInterno(p) ? " fx-integ" : "") + '" data-no="' + p.id + '" style="left:' + x + "px;top:" + y + 'px"><span class="fx-in"></span>' +
+    return '<div class="fx-no' + on + (p.tipo === "active" ? " fx-integ" : FM.ehInterno(p) ? " fx-logica" : "") + '" data-no="' + p.id + '" style="left:' + x + "px;top:" + y + 'px"><span class="fx-in"></span>' +
       '<div class="fx-cab"><small><span class="fx-ic ' + GRUPO_CLS[t.grupo] + '">' + t.ic + "</span>" + (FM.ehPergunta(p) ? n + " · " : "") + t.nome + "</small>" +
-      '<b data-tit="' + p.id + '">' + h(p.titulo || "Sem título") + "</b>" + (p.tipo === "active" ? '<span class="fx-resumo">' + h(resumoActive(p)) + "</span>" : "") + (!entra.has(p.id) ? '<span class="fx-solta" title="Nenhuma etapa leva até aqui">sem entrada</span>' : "") + "</div>" +
+      '<b data-tit="' + p.id + '">' + h(p.titulo || "Sem título") + "</b>" + (FM.ehInterno(p) ? '<span class="fx-resumo">' + h(resumoBloco(p)) + "</span>" : "") + (!entra.has(p.id) ? '<span class="fx-solta" title="Nenhuma etapa leva até aqui">sem entrada</span>' : "") + "</div>" +
       '<div class="fx-portas">' + portas.map((pt) => '<div class="fx-porta ' + pt.cls + '" data-chave="' + h(pt.chave) + '" title="' + h(pt.rot) + (pt.alvo ? "" : pt.spec.tipo === "padrao" ? " — sem ligação: vai para a tela final padrão" : " — sem ligação: segue “Qualquer outra resposta”") + '"><span class="rot">' + h(pt.rot) + "</span>" +
         '<span class="fx-dot' + (pt.alvo ? (pt.impl ? " impl" : " ligado") : "") + '" data-q="' + p.id + '" data-chave="' + h(pt.chave) + '"></span></div>').join("") + "</div></div>";
   }).join("");
@@ -1900,6 +1942,7 @@ function fontesActive(atual) {
   return '<option value="">— escolha —</option>' +
     '<optgroup label="Respostas do formulário">' + ps.map((q) => opt("q:" + q.id, rotuloQ(q))).join("") + "</optgroup>" +
     '<optgroup label="Parâmetros do link">' + PARAMS.concat(extra).map((k) => opt("param:" + k, "?" + k + "=")).join("") + opt("param:__novo", "Outro parâmetro…") + "</optgroup>" +
+    (FM.varsDoForm(f).length ? '<optgroup label="Lead Score">' + FM.varsDoForm(f).map((v) => opt("var:" + v, "Σ " + v) + opt("var:" + v + "_faixa", "Σ " + v + " · nome da faixa")).join("") + "</optgroup>" : "") +
     '<optgroup label="Outros">' + opt("meta:form", "Nome do formulário") + opt("meta:data", "Data da resposta") + opt("fixo:", "Texto fixo…") + "</optgroup>";
 }
 
@@ -2020,6 +2063,177 @@ function resumoActive(p) {
   if ((ac.tags || []).length) partes.push(ac.tags.length + " tag" + (ac.tags.length > 1 ? "s" : ""));
   if (ac.lista) partes.push("lista");
   return partes.join(" · ");
+}
+
+
+// ---------------- LEAD SCORE ----------------
+function resumoBloco(p) {
+  if (p.tipo === "active") return resumoActive(p);
+  if (p.tipo === "score") { const n = (p.pontuacao || []).length; return "{{" + FM.nomeVar(p) + "}} · " + n + " regra" + (n === 1 ? "" : "s"); }
+  if (p.tipo === "faixa") { const n = (p.faixas || []).length; return "{{" + FM.nomeVar(p) + "}} · " + n + " faixa" + (n === 1 ? "" : "s"); }
+  return "";
+}
+function cabBloco(p, i, f, rotulo) {
+  const t = T[p.tipo];
+  return '<div class="painel-cab"><h2><span class="ic ' + GRUPO_CLS[t.grupo] + '" style="background:var(--' + GRUPO_COR[t.grupo] + '-bg);color:var(--' + GRUPO_COR[t.grupo] + '-fg)">' + t.ic + "</span>" + h(rotulo || t.nome) + "</h2>" +
+    '<button class="ico ghost" id="q-up" title="Subir" aria-label="Subir"' + (i === 0 ? " disabled" : "") + ">↑</button>" +
+    '<button class="ico ghost" id="q-down" title="Descer" aria-label="Descer"' + (i === f.perguntas.length - 1 ? " disabled" : "") + ">↓</button>" +
+    '<button class="ico ghost" id="q-dup" title="Duplicar" aria-label="Duplicar">⧉</button>' +
+    '<button class="ico ghost perigo" id="q-del" title="Excluir" aria-label="Excluir">🗑</button></div>';
+}
+function ligarCabBloco(pn, p, i, f) {
+  $("#q-up", pn).onclick = () => mover(p, -1);
+  $("#q-down", pn).onclick = () => mover(p, 1);
+  $("#q-dup", pn).onclick = () => {
+    const c = JSON.parse(JSON.stringify(p)); c.id = FM.uid("q"); c.regras = [];
+    (c.pontuacao || []).forEach((r) => r.id = FM.uid("r")); (c.faixas || []).forEach((x) => { x.id = FM.uid("x"); x.destino = ""; });
+    f.perguntas.splice(i + 1, 0, c); ED.sel = c.id; marcarSujo(); renderLado(); renderPainel(); toast("Bloco duplicado");
+  };
+  $("#q-del", pn).onclick = async () => {
+    if (!await confirmar("Excluir este bloco?", "Excluir", true)) return;
+    f.perguntas.splice(i, 1); removerReferencias(p.id, false);
+    ED.sel = f.perguntas[Math.min(i, f.perguntas.length - 1)] ? f.perguntas[Math.min(i, f.perguntas.length - 1)].id : null;
+    marcarSujo(); renderLado(); renderPainel();
+  };
+}
+
+// editor de condições reaproveitável (usado nas regras de pontuação)
+function htmlConds(r, candidatas) {
+  r.conds = r.conds || []; if (!r.conds.length && candidatas[0]) { const q0 = candidatas[0], v0 = valoresPossiveis(q0); r.conds.push({ pergunta: q0.id, op: opsPara(q0)[0][0], valor: v0 ? v0[0] : "" }); }
+  return r.conds.map((c, ci) => {
+    const q = Pq(c.pergunta);
+    const ops = opsPara(q);
+    if (q && ops.length && !ops.some(([k]) => k === c.op)) c.op = ops[0][0];
+    const semValor = ["respondeu", "nao_respondeu"].includes(c.op);
+    const vals = valoresPossiveis(q);
+    let campoV = "<span></span>";
+    if (!semValor) {
+      if (vals) { if (!vals.includes(String(c.valor))) c.valor = vals[0] || ""; campoV = '<select data-cv="' + ci + '">' + vals.map((v) => "<option" + (String(c.valor) === v ? " selected" : "") + ">" + h(v) + "</option>").join("") + "</select>"; }
+      else campoV = '<input data-cv="' + ci + '" value="' + h(c.valor == null ? "" : c.valor) + '" placeholder="valor"' + (q && q.tipo === "numero" ? ' inputmode="decimal"' : "") + ">";
+    }
+    return '<div class="cond"><span class="pre">' + (ci === 0 ? "Se" : (r.juncao === "ou" ? "ou" : "e")) + "</span>" +
+      '<select data-cq="' + ci + '">' + candidatas.map((q2) => '<option value="' + h(q2.id) + '"' + (c.pergunta === q2.id ? " selected" : "") + ">" + h(rotuloQ(q2)) + "</option>").join("") + "</select>" +
+      '<select data-co="' + ci + '">' + ops.map(([k, l]) => '<option value="' + k + '"' + (c.op === k ? " selected" : "") + ">" + l + "</option>").join("") + "</select>" + campoV +
+      (r.conds.length > 1 ? '<button class="ico ghost mini" data-cdel="' + ci + '" aria-label="Remover condição">×</button>' : "<span></span>") + "</div>";
+  }).join("");
+}
+function ligarConds(el, r, refazer, mudou) {
+  $$("[data-cq]", el).forEach((sl) => sl.onchange = () => { const c = r.conds[+sl.dataset.cq]; c.pergunta = sl.value; const q = Pq(sl.value); c.op = opsPara(q)[0][0]; const v = valoresPossiveis(q); c.valor = v ? v[0] : ""; mudou(); refazer(); });
+  $$("[data-co]", el).forEach((sl) => sl.onchange = () => { r.conds[+sl.dataset.co].op = sl.value; mudou(); refazer(); });
+  $$("[data-cv]", el).forEach((sl) => sl.addEventListener(sl.tagName === "SELECT" ? "change" : "input", () => { r.conds[+sl.dataset.cv].valor = sl.value; mudou(); }));
+  $$("[data-cdel]", el).forEach((b) => b.onclick = () => { r.conds.splice(+b.dataset.cdel, 1); mudou(); refazer(); });
+}
+
+function painelScore(pn, p) {
+  const f = ED.form, i = f.perguntas.indexOf(p);
+  p.pontuacao = p.pontuacao || [];
+  const candidatas = f.perguntas.filter(FM.ehPergunta).concat(FM.varsDoForm(f).filter((v) => v !== FM.nomeVar(p) || p.zerar === false).map(qVar));
+  const numericas = f.perguntas.filter((q) => ["nps", "escala", "estrelas", "numero", "multipla"].includes(q.tipo));
+  const maxPos = p.pontuacao.reduce((a, r) => a + (r.tipo === "valor" ? 0 : Math.max(0, FM.num(r.pontos) || 0)), 0);
+  pn.innerHTML = '<div class="painel-in">' + cabBloco(p, i, f, "Lead Score") +
+    '<div class="card"><p class="ajuda" style="margin:0 0 12px">Quem responde não vê esta etapa. Ao passar por aqui, o formulário soma os pontos das regras que baterem e guarda o resultado na variável. Use depois um bloco <b>Condição por score</b> para separar os caminhos, ou mande o score para o ActiveCampaign.</p>' +
+    '<div class="g2">' + campo("Nome do bloco", '<input id="sc-nome" value="' + h(p.titulo || "") + '" maxlength="80">') +
+    campo("Variável", '<input id="sc-var" value="' + h(FM.nomeVar(p)) + '" maxlength="30">', "Use como <code>{{" + h(FM.nomeVar(p)) + "}}</code> em textos.") + "</div>" +
+    '<label class="tg"><input type="checkbox" id="sc-zerar"' + (p.zerar !== false ? " checked" : "") + "> Começar do zero (desligado: soma ao valor que a variável já tinha)</label></div>" +
+    '<div class="card"><h3>Regras de pontuação</h3><div id="sc-regras"></div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="mini" id="sc-add">+ Regra (se… então pontos)</button><button class="mini" id="sc-op">+ Pontuar as opções de uma pergunta</button><button class="mini" id="sc-val">+ Somar o valor de uma resposta</button></div>' +
+    '<div class="score-total"><span>Pontuação máxima pelas regras: <b>' + String(maxPos).replace(".", ",") + "</b></span><span>Regras: <b>" + p.pontuacao.length + "</b></span></div></div>" +
+    '<div class="card" id="logica"></div></div>';
+  const mud = (leve) => { marcarSujo(); renderLadoLeve(); if (!leve) redesenhar(); };
+  const redesenhar = () => {
+    const box = $("#sc-regras"); if (!box) return;
+    box.innerHTML = p.pontuacao.length ? p.pontuacao.map((r, ri) => {
+      if (r.tipo === "valor") {
+        return '<div class="regra" data-ri="' + ri + '"><div class="regra-cab"><span>Regra ' + (ri + 1) + " · valor da resposta</span>" + '<button class="ico ghost mini" data-rdel aria-label="Remover regra">×</button></div>' +
+          '<div class="cond" style="grid-template-columns:auto 1fr auto 100px"><span class="pre">Somar</span><select data-vq>' + numericas.map((q) => '<option value="' + q.id + '"' + (r.pergunta === q.id ? " selected" : "") + ">" + h(rotuloQ(q)) + (q.tipo === "multipla" ? " (nº de opções marcadas)" : "") + "</option>").join("") + '</select><span class="pre" style="width:auto">×</span><input data-vf value="' + h(r.fator == null ? 1 : r.fator) + '" inputmode="decimal"></div></div>';
+      }
+      return '<div class="regra" data-ri="' + ri + '"><div class="regra-cab"><span>Regra ' + (ri + 1) + "</span>" +
+        '<span style="display:flex;gap:6px;align-items:center">' + ((r.conds || []).length > 1 ? '<span class="juncao"><button data-jn="e" class="' + (r.juncao !== "ou" ? "on" : "") + '">E</button><button data-jn="ou" class="' + (r.juncao === "ou" ? "on" : "") + '">OU</button></span>' : "") +
+        '<button class="ico ghost mini" data-rdel aria-label="Remover regra">×</button></span></div>' +
+        htmlConds(r, candidatas) + '<button class="mini ghost" data-cadd>+ condição</button>' +
+        '<div class="pts"><b>→ somar</b><input data-pts value="' + h(r.pontos == null ? "" : r.pontos) + '" inputmode="decimal" placeholder="10"><span class="mut" style="font-size:12.5px">pontos (use negativo para tirar)</span></div></div>';
+    }).join("") : '<p class="mut" style="margin-bottom:12px">Nenhuma regra ainda. Ex.: “Se a nota for maior que 9 → +30 pontos”, “Se faturamento é Mais de R$ 20 mil → +40”.</p>';
+    $$(".regra", box).forEach((el) => {
+      const r = p.pontuacao[+el.dataset.ri];
+      $("[data-rdel]", el).onclick = () => { p.pontuacao.splice(+el.dataset.ri, 1); mud(); painelScore(pn, p); };
+      if (r.tipo === "valor") {
+        $("[data-vq]", el).onchange = (e) => { r.pergunta = e.target.value; mud(true); };
+        $("[data-vf]", el).oninput = (e) => { r.fator = e.target.value.replace(",", "."); mud(true); };
+        return;
+      }
+      ligarConds(el, r, redesenhar, () => mud(true));
+      $$("[data-jn]", el).forEach((b) => b.onclick = () => { r.juncao = b.dataset.jn; mud(); });
+      $("[data-cadd]", el).onclick = () => { const q = Pq(r.conds[r.conds.length - 1].pergunta) || candidatas[0]; const v = valoresPossiveis(q); r.conds.push({ pergunta: q.id, op: opsPara(q)[0][0], valor: v ? v[0] : "" }); mud(); };
+      $("[data-pts]", el).oninput = (e) => { r.pontos = e.target.value.replace(",", "."); marcarSujo(true); const mx = $(".score-total b"); if (mx) mx.textContent = String(p.pontuacao.reduce((a, x) => a + (x.tipo === "valor" ? 0 : Math.max(0, FM.num(x.pontos) || 0)), 0)).replace(".", ","); };
+    });
+  };
+  redesenhar();
+  $("#sc-nome").oninput = (e) => { p.titulo = e.target.value; mud(true); };
+  $("#sc-var").oninput = (e) => { const v = e.target.value.replace(/[^\w]/g, "").slice(0, 30); if (v !== e.target.value) e.target.value = v; p.score_var = v || "score"; mud(true); };
+  $("#sc-zerar").onchange = (e) => { p.zerar = e.target.checked; mud(true); };
+  $("#sc-add").onclick = () => {
+    if (!candidatas.length) return toast("Adicione perguntas ao formulário antes.", true);
+    p.pontuacao.push({ id: FM.uid("r"), juncao: "e", conds: [], pontos: 10 }); mud(); painelScore(pn, p);
+  };
+  $("#sc-val").onclick = () => {
+    if (!numericas.length) return toast("Não há perguntas numéricas (NPS, escala, estrelas, número ou múltipla escolha).", true);
+    p.pontuacao.push({ id: FM.uid("r"), tipo: "valor", pergunta: numericas[0].id, fator: 1 }); mud(); painelScore(pn, p);
+  };
+  $("#sc-op").onclick = () => {
+    const comOp = f.perguntas.filter((q) => ["unica", "multipla", "lista", "sim_nao"].includes(q.tipo));
+    if (!comOp.length) return toast("Não há perguntas de escolha no formulário.", true);
+    modal('<h3>Pontuar as opções de uma pergunta</h3>' + campo("Pergunta", '<select id="po-q">' + comOp.map((q) => '<option value="' + q.id + '">' + h(rotuloQ(q)) + "</option>").join("") + "</select>") +
+      '<div id="po-ops"></div><div class="rod"><button data-fechar>Cancelar</button><button class="pri" id="po-ok">Adicionar regras</button></div>', (el, fechar) => {
+      const desenha = () => {
+        const q = P($("#po-q", el).value);
+        $("#po-ops", el).innerHTML = (valoresPossiveis(q) || []).map((v) => '<div class="map" style="grid-template-columns:1fr 110px"><span>' + h(v) + '</span><input data-po="' + h(v) + '" inputmode="decimal" placeholder="pontos"></div>').join("") + '<p class="ajuda">Deixe em branco as opções que não somam pontos.</p>';
+      };
+      $("#po-q", el).onchange = desenha; desenha();
+      $("#po-ok", el).onclick = () => {
+        const qid = $("#po-q", el).value;
+        let n = 0;
+        $$("[data-po]", el).forEach((inp) => { const v = inp.value.trim(); if (!v) return; p.pontuacao.push({ id: FM.uid("r"), juncao: "e", conds: [{ pergunta: qid, op: "igual", valor: inp.dataset.po }], pontos: v.replace(",", ".") }); n++; });
+        fechar(); if (n) { mud(); painelScore(pn, p); toast(n + " regra" + (n > 1 ? "s" : "") + " adicionada" + (n > 1 ? "s" : "")); }
+      };
+    });
+  };
+  ligarCabBloco(pn, p, i, f);
+  renderLogica(p);
+}
+
+function painelFaixa(pn, p) {
+  const f = ED.form, i = f.perguntas.indexOf(p);
+  p.faixas = p.faixas || [];
+  const vars = FM.varsDoForm(f); if (!vars.includes(FM.nomeVar(p))) vars.push(FM.nomeVar(p));
+  pn.innerHTML = '<div class="painel-in">' + cabBloco(p, i, f, "Condição por score") +
+    (FM.varsDoForm(f).length ? "" : '<div class="aviso-box">Adicione antes um bloco <b>Lead Score</b> para calcular o score.</div>') +
+    '<div class="card"><p class="ajuda" style="margin:0 0 12px">Quem responde não vê esta etapa. O formulário olha o score e segue pela primeira faixa em que ele cair. No Fluxo, cada faixa vira uma bolinha para ligar.</p>' +
+    '<div class="g2">' + campo("Nome do bloco", '<input id="fa-nome" value="' + h(p.titulo || "") + '" maxlength="80">') +
+    campo("Variável", '<select id="fa-var">' + vars.map((v) => "<option" + (v === FM.nomeVar(p) ? " selected" : "") + ">" + h(v) + "</option>").join("") + "</select>") + "</div></div>" +
+    '<div class="card"><h3>Faixas <small>de cima para baixo, vale a primeira que bater</small></h3><div id="fa-lista"></div><button class="mini" id="fa-add">+ Faixa</button>' +
+    '<p class="ajuda">Deixe “de” ou “até” em branco para não ter limite. Use <code>{{' + h(FM.nomeVar(p)) + '_faixa}}</code> nos textos para mostrar o nome da faixa.</p></div>' +
+    '<div class="card" id="logica"></div></div>';
+  const mud = () => { marcarSujo(); renderLadoLeve(); };
+  const redesenhar = () => {
+    $("#fa-lista").innerHTML = (p.faixas.length ? '<div class="fxa-cab"><span>Nome</span><span>De</span><span>Até</span><span>Ir para</span><span></span></div>' : "") +
+      p.faixas.map((x, j) => '<div class="fxa" data-j="' + j + '"><input data-fn value="' + h(x.rotulo || "") + '" placeholder="Ex.: Quente"><input data-fmin value="' + h(x.min == null ? "" : x.min) + '" inputmode="decimal" placeholder="sem mín."><input data-fmax value="' + h(x.max == null ? "" : x.max) + '" inputmode="decimal" placeholder="sem máx.">' +
+        '<select data-fd><option value="">— ligar depois —</option>' + opcoesDestino(p.id, x.destino, false) + '</select><button class="ico ghost" data-fdel aria-label="Remover faixa">×</button></div>').join("");
+    $$(".fxa").forEach((row) => {
+      const x = p.faixas[+row.dataset.j];
+      $("[data-fn]", row).oninput = (e) => { x.rotulo = e.target.value; mud(); };
+      $("[data-fmin]", row).oninput = (e) => { x.min = e.target.value.replace(",", "."); mud(); };
+      $("[data-fmax]", row).oninput = (e) => { x.max = e.target.value.replace(",", "."); mud(); };
+      $("[data-fd]", row).onchange = (e) => { x.destino = e.target.value; mud(); };
+      $("[data-fdel]", row).onclick = () => { p.faixas.splice(+row.dataset.j, 1); mud(); redesenhar(); };
+    });
+  };
+  redesenhar();
+  $("#fa-nome").oninput = (e) => { p.titulo = e.target.value; mud(); };
+  $("#fa-var").onchange = (e) => { p.score_var = e.target.value; mud(); painelFaixa(pn, p); };
+  $("#fa-add").onclick = () => { p.faixas.push({ id: FM.uid("x"), rotulo: "", min: "", max: "", destino: "" }); mud(); redesenhar(); };
+  ligarCabBloco(pn, p, i, f);
+  renderLogica(p);
+  const lbl = $("#logica label.f > span"); if (lbl) lbl.textContent = "Se o score não cair em nenhuma faixa, ir para";
 }
 
 // ---------------- DESIGN ----------------
@@ -2268,7 +2482,7 @@ function desenharResultados() {
 
   // ----- resumo por pergunta -----
   const base = R.filtro === "todas" ? inic : conc;
-  const resumos = ps.filter(FM.ehPergunta).map((q) => resumoPergunta(q, base)).join("");
+  const resumos = FM.varsDoForm(f).map((v) => resumoScore(f, base, v)).join("") + ps.filter(FM.ehPergunta).map((q) => resumoPergunta(q, base)).join("");
 
   $("#rs-corpo").className = "";
   $("#rs-corpo").innerHTML =
@@ -2298,6 +2512,29 @@ function desenharResultados() {
   tabela();
 }
 
+// valores do Lead Score numa resposta
+const scoreDe = (r, v) => { const x = ((r.respostas || {}).__vars || {})[v]; return x == null || x === "" ? null : Number(x); };
+const faixaTxt = (r, v) => ((r.respostas || {}).__vars || {})[v + "_faixa"] || "";
+const fmtScore = (n) => n == null || isNaN(n) ? "—" : String(Math.round(n * 100) / 100).replace(".", ",");
+function resumoScore(f, base, v) {
+  const ns = base.map((r) => scoreDe(r, v)).filter((x) => x != null && !isNaN(x)).sort((a, b) => a - b);
+  const cab = '<div class="card rq"><h4>Σ Lead Score <span class="mut" style="font-weight:500">{{' + h(v) + '}}</span></h4><div class="sub">' + fmtN(ns.length) + " resposta" + (ns.length === 1 ? "" : "s") + " com score</div>";
+  if (!ns.length) return cab + '<p class="mut">Ninguém passou pelo cálculo ainda.</p></div>';
+  const media = ns.reduce((a, b) => a + b, 0) / ns.length;
+  let html = '<div class="nps-top"><b>' + fmtScore(media) + '</b><span class="mut">média · mín ' + fmtScore(ns[0]) + " · mediana " + fmtScore(ns[Math.floor(ns.length / 2)]) + " · máx " + fmtScore(ns[ns.length - 1]) + "</span></div>";
+  const blocoFx = f.perguntas.find((q) => q.tipo === "faixa" && FM.nomeVar(q) === v);
+  if (blocoFx) {
+    const cont = {}; base.forEach((r) => { const t = faixaTxt(r, v); if (t) cont[t] = (cont[t] || 0) + 1; });
+    const tot = Object.values(cont).reduce((a, b) => a + b, 0);
+    html += (blocoFx.faixas || []).map((x) => { const nome = x.rotulo || FM.rotuloFaixa(x); return barh(nome + " (" + FM.rotuloFaixa(x) + ")", cont[nome] || 0, tot); }).join("");
+  } else {
+    const k = Math.min(8, Math.max(3, Math.ceil(Math.sqrt(ns.length)))), mi = ns[0], ma = ns[ns.length - 1], passo = (ma - mi) / k || 1;
+    const b = Array(k).fill(0); ns.forEach((x) => b[Math.min(k - 1, Math.floor((x - mi) / passo))]++);
+    const mx = Math.max(...b);
+    html += '<div class="colunas">' + b.map((c, j) => '<div title="' + fmtScore(mi + j * passo) + "–" + fmtScore(mi + (j + 1) * passo) + ": " + c + '"><i style="height:' + (c / mx * 100) + '%"></i><span>' + fmtScore(Math.round(mi + j * passo)) + "</span></div>").join("") + "</div>";
+  }
+  return cab + html + "</div>";
+}
 function kpi(rot, val, sub) { return '<div class="kpi"><span>' + rot + "</span><b>" + val + "</b><small>" + sub + "</small></div>"; }
 function barh(rot, n, total) {
   return '<div class="barh"><span class="lb" title="' + h(rot) + '">' + h(rot) + '</span><span class="tr"><i style="width:' + pct(n, Math.max(total, 1)) + '%"></i></span><span class="vl"><b>' + fmtN(n) + "</b> · " + fmtPct(n, total) + "</span></div>";
@@ -2415,13 +2652,16 @@ function tabela() {
     if (Array.isArray(v)) return v.map((x) => '<span class="chip">' + h(x) + "</span>").join(" ");
     return h(v);
   };
-  $("#rs-tab").innerHTML = '<div class="tab-wrap tab-resp"><table><thead><tr><th class="fixa">#</th><th>Data</th><th>Status</th>' +
+  const vs = FM.varsDoForm(f);
+  const temFx = (v) => f.perguntas.some((q) => q.tipo === "faixa" && FM.nomeVar(q) === v);
+  $("#rs-tab").innerHTML = '<div class="tab-wrap tab-resp"><table><thead><tr><th class="fixa">#</th><th>Data</th><th>Status</th>' + vs.map((v) => "<th>Σ " + h(v) + "</th>" + (temFx(v) ? "<th>Faixa</th>" : "")).join("") +
     qs.map((q) => '<th title="' + h(q.titulo) + '">' + h(curto(q.titulo)) + "</th>").join("") +
     "<th>Tela final</th><th>Parou em</th><th>Origem</th>" + (temAc ? "<th>ActiveCampaign</th>" : "") + "<th>Dispositivo</th></tr></thead><tbody>" +
     fatia.map((r, i) => {
       const parou = r.status !== "concluida" && r.atual ? P(r.atual) : null;
       const pr = r.params || {};
       return '<tr data-id="' + r.id + '"><td class="fixa mut">' + (tot - (R.pagina * POR + i)) + "</td><td>" + dataHora(r.iniciado_em) + '</td><td><span class="pill ' + r.status + '">' + stRot[r.status] + "</span></td>" +
+        vs.map((v) => '<td style="font-weight:600;font-variant-numeric:tabular-nums">' + fmtScore(scoreDe(r, v)) + "</td>" + (temFx(v) ? "<td>" + (faixaTxt(r, v) ? '<span class="chip">' + h(faixaTxt(r, v)) + "</span>" : '<span class="mut">—</span>') + "</td>" : "")).join("") +
         qs.map((q) => "<td>" + cel(q, (r.respostas || {})[q.id]) + "</td>").join("") +
         "<td>" + h(nomeFinal(r.final_id)) + '</td><td class="mut">' + (parou ? h(curto(parou.titulo)) : "") + '</td><td class="mut">' + h([pr.utm_source, pr.utm_campaign, pr.sck].filter(Boolean).join(" · ")) + "</td>" +
         (temAc ? "<td>" + celAc(r) + "</td>" : "") + '<td class="mut">' + h(r.dispositivo || "") + "</td></tr>";
@@ -2444,6 +2684,7 @@ function detalhe(r) {
   g.innerHTML = '<div role="dialog" aria-modal="true"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><h3 style="flex:1;font-size:18px">Resposta</h3><button class="ico ghost" id="dt-x" aria-label="Fechar">×</button></div>' +
     '<p class="mut" style="margin-bottom:12px"><span class="pill ' + r.status + '">' + stRot[r.status] + "</span> · " + dataHora(r.iniciado_em) + (dur ? " · " + (dur < 60 ? dur + "s" : Math.floor(dur / 60) + "min " + dur % 60 + "s") : "") + (r.dispositivo ? " · " + h(r.dispositivo) : "") + (fi ? " · final: " + h(fi.nome || fi.titulo) : "") + "</p>" +
     (parou ? '<div class="alerta">Parou em: “' + h(parou.titulo) + "”</div>" : "") +
+    FM.varsDoForm(f).map((v) => scoreDe(r, v) == null ? "" : '<div class="integ ok" style="background:var(--log-bg);color:var(--log-fg)"><b>Σ</b><span><b>' + h(v) + ": " + fmtScore(scoreDe(r, v)) + "</b>" + (faixaTxt(r, v) ? " · " + h(faixaTxt(r, v)) : "") + "</span></div>").join("") +
     f.perguntas.filter(FM.ehPergunta).map((q) => {
       const v = (r.respostas || {})[q.id];
       return '<div class="resp-item"><span>' + h(q.titulo || "Sem título") + "</span><p>" + (FM.vazio(v) ? '<i class="mut">' + ((r.vistas || []).includes(q.id) ? "não respondeu" : "não viu") + "</i>" : h(FM.textoResposta(v))) + "</p></div>";
@@ -2486,12 +2727,14 @@ function tabelaExport() {
   const L = ED.resultados.linhas;
   const pks = [...new Set(L.flatMap((r) => Object.keys(r.params || {})))].sort();
   const stRot = { concluida: "Concluída", parcial: "Parcial", visita: "Só visitou" };
-  const cab = ["Início", "Status", "Concluído em", "Tempo (s)", "Tela final", "Parou em"].concat(qs.map((q) => q.titulo || q.chave || q.id)).concat(pks).concat(["Dispositivo", "ID"]);
+  const vs = FM.varsDoForm(f);
+  const cab = ["Início", "Status", "Concluído em", "Tempo (s)", "Tela final", "Parou em"].concat(vs.flatMap((v) => ["Lead Score (" + v + ")", "Faixa (" + v + ")"])).concat(qs.map((q) => q.titulo || q.chave || q.id)).concat(pks).concat(["Dispositivo", "ID"]);
   const linhas = L.filter((r) => r.status !== "visita").map((r) => {
     const fi = f.finais.find((x) => x.id === r.final_id);
     const parou = r.status !== "concluida" && r.atual ? P(r.atual) : null;
     return [new Date(r.iniciado_em), stRot[r.status], r.concluido_em ? new Date(r.concluido_em) : "", r.concluido_em ? Math.round((new Date(r.concluido_em) - new Date(r.iniciado_em)) / 1000) : "",
       fi ? fi.nome || fi.titulo : "", parou ? parou.titulo : ""]
+      .concat(vs.flatMap((v) => [scoreDe(r, v) == null ? "" : scoreDe(r, v), faixaTxt(r, v)]))
       .concat(qs.map((q) => { const v = (r.respostas || {})[q.id]; return typeof v === "number" ? v : FM.textoResposta(v); }))
       .concat(pks.map((k) => (r.params || {})[k] || "")).concat([r.dispositivo || "", r.id]);
   });
@@ -2632,6 +2875,21 @@ async function gerarPdf(op) {
 
     // resumo por pergunta
     conteudo.push({ text: "Resumo por pergunta", style: "h2", pageBreak: "before" }, { text: op.parciais ? "Considera concluídas e parciais." : "Considera só quem concluiu.", style: "mut", margin: [0, -4, 0, 4] });
+    FM.varsDoForm(f).forEach((v) => {
+      const ns = base.map((r) => scoreDe(r, v)).filter((x) => x != null && !isNaN(x)).sort((a, b) => a - b);
+      const bl = [{ text: "Lead Score  {{" + v + "}}", style: "h3" }, { text: fmtN(ns.length) + " resposta" + (ns.length === 1 ? "" : "s") + " com score", style: "mut", margin: [0, 0, 0, 4] }];
+      if (ns.length) {
+        const media = ns.reduce((a, b) => a + b, 0) / ns.length;
+        bl.push({ text: [{ text: fmtScore(media), fontSize: 18, bold: true }, { text: "  média · mín " + fmtScore(ns[0]) + " · mediana " + fmtScore(ns[Math.floor(ns.length / 2)]) + " · máx " + fmtScore(ns[ns.length - 1]), style: "mut" }] });
+        const bfx = f.perguntas.find((q) => q.tipo === "faixa" && FM.nomeVar(q) === v);
+        if (bfx) {
+          const cont = {}; base.forEach((r) => { const t = faixaTxt(r, v); if (t) cont[t] = (cont[t] || 0) + 1; });
+          const tt = Object.values(cont).reduce((a, b) => a + b, 0) || 1;
+          bl.push({ table: { widths: ["*", 124, 34, 46], body: (bfx.faixas || []).map((x) => { const nome = x.rotulo || FM.rotuloFaixa(x); const c = cont[nome] || 0; return [tx(nome) + "  (" + FM.rotuloFaixa(x) + ")", barra(c / tt, 120), { text: fmtN(c), alignment: "right" }, { text: pctTxt(c, tt), alignment: "right", style: "mut" }]; }) }, layout: tabela, margin: [0, 4, 0, 0] });
+        }
+      } else bl.push({ text: "Ninguém passou pelo cálculo.", style: "mut" });
+      conteudo.push({ stack: bl, unbreakable: true, margin: [0, 0, 0, 8] });
+    });
     qs.forEach((q, i) => {
       const vals = base.map((r) => (r.respostas || {})[q.id]).filter((v) => !FM.vazio(v));
       const bloco = [{ text: (i + 1) + ". " + tx(q.titulo || "Sem título"), style: "h3" }, { text: (T[q.tipo] || T.curto).nome + " · " + fmtN(vals.length) + " resposta" + (vals.length === 1 ? "" : "s"), style: "mut", margin: [0, 0, 0, 4] }];
@@ -2680,7 +2938,8 @@ async function gerarPdf(op) {
         const pr = r.params || {};
         const origem = [pr.utm_source, pr.utm_campaign, pr.sck].filter(Boolean).join(" · ");
         const linhas = qs.filter((q) => !FM.vazio((r.respostas || {})[q.id])).map((q) => [{ text: tx(q.titulo || q.chave || "Pergunta"), style: "mut" }, resp(r.respostas[q.id])]);
-        const cab = "#" + (base.length - i) + "   " + dataHora(r.iniciado_em) + "   " + stRot[r.status] + (fi ? "   ·   " + tx(fi.nome || fi.titulo) : "") + (origem ? "   ·   " + tx(origem) : "");
+        const sc = FM.varsDoForm(f).filter((v) => scoreDe(r, v) != null).map((v) => v + " " + fmtScore(scoreDe(r, v)) + (faixaTxt(r, v) ? " (" + tx(faixaTxt(r, v)) + ")" : "")).join("  ");
+        const cab = "#" + (base.length - i) + "   " + dataHora(r.iniciado_em) + "   " + stRot[r.status] + (sc ? "   ·   " + sc : "") + (fi ? "   ·   " + tx(fi.nome || fi.titulo) : "") + (origem ? "   ·   " + tx(origem) : "");
         conteudo.push({ stack: [
           { table: { widths: ["*"], body: [[{ text: cab, bold: true, fillColor: COR.fundo, margin: [2, 1, 2, 1] }]] }, layout: "noBorders" },
           ...(parou ? [{ text: "Parou em: " + tx(parou.titulo), color: COR.warn, margin: [4, 3, 0, 0] }] : []),

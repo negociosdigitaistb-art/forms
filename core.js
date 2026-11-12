@@ -15,6 +15,8 @@
     estrelas: { nome: "Estrelas",          ic: "★",   grupo: "Avaliação" },
     data:     { nome: "Data",              ic: "▦",   grupo: "Texto" },
     aviso:    { nome: "Texto / aviso",     ic: "i",   grupo: "Outros", semResposta: true },
+    score:    { nome: "Lead Score (cálculo)", ic: "Σ", grupo: "Lógica", semResposta: true, interno: true },
+    faixa:    { nome: "Condição por score",   ic: "⑂", grupo: "Lógica", semResposta: true, interno: true },
     active:   { nome: "ActiveCampaign",    ic: "AC",  grupo: "Integrações", semResposta: true, interno: true }
   };
 
@@ -46,9 +48,13 @@
   const norm = (s) => String(s == null ? "" : s).trim().toLowerCase()
     .normalize("NFD").replace(/[̀-ͯ]/g, "");
 
+  function valorDe(ref, respostas) {
+    if (ref && ref[0] === "$") return ((respostas && respostas.__vars) || {})[ref.slice(1)];
+    return respostas[ref];
+  }
   function avaliar(cond, respostas) {
     if (!cond || !cond.pergunta || !cond.op) return false;
-    const v = respostas[cond.pergunta];
+    const v = valorDe(cond.pergunta, respostas);
     const alvo = cond.valor;
     switch (cond.op) {
       case "respondeu": return !vazio(v);
@@ -100,6 +106,10 @@
     if (atualId == null) return ps.length ? { tipo: "pergunta", id: ps[0].id } : fimPadrao;
     const i = ps.findIndex((p) => p.id === atualId);
     const p = ps[i];
+    if (p && p.tipo === "faixa") {
+      const fx = faixaDe(p, respostas);
+      if (fx) { const d = resolver(fx.destino); if (d) return d; }
+    }
     if (p) {
       for (const r of p.regras || []) {
         if (regraBate(r, respostas)) { const d = resolver(r.destino); if (d) return d; }
@@ -109,6 +119,47 @@
     }
     if (i >= 0 && i + 1 < ps.length) return { tipo: "pergunta", id: ps[i + 1].id };
     return fimPadrao;
+  }
+
+  // ---------- Lead Score ----------
+  const num = (x) => { if (x == null || x === "") return null; const n = Number(String(x).replace(/\./g, (m, o, t) => /,\d+$/.test(t) ? "" : m).replace(",", ".")); return isNaN(n) ? null : n; };
+  function nomeVar(b) { return (b && b.score_var ? String(b.score_var) : "score").replace(/[^\w]/g, "") || "score"; }
+  // calcula e grava em respostas.__vars[nome]; devolve { total, linhas:[{regra, pontos}] }
+  function calcularScore(bloco, respostas) {
+    respostas.__vars = respostas.__vars || {};
+    const nome = nomeVar(bloco);
+    let total = bloco.zerar === false ? (num(respostas.__vars[nome]) || 0) : 0;
+    const linhas = [];
+    for (const r of bloco.pontuacao || []) {
+      let pts = 0;
+      if (r.tipo === "valor") {
+        const v = num(Array.isArray(respostas[r.pergunta]) ? respostas[r.pergunta].length : respostas[r.pergunta]);
+        if (v != null) pts = v * (num(r.fator) == null ? 1 : num(r.fator));
+      } else if (regraBate(r, respostas)) pts = num(r.pontos) || 0;
+      if (pts) linhas.push({ id: r.id, pontos: pts });
+      total += pts;
+    }
+    total = Math.round(total * 100) / 100;
+    respostas.__vars[nome] = total;
+    return { total, linhas };
+  }
+  function faixaDe(bloco, respostas) {
+    const v = num(((respostas && respostas.__vars) || {})[nomeVar(bloco)]) || 0;
+    return (bloco.faixas || []).find((f) => (num(f.min) == null || v >= num(f.min)) && (num(f.max) == null || v <= num(f.max))) || null;
+  }
+  function rotuloFaixa(f) {
+    const a = num(f.min), b = num(f.max);
+    const fmt = (n) => String(n).replace(".", ",");
+    if (a != null && b != null) return fmt(a) + " a " + fmt(b);
+    if (a != null) return "≥ " + fmt(a);
+    if (b != null) return "≤ " + fmt(b);
+    return "qualquer valor";
+  }
+  // nomes das variáveis de score usadas no formulário
+  function varsDoForm(form) {
+    const s = new Set();
+    (form.perguntas || []).forEach((p) => { if (p.tipo === "score") s.add(nomeVar(p)); });
+    return [...s];
   }
 
   function textoResposta(v) {
@@ -126,6 +177,8 @@
       const kl = k.toLowerCase();
       let v = "";
       if (porChave[kl]) v = textoResposta(respostas[porChave[kl]]);
+      const vs = (respostas && respostas.__vars) || {};
+      if (!v && vs[k] != null) v = String(vs[k]).replace(".", ",");
       if (!v && params && params[k] != null) v = params[k];
       if (!v && params && params[kl] != null) v = params[kl];
       if (/^%[A-Z_]+%$|^\{\{.*\}\}$|^\[.*\]$/.test(String(v).trim())) v = ""; // tag de e-mail não trocada
@@ -193,5 +246,5 @@
   const ehPergunta = (q) => !!q && q.tipo !== "aviso" && !(TIPOS[q.tipo] && TIPOS[q.tipo].interno);
   const ehInterno = (q) => !!q && !!(TIPOS[q.tipo] && TIPOS[q.tipo].interno);
 
-  window.FM = { ehPergunta, ehInterno, PREENCHE, paramsDaPergunta, valorDaUrl, TIPOS, OPS, uid, vazio, avaliar, regraBate, proximo, textoResposta, variaveis, chaveSugerida, slugify, norm };
+  window.FM = { ehPergunta, ehInterno, calcularScore, faixaDe, rotuloFaixa, nomeVar, varsDoForm, valorDe, num, PREENCHE, paramsDaPergunta, valorDaUrl, TIPOS, OPS, uid, vazio, avaliar, regraBate, proximo, textoResposta, variaveis, chaveSugerida, slugify, norm };
 })();

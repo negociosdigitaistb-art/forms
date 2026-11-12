@@ -525,6 +525,15 @@
   function passarBloco(p, volta, saltos) {
     if (!vistas.includes(p.id)) vistas.push(p.id);
     atual = p.id;
+    if (p.tipo === "score") {
+      const c = FM.calcularScore(p, respostas);
+      if (PREVIA) mostrarScorePrevia(FM.nomeVar(p), c.total);
+    }
+    if (p.tipo === "faixa") {
+      const fx = FM.faixaDe(p, respostas);
+      respostas.__vars = respostas.__vars || {};
+      respostas.__vars[FM.nomeVar(p) + "_faixa"] = fx ? (fx.rotulo || FM.rotuloFaixa(fx)) : "";
+    }
     if (!PREVIA && token) {
       gravar("fm_progresso", { p_token: token, p_respostas: respostas, p_vistas: vistas, p_atual: p.id });
       if (p.tipo === "active") {
@@ -536,6 +545,10 @@
       }
     }
     irPara(FM.proximo(form, p.id, respostas), volta, (saltos || 0) + 1);
+  }
+
+  function mostrarScorePrevia(nome, total) {
+    const b = $("#previa"); b.textContent = "Pré-visualização · " + nome + ": " + String(total).replace(".", ",");
   }
 
   function irPara(dest, volta, saltos) {
@@ -612,7 +625,7 @@
       const d = ev.data || {};
       if (d.fm !== "preview" || !d.form) return;
       if (ev.origin !== location.origin) return;
-      if (d.reiniciar) { respostas = {}; vistas = []; historico = []; }
+      if (d.reiniciar) { respostas = {}; vistas = []; historico = []; $("#previa").textContent = "Pré-visualização"; }
       if (d.params) { Object.keys(params).forEach((k) => delete params[k]); Object.keys(brutos).forEach((k) => delete brutos[k]); Object.assign(params, d.params); Object.assign(brutos, d.params); }
       comecar(d.form, d.ir);
     });

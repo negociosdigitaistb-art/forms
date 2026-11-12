@@ -105,6 +105,7 @@ Deno.serve(async (req) => {
       if (fonte.startsWith("q:")) return (r.respostas || {})[fonte.slice(2)];
       if (fonte.startsWith("param:")) { const k = fonte.slice(6).toLowerCase(); const p = r.params || {}; const kk = Object.keys(p).find((x) => x.toLowerCase() === k); return kk ? p[kk] : ""; }
       if (fonte.startsWith("fixo:")) return fonte.slice(5);
+      if (fonte.startsWith("var:")) { const v = ((r.respostas || {}).__vars || {})[fonte.slice(4)]; return v == null ? "" : String(v); }
       if (fonte === "meta:form") return f!.titulo || "";
       if (fonte === "meta:data") return String(r.iniciado_em || "").slice(0, 10);
       return "";
