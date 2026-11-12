@@ -88,6 +88,7 @@
     const fimPadrao = { tipo: "fim", id: finais[0] ? finais[0].id : null };
     const resolver = (dest) => {
       if (!dest) return null;
+      if (dest === "fim") return fimPadrao;
       if (dest.startsWith("fim:")) {
         const id = dest.slice(4);
         return { tipo: "fim", id: finais.some((f) => f.id === id) ? id : fimPadrao.id };
