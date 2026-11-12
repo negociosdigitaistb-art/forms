@@ -278,6 +278,9 @@
   .tab-resp th.fixa { background:var(--bg); z-index:3; }
   .tab-resp tbody tr:hover td.fixa { background:var(--sel); }
   .chip { display:inline-block; background:var(--line2); border-radius:6px; padding:1px 7px; font-size:12px; margin:1px 0; }
+  .datas { display:inline-flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .datas label { display:inline-flex; gap:6px; align-items:center; font-size:13px; color:var(--muted); font-weight:600; }
+  .datas input { width:auto; height:36px; font-size:13px; }
   .pag { display:flex; justify-content:flex-end; gap:8px; align-items:center; padding:12px; font-size:13px; color:var(--muted); }
 
   .gaveta { position:fixed; inset:0; z-index:55; background:rgba(15,18,40,.35); display:flex; justify-content:flex-end; }
@@ -1793,15 +1796,44 @@ function blocoPreencher(f, link) {
 }
 
 // ---------------- RESULTADOS ----------------
-const PERIODOS = [["7", "Últimos 7 dias"], ["30", "Últimos 30 dias"], ["90", "Últimos 90 dias"], ["tudo", "Todo o período"]];
-async function carregarRespostas(periodo) {
+const PERIODOS = [["hoje", "Hoje"], ["ontem", "Ontem"], ["7", "Últimos 7 dias"], ["30", "Últimos 30 dias"], ["90", "Últimos 90 dias"], ["tudo", "Todo o período"], ["datas", "Escolher datas…"]];
+const pad2 = (n) => String(n).padStart(2, "0");
+const ymd = (d) => d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+const dmy = (s) => s ? s.split("-").reverse().join("/") : "";
+// devolve { desde, ate } em Date (ate = exclusivo) ou null para "todo o período"
+function intervalo(R) {
+  const meiaNoite = (d) => { d = new Date(d); d.setHours(0, 0, 0, 0); return d; };
+  const hoje = meiaNoite(new Date()), amanha = new Date(hoje); amanha.setDate(amanha.getDate() + 1);
+  if (R.periodo === "tudo") return null;
+  if (R.periodo === "hoje") return { desde: hoje, ate: amanha };
+  if (R.periodo === "ontem") { const o = new Date(hoje); o.setDate(o.getDate() - 1); return { desde: o, ate: hoje }; }
+  if (R.periodo === "datas") {
+    const de = R.de ? new Date(R.de + "T00:00:00") : null;
+    let ate = R.ate ? new Date(R.ate + "T00:00:00") : null; if (ate) ate.setDate(ate.getDate() + 1);
+    return de || ate ? { desde: de, ate } : null;
+  }
+  const d = new Date(hoje); d.setDate(d.getDate() - (+R.periodo - 1));
+  return { desde: d, ate: null };
+}
+function rotuloPeriodo(R) {
+  if (R.periodo === "datas") {
+    if (R.de && R.ate) return R.de === R.ate ? dmy(R.de) : dmy(R.de) + " a " + dmy(R.ate);
+    if (R.de) return "a partir de " + dmy(R.de);
+    if (R.ate) return "até " + dmy(R.ate);
+    return "Todo o período";
+  }
+  const p = PERIODOS.find((x) => x[0] === R.periodo);
+  return p ? p[1] : "";
+}
+async function carregarRespostas(R) {
   const f = ED.form;
-  let desde = null;
-  if (periodo !== "tudo") { desde = new Date(); desde.setHours(0, 0, 0, 0); desde.setDate(desde.getDate() - (+periodo - 1)); }
+  const iv = intervalo(R);
+  const desde = iv && iv.desde, ate = iv && iv.ate;
   const todas = [];
   for (let de = 0; de < 100000; de += 1000) {
     let q = sb.from("fm_respostas").select("id,status,respostas,vistas,atual,final_id,params,dispositivo,iniciado_em,atualizado_em,concluido_em").eq("form_id", f.id).order("iniciado_em", { ascending: false }).range(de, de + 999);
     if (desde) q = q.gte("iniciado_em", desde.toISOString());
+    if (ate) q = q.lt("iniciado_em", ate.toISOString());
     const { data, error } = await q;
     if (error) throw error;
     todas.push(...data);
@@ -1815,17 +1847,28 @@ async function renderResultados() {
   const R = ED.resultados = ED.resultados || { periodo: "30", filtro: "concluida", busca: "", pagina: 0, linhas: null };
   $("#ed-corpo").innerHTML = '<div class="pagina">' +
     '<div class="barra"><select id="rs-per" aria-label="Período">' + PERIODOS.map(([k, l]) => '<option value="' + k + '"' + (R.periodo === k ? " selected" : "") + ">" + l + "</option>").join("") + "</select>" +
+    (R.periodo === "datas" ? '<span class="datas"><label>De <input type="date" id="rs-de" value="' + h(R.de || "") + '" max="' + ymd(new Date()) + '"></label><label>até <input type="date" id="rs-ate" value="' + h(R.ate || "") + '" max="' + ymd(new Date()) + '"></label><button class="mini pri" id="rs-aplicar" style="height:36px">Aplicar</button></span>' : "") +
     '<button class="mini" id="rs-at" style="height:36px">↻ Atualizar</button><div class="esp"></div>' +
-    '<button class="mini" id="rs-xls" style="height:36px">⬇ Exportar Excel</button><button class="ico ghost" id="rs-mais" aria-label="Mais ações" style="height:36px;width:36px">⋯</button></div>' +
+    '<button class="mini" id="rs-pdf" style="height:36px">⬇ Relatório PDF</button><button class="mini" id="rs-xls" style="height:36px">⬇ Excel</button><button class="ico ghost" id="rs-mais" aria-label="Mais ações" style="height:36px;width:36px">⋯</button></div>' +
     '<div id="rs-corpo" class="mut">Carregando respostas…</div></div>';
-  $("#rs-per").onchange = (e) => { R.periodo = e.target.value; R.linhas = null; renderResultados(); };
+  $("#rs-per").onchange = (e) => {
+    R.periodo = e.target.value;
+    if (R.periodo === "datas" && !R.de) { const d = new Date(); R.ate = ymd(d); d.setDate(d.getDate() - 6); R.de = ymd(d); }
+    R.linhas = null; renderResultados();
+  };
+  if ($("#rs-aplicar")) $("#rs-aplicar").onclick = () => {
+    const de = $("#rs-de").value, ate = $("#rs-ate").value;
+    if (de && ate && de > ate) return toast("A data inicial é depois da final.", true);
+    R.de = de; R.ate = ate; R.linhas = null; renderResultados();
+  };
+  $("#rs-pdf").onclick = () => opcoesPdf();
   $("#rs-at").onclick = () => { R.linhas = null; renderResultados(); };
   $("#rs-xls").onclick = () => exportarExcel();
   $("#rs-mais").onclick = (e) => menu(e.currentTarget, [
     { rot: "Exportar CSV", fn: exportarCSV },
     { rot: "Apagar respostas do período", perigo: true, fn: apagarPeriodo }
   ]);
-  try { if (!R.linhas) R.linhas = await carregarRespostas(R.periodo); }
+  try { if (!R.linhas) R.linhas = await carregarRespostas(R); }
   catch (e) { $("#rs-corpo").innerHTML = '<p style="color:var(--err-fg)">Erro ao carregar: ' + h(e.message) + "</p>"; return; }
   if (!ED || ED.aba !== "resultados") return;
   try { desenharResultados(); }
@@ -2086,7 +2129,7 @@ async function apagarPeriodo() {
   const R = ED.resultados;
   const n = R.linhas.length;
   if (!n) return toast("Não há respostas neste período.");
-  if (!await confirmar("Apagar " + fmtN(n) + " registro" + (n > 1 ? "s" : "") + " (" + PERIODOS.find((p) => p[0] === R.periodo)[1].toLowerCase() + ")? Não dá para desfazer.", "Apagar", true)) return;
+  if (!await confirmar("Apagar " + fmtN(n) + " registro" + (n > 1 ? "s" : "") + " (" + rotuloPeriodo(R).toLowerCase() + ")? Não dá para desfazer.", "Apagar", true)) return;
   const ids = R.linhas.map((r) => r.id);
   for (let i = 0; i < ids.length; i += 200) {
     const { error } = await sb.from("fm_respostas").delete().in("id", ids.slice(i, i + 200));
@@ -2112,7 +2155,7 @@ function tabelaExport() {
   });
   return { cab, linhas };
 }
-function nomeArquivo(ext) { return FM.slugify(ED.form.titulo) + "-respostas-" + new Date().toISOString().slice(0, 10) + "." + ext; }
+function nomeArquivo(ext, base) { return FM.slugify(ED.form.titulo) + "-" + (base || "respostas") + "-" + ymd(new Date()) + "." + ext; }
 function exportarCSV() {
   const { cab, linhas } = tabelaExport();
   const cel = (v) => { if (v instanceof Date) v = v.toLocaleString("pt-BR"); v = String(v == null ? "" : v); return /[";\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
@@ -2150,6 +2193,168 @@ async function exportarExcel() {
 function baixar(blob, nome) {
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+
+// ---------------- RELATÓRIO PDF ----------------
+function carregarPdfmake() {
+  if (window.pdfMake && window.pdfMake.vfs) return Promise.resolve();
+  const js = (src) => new Promise((ok, erro) => { const t = document.createElement("script"); t.src = src; t.onload = ok; t.onerror = () => erro(new Error("Não carregou " + src)); document.head.appendChild(t); });
+  return js("https://cdn.jsdelivr.net/npm/pdfmake@0.2.10/build/pdfmake.min.js").then(() => js("https://cdn.jsdelivr.net/npm/pdfmake@0.2.10/build/vfs_fonts.js"));
+}
+function opcoesPdf() {
+  const R = ED.resultados; if (!R || !R.linhas) return;
+  const n = R.linhas.filter((r) => r.status !== "visita").length;
+  modal("<h3>Relatório em PDF</h3>" +
+    '<p class="mut" style="margin:-8px 0 14px">Período: <b>' + h(rotuloPeriodo(R)) + "</b> · " + fmtN(R.linhas.length) + " visitas, " + fmtN(R.linhas.filter((r) => r.status === "concluida").length) + " concluídas</p>" +
+    '<label class="tg"><input type="checkbox" id="pdf-ind" checked> Incluir as respostas de cada pessoa</label>' +
+    '<label class="tg"><input type="checkbox" id="pdf-parc"' + (R.filtro === "todas" ? " checked" : "") + "> Incluir respostas parciais (quem não terminou)</label>" +
+    (n > 500 ? '<p class="ajuda">Para não ficar gigante, o PDF lista as 500 respostas mais recentes. O Excel traz todas.</p>' : "") +
+    '<p id="pdf-st" class="ajuda" style="min-height:18px"></p><div class="rod"><button data-fechar>Cancelar</button><button class="pri" id="pdf-ok">Gerar PDF</button></div>',
+    (el, fechar) => {
+      $("#pdf-ok", el).onclick = async () => {
+        $("#pdf-ok", el).disabled = true; $("#pdf-st", el).textContent = "Montando o relatório…";
+        try { await gerarPdf({ individuais: $("#pdf-ind", el).checked, parciais: $("#pdf-parc", el).checked }); fechar(); toast("Relatório baixado"); }
+        catch (e) { console.error(e); $("#pdf-st", el).textContent = "Não consegui gerar: " + e.message; $("#pdf-ok", el).disabled = false; }
+      };
+    });
+}
+
+async function gerarPdf(op) {
+  await carregarPdfmake();
+  const f = ED.form, R = ED.resultados, L = R.linhas;
+  const COR = { ink: "#1B1F3B", mut: "#5B6170", linha: "#E6E8EE", fundo: "#F3F4F8", barra: "#2F44C8", barra2: "#C9D0F5", ok: "#1E6B3A", warn: "#7A5310", err: "#8F2756" };
+  const tx = (v) => String(v == null ? "" : v).replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "").trim();
+  const resp = (v) => tx(FM.textoResposta(v));
+  const visitas = L.length;
+  const inic = L.filter((r) => r.status !== "visita");
+  const conc = L.filter((r) => r.status === "concluida");
+  const base = op.parciais ? inic : conc;
+  const qs = f.perguntas.filter((q) => q.tipo !== "aviso");
+  const durs = conc.map((r) => (new Date(r.concluido_em) - new Date(r.iniciado_em)) / 1000).filter((x) => x > 0 && x < 86400).sort((a, b) => a - b);
+  const med = durs.length ? durs[Math.floor(durs.length / 2)] : 0;
+  const fmtDur = (x) => !x ? "—" : x < 60 ? Math.round(x) + "s" : Math.floor(x / 60) + "min " + Math.round(x % 60) + "s";
+  const pctTxt = (a, b) => fmtPct(a, b);
+  const barra = (frac, w, frac2) => ({ canvas: [
+    { type: "rect", x: 0, y: 2, w, h: 8, r: 3, color: COR.fundo },
+    ...(frac2 != null ? [{ type: "rect", x: 0, y: 2, w: Math.max(0.01, w * Math.min(1, frac2)), h: 8, r: 3, color: COR.barra2 }] : []),
+    { type: "rect", x: 0, y: 2, w: Math.max(0.01, w * Math.min(1, frac || 0)), h: 8, r: 3, color: COR.barra }
+  ] });
+  const tabela = { hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 0 : 0.5), vLineWidth: () => 0, hLineColor: () => COR.linha,
+    paddingTop: () => 4, paddingBottom: () => 4, paddingLeft: () => 4, paddingRight: () => 4 };
+  const th = (t, al) => ({ text: t, style: "th", alignment: al || "left" });
+  const conteudo = [];
+
+  // cabeçalho
+  conteudo.push({ columns: [
+    { stack: [{ text: "Relatório de respostas", style: "mut" }, { text: tx(f.titulo), style: "h1" }] },
+    { stack: [{ text: "Período: " + rotuloPeriodo(R), alignment: "right" }, { text: "Gerado em " + new Date().toLocaleString("pt-BR"), style: "mut", alignment: "right" }, { text: linkForm(f), style: "mut", alignment: "right", link: linkForm(f) }], width: 240 }
+  ], margin: [0, 0, 0, 14] });
+
+  // números
+  const kpi = (rot, val, sub) => ({ stack: [{ text: rot, style: "mut" }, { text: val, fontSize: 17, bold: true, margin: [0, 2, 0, 1] }, { text: sub, style: "mut" }], fillColor: COR.fundo });
+  conteudo.push({ table: { widths: ["*", "*", "*", "*", "*"], body: [[
+    kpi("Visitas", fmtN(visitas), "abriram o link"), kpi("Começaram", fmtN(inic.length), pctTxt(inic.length, visitas) + " das visitas"),
+    kpi("Concluíram", fmtN(conc.length), pctTxt(conc.length, visitas) + " das visitas"), kpi("Taxa de conclusão", pctTxt(conc.length, inic.length), "de quem começou"),
+    kpi("Tempo mediano", fmtDur(med), "para concluir")]] },
+    layout: { hLineWidth: () => 0, vLineWidth: () => 3, vLineColor: () => "#FFFFFF", paddingTop: () => 8, paddingBottom: () => 8, paddingLeft: () => 9, paddingRight: () => 9 } });
+
+  if (!visitas) conteudo.push({ text: "Nenhuma visita neste período.", margin: [0, 20, 0, 0], style: "mut" });
+  else {
+    // funil
+    conteudo.push({ text: "Funil de respostas", style: "h2" }, { text: "Barra clara: viram a pergunta. Barra escura: responderam. Abandono: saíram nessa pergunta ÷ viram.", style: "mut", margin: [0, -4, 0, 6] });
+    const corpo = [[th("#"), th("Etapa"), th(""), th("Viram", "right"), th("Resp.", "right"), th("Saíram", "right"), th("Abandono", "right")]];
+    const saiuIni = L.filter((r) => r.status === "visita" && !r.atual).length;
+    corpo.push(["", "Abriram o formulário", barra(inic.length / visitas, 120, 1), { text: fmtN(visitas), alignment: "right" }, { text: fmtN(inic.length), alignment: "right" }, { text: fmtN(saiuIni), alignment: "right" }, { text: pctTxt(saiuIni, visitas), alignment: "right" }]);
+    let n = 0;
+    f.perguntas.forEach((q) => {
+      const viram = L.filter((r) => (r.vistas || []).includes(q.id)).length;
+      const respond = q.tipo === "aviso" ? L.filter((r) => (r.vistas || []).includes(q.id) && (r.status === "concluida" || r.atual !== q.id)).length : L.filter((r) => !FM.vazio((r.respostas || {})[q.id])).length;
+      const sairam = L.filter((r) => r.status !== "concluida" && r.atual === q.id).length;
+      if (q.tipo !== "aviso") n++;
+      const ab = viram ? pct(sairam, viram) : 0;
+      corpo.push([{ text: q.tipo === "aviso" ? "i" : String(n), style: "mut" }, tx(q.titulo || "Sem título"), barra(respond / visitas, 120, viram / visitas),
+        { text: fmtN(viram), alignment: "right" }, { text: fmtN(respond), alignment: "right" }, { text: fmtN(sairam), alignment: "right" },
+        { text: viram ? pctTxt(sairam, viram) : "—", alignment: "right", bold: ab >= 25, color: ab >= 25 ? COR.err : ab >= 10 ? COR.warn : COR.ink }]);
+    });
+    corpo.push([{ text: "", style: "mut" }, { text: "Concluíram", bold: true }, barra(conc.length / visitas, 120), { text: fmtN(conc.length), alignment: "right", bold: true }, "", "", { text: pctTxt(conc.length, visitas), alignment: "right", style: "mut" }]);
+    conteudo.push({ table: { headerRows: 1, widths: [14, "*", 124, 38, 38, 38, 50], body: corpo }, layout: tabela });
+
+    // telas finais
+    if (f.finais.length > 1 && conc.length) {
+      conteudo.push({ text: "Telas finais", style: "h3" });
+      conteudo.push({ table: { widths: ["*", 124, 40, 46], body: f.finais.map((fi) => { const c = conc.filter((r) => r.final_id === fi.id).length; return [tx(fi.nome || fi.titulo), barra(c / conc.length, 120), { text: fmtN(c), alignment: "right" }, { text: pctTxt(c, conc.length), alignment: "right", style: "mut" }]; }) }, layout: tabela });
+    }
+
+    // resumo por pergunta
+    conteudo.push({ text: "Resumo por pergunta", style: "h2", pageBreak: "before" }, { text: op.parciais ? "Considera concluídas e parciais." : "Considera só quem concluiu.", style: "mut", margin: [0, -4, 0, 4] });
+    qs.forEach((q, i) => {
+      const vals = base.map((r) => (r.respostas || {})[q.id]).filter((v) => !FM.vazio(v));
+      const bloco = [{ text: (i + 1) + ". " + tx(q.titulo || "Sem título"), style: "h3" }, { text: (T[q.tipo] || T.curto).nome + " · " + fmtN(vals.length) + " resposta" + (vals.length === 1 ? "" : "s"), style: "mut", margin: [0, 0, 0, 4] }];
+      const t = q.tipo;
+      if (!vals.length) bloco.push({ text: "Nenhuma resposta.", style: "mut" });
+      else if (["unica", "multipla", "lista", "sim_nao"].includes(t)) {
+        const ops = t === "sim_nao" ? ["Sim", "Não"] : (q.opcoes || []).map((o) => o.texto).filter(Boolean);
+        const cont = {}; ops.forEach((o) => cont[o] = 0); const outros = [];
+        vals.forEach((v) => (Array.isArray(v) ? v : [v]).forEach((x) => { if (x in cont) cont[x]++; else outros.push(x); }));
+        const linhas = ops.map((o) => [o, cont[o]]).sort((a, b) => b[1] - a[1]);
+        if (outros.length) linhas.push(["Outro", outros.length]);
+        bloco.push({ table: { widths: ["*", 124, 34, 46], body: linhas.map(([o, c]) => [tx(o), barra(c / vals.length, 120), { text: fmtN(c), alignment: "right" }, { text: pctTxt(c, vals.length), alignment: "right", style: "mut" }]) }, layout: tabela });
+        if (outros.length) bloco.push({ text: "Outro: " + outros.slice(0, 20).map(tx).join(" · "), style: "mut", margin: [0, 3, 0, 0] });
+      } else if (t === "nps") {
+        const ns = vals.map(Number).filter((x) => !isNaN(x));
+        const pro = ns.filter((x) => x >= 9).length, neu = ns.filter((x) => x >= 7 && x <= 8).length, det = ns.filter((x) => x <= 6).length;
+        const score = Math.round((pro - det) / ns.length * 100);
+        bloco.push({ columns: [{ text: (score > 0 ? "+" : "") + score, fontSize: 22, bold: true, width: 70 }, { stack: [{ text: "NPS" }, { text: "Promotores " + pctTxt(pro, ns.length) + " (" + pro + ") · Neutros " + pctTxt(neu, ns.length) + " (" + neu + ") · Detratores " + pctTxt(det, ns.length) + " (" + det + ")", style: "mut" }] }] });
+        const dist = Array.from({ length: 11 }, (_, k) => ns.filter((x) => x === k).length), mx = Math.max(1, ...dist);
+        bloco.push({ table: { widths: Array(11).fill("*"), body: [dist.map((c) => ({ canvas: [{ type: "rect", x: 2, y: 34 - c / mx * 32, w: 22, h: Math.max(0.5, c / mx * 32), r: 2, color: COR.barra }] })), dist.map((c, k) => ({ text: k + (c ? " (" + c + ")" : ""), style: "mut", alignment: "center" }))] }, layout: "noBorders", margin: [0, 6, 0, 0] });
+      } else if (["escala", "estrelas", "numero"].includes(t)) {
+        const ns = vals.map(Number).filter((x) => !isNaN(x));
+        const media = ns.reduce((a, b) => a + b, 0) / Math.max(1, ns.length);
+        bloco.push({ text: [{ text: media.toLocaleString("pt-BR", { maximumFractionDigits: 1 }), fontSize: 18, bold: true }, { text: "  média", style: "mut" }] });
+        if (t !== "numero") {
+          const mi = t === "estrelas" ? 1 : (+q.escala_min || 0), ma = +q.escala_max || 5, linhas = [];
+          for (let k = mi; k <= ma; k++) { const c = ns.filter((x) => x === k).length; linhas.push([t === "estrelas" ? k + " estrela" + (k > 1 ? "s" : "") : String(k), barra(c / ns.length, 120), { text: fmtN(c), alignment: "right" }, { text: pctTxt(c, ns.length), alignment: "right", style: "mut" }]); }
+          bloco.push({ table: { widths: ["*", 124, 34, 46], body: linhas }, layout: tabela });
+        }
+      } else {
+        const lista = base.filter((r) => !FM.vazio((r.respostas || {})[q.id])).slice(0, 25);
+        bloco.push({ ul: lista.map((r) => ({ text: [resp(r.respostas[q.id]), { text: "  " + dataHora(r.concluido_em || r.atualizado_em), style: "mut" }] })), margin: [0, 2, 0, 0] });
+        if (vals.length > 25) bloco.push({ text: "Mostrando 25 de " + vals.length + ". As demais estão nas respostas individuais e no Excel.", style: "mut" });
+      }
+      conteudo.push({ stack: bloco, unbreakable: vals.length <= 12, margin: [0, 0, 0, 6] });
+    });
+
+    // respostas individuais
+    if (op.individuais && base.length) {
+      const lista = base.slice(0, 500);
+      const stRot = { concluida: "Concluída", parcial: "Parcial" };
+      conteudo.push({ text: "Respostas individuais", style: "h2", pageBreak: "before" }, { text: fmtN(base.length) + " resposta" + (base.length === 1 ? "" : "s") + (base.length > 500 ? " · mostrando as 500 mais recentes" : ""), style: "mut", margin: [0, -4, 0, 6] });
+      lista.forEach((r, i) => {
+        const fi = f.finais.find((x) => x.id === r.final_id);
+        const parou = r.status !== "concluida" && r.atual ? P(r.atual) : null;
+        const pr = r.params || {};
+        const origem = [pr.utm_source, pr.utm_campaign, pr.sck].filter(Boolean).join(" · ");
+        const linhas = qs.filter((q) => !FM.vazio((r.respostas || {})[q.id])).map((q) => [{ text: tx(q.titulo || q.chave || "Pergunta"), style: "mut" }, resp(r.respostas[q.id])]);
+        const cab = "#" + (base.length - i) + "   " + dataHora(r.iniciado_em) + "   " + stRot[r.status] + (fi ? "   ·   " + tx(fi.nome || fi.titulo) : "") + (origem ? "   ·   " + tx(origem) : "");
+        conteudo.push({ stack: [
+          { table: { widths: ["*"], body: [[{ text: cab, bold: true, fillColor: COR.fundo, margin: [2, 1, 2, 1] }]] }, layout: "noBorders" },
+          ...(parou ? [{ text: "Parou em: " + tx(parou.titulo), color: COR.warn, margin: [4, 3, 0, 0] }] : []),
+          linhas.length ? { table: { widths: [170, "*"], body: linhas }, layout: tabela, margin: [0, 2, 0, 0] } : { text: "Sem respostas.", style: "mut", margin: [4, 3, 0, 0] }
+        ], unbreakable: linhas.length <= 14, margin: [0, 0, 0, 10] });
+      });
+    }
+  }
+
+  const dd = {
+    pageSize: "A4", pageMargins: [36, 40, 36, 46],
+    info: { title: "Relatório — " + tx(f.titulo), author: "TB Forms" },
+    defaultStyle: { font: "Roboto", fontSize: 9.5, color: COR.ink, lineHeight: 1.15 },
+    styles: { h1: { fontSize: 18, bold: true, margin: [0, 2, 0, 0] }, h2: { fontSize: 13.5, bold: true, margin: [0, 18, 0, 8] }, h3: { fontSize: 10.5, bold: true, margin: [0, 10, 0, 1] }, mut: { color: COR.mut, fontSize: 8.5 }, th: { bold: true, color: COR.mut, fontSize: 8 } },
+    footer: (pag, tot) => ({ columns: [{ text: "TB Forms · " + tx(f.titulo) + " · " + rotuloPeriodo(R), style: "mut" }, { text: "Página " + pag + " de " + tot, alignment: "right", style: "mut" }], margin: [36, 16, 36, 0] }),
+    content: conteudo
+  };
+  await new Promise((ok, erro) => { try { pdfMake.createPdf(dd).download(nomeArquivo("pdf", "relatorio"), ok); } catch (e) { erro(e); } });
 }
 
 // atalho: Ctrl/Cmd+S salva
