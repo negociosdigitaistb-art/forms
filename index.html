@@ -385,7 +385,7 @@
   <form id="lf">
     <div class="brand"><span class="brand-dot">TF</span>TB Forms</div>
     <h1>Entrar</h1>
-    <p>Use o mesmo e-mail e senha do Disparador / Webnario.</p>
+    <p>Entre com o e-mail e a senha que você recebeu.</p>
     <label class="f"><span>E-mail</span><input name="email" type="email" required autocomplete="username"></label>
     <label class="f"><span>Senha</span><input name="senha" type="password" required autocomplete="current-password"></label>
     <button class="pri" style="width:100%">Entrar</button>
@@ -402,7 +402,8 @@
         <svg class="lua" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
         <svg class="sol" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>
       </button>
-      <span id="quem"></span>
+      <a class="b mini ghost" href="#/usuarios" id="nav-usu">Usuários</a>
+      <button class="mini ghost" id="minha-senha" title="Trocar minha senha"><span id="quem"></span></button>
       <button class="mini" id="sair">Sair</button>
     </div>
   </div></header>
@@ -505,16 +506,18 @@ async function iniciar() {
   const { data: adm } = await sb.rpc("fm_is_admin");
   if (!adm) {
     $("#login").classList.remove("hide"); $("#app").classList.add("hide");
-    $("#lerr").textContent = "Esse usuário não tem acesso de administrador."; await sb.auth.signOut(); return;
+    $("#lerr").textContent = "Esse usuário não tem acesso ao TB Forms. Peça para alguém da equipe te cadastrar em Usuários."; await sb.auth.signOut(); return;
   }
   $("#login").classList.add("hide"); $("#app").classList.remove("hide");
   $("#quem").textContent = session.user.email;
+  EU = session.user;
   rotear();
 }
 window.addEventListener("hashchange", () => rotear());
 
 // ---------------- roteamento ----------------
 let ED = null; // estado do editor
+let EU = null; // usuário logado
 async function rotear() {
   const p = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
   if (p[0] === "f" && p[1]) {
@@ -531,6 +534,7 @@ async function rotear() {
     return renderEditor();
   }
   if (ED) { await salvarAgora(); ED = null; }
+  if (p[0] === "usuarios") return renderUsuarios();
   renderLista();
 }
 window.addEventListener("beforeunload", (e) => { if (ED && ED.dirty) { salvarAgora(); e.preventDefault(); e.returnValue = ""; } });
@@ -546,6 +550,118 @@ function normalizar(f) {
 function novoFinal(titulo) {
   return { id: FM.uid("f"), nome: titulo || "Final", titulo: titulo || "Obrigado!", texto: "Sua resposta foi enviada.", botao_texto: "", botao_url: "", redirecionar: "", segundos: 3, repassar_params: false, mostrar_icone: true };
 }
+
+// ---------------- USUÁRIOS ----------------
+async function funcUsuarios(corpo) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) throw new Error("Faça login de novo.");
+  const r = await fetch(CFG.url + "/functions/v1/fm-usuarios", {
+    method: "POST", headers: { Authorization: "Bearer " + session.access_token, apikey: CFG.anon, "Content-Type": "application/json" },
+    body: JSON.stringify(corpo)
+  });
+  let d = {}; try { d = await r.json(); } catch (e) {}
+  if (!r.ok || !d.ok) throw new Error(d.erro || "Não foi possível concluir (" + r.status + ").");
+  return d;
+}
+function gerarSenha() {
+  const c = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const a = new Uint32Array(10); crypto.getRandomValues(a);
+  return Array.from(a, (x) => c[x % c.length]).join("");
+}
+const campoSenha = (id, rot, ajuda) => '<label class="f"><span>' + rot + '</span><div style="display:flex;gap:8px"><input id="' + id + '" type="text" autocomplete="new-password" minlength="8" spellcheck="false" class="mono">' +
+  '<button type="button" class="mini" data-gerar="' + id + '" style="height:40px">Gerar</button></div>' + (ajuda ? "<small>" + ajuda + "</small>" : "") + "</label>";
+function ligarGerar(el) { $$("[data-gerar]", el).forEach((b) => b.onclick = () => { $("#" + b.dataset.gerar, el).value = gerarSenha(); }); }
+function textoAcesso(email, senha) { return "Acesso ao TB Forms\nEndereço: " + location.origin + "\nE-mail: " + email + "\nSenha: " + senha; }
+function mostrarAcesso(titulo, email, senha, obs) {
+  const txt = textoAcesso(email, senha);
+  modal("<h3>" + h(titulo) + '</h3><pre style="font-size:13px">' + h(txt) + "</pre>" + (obs ? '<p class="ajuda" style="margin-top:10px">' + obs + "</p>" : "") +
+    '<div class="rod"><button data-fechar>Fechar</button><button class="pri" id="cp-acesso">Copiar acesso</button></div>',
+    (el) => { $("#cp-acesso", el).onclick = () => copiar(txt); });
+}
+
+async function renderUsuarios() {
+  view.innerHTML = '<div class="pagina" style="max-width:900px"><div class="topo"><h1>Usuários</h1><button class="pri" id="u-novo">+ Novo usuário</button></div>' +
+    '<p class="mut" style="margin:-10px 0 18px">Quem está aqui entra no TB Forms com e-mail e senha e pode criar, editar e ver os resultados de todos os formulários.</p><div id="u-lista" class="mut">Carregando…</div></div>';
+  $("#u-novo").onclick = novoUsuario;
+  const { data, error } = await sb.from("fm_usuarios").select("user_id,nome,email,criado_em").order("criado_em");
+  if (error) { $("#u-lista").innerHTML = '<p style="color:var(--err-fg)">Erro ao carregar: ' + h(error.message) + "</p>"; return; }
+  $("#u-lista").className = "";
+  $("#u-lista").innerHTML = '<div class="tab-wrap"><table><thead><tr><th>Nome</th><th>E-mail (login)</th><th>Desde</th><th></th></tr></thead><tbody>' +
+    data.map((u) => '<tr style="cursor:default"><td><b style="font-weight:600">' + h(u.nome || "—") + "</b>" + (EU && u.user_id === EU.id ? ' <span class="pill visita">você</span>' : "") + "</td><td>" + h(u.email) + '</td><td class="mut">' + new Date(u.criado_em).toLocaleDateString("pt-BR") + "</td>" +
+      '<td style="text-align:right;white-space:nowrap"><button class="mini" data-senha="' + u.user_id + '">Trocar senha</button> ' +
+      (EU && u.user_id === EU.id ? "" : '<button class="mini perigo" data-rem="' + u.user_id + '">Remover acesso</button>') + "</td></tr>").join("") +
+    "</tbody></table></div>";
+  $$("[data-senha]").forEach((b) => b.onclick = () => trocarSenhaDe(data.find((u) => u.user_id === b.dataset.senha)));
+  $$("[data-rem]").forEach((b) => b.onclick = async () => {
+    const u = data.find((x) => x.user_id === b.dataset.rem);
+    if (!await confirmar("Remover o acesso de " + (u.nome || u.email) + " ao TB Forms?", "Remover acesso", true)) return;
+    try { await funcUsuarios({ acao: "remover", usuario_id: u.user_id }); toast("Acesso removido"); renderUsuarios(); }
+    catch (e) { toast(e.message, true); }
+  });
+}
+
+function novoUsuario() {
+  modal("<h3>Novo usuário</h3>" +
+    '<label class="f"><span>Nome</span><input id="nu-nome" maxlength="80" placeholder="Ex.: Angélica"></label>' +
+    '<label class="f"><span>E-mail (é o login)</span><input id="nu-email" type="email" autocomplete="off" placeholder="nome@empresa.com"></label>' +
+    campoSenha("nu-senha", "Senha", "Mínimo de 8 caracteres. Se esse e-mail já tiver login no Disparador ou no Webnario, o acesso é liberado e a senha dele continua a mesma.") +
+    '<p id="nu-erro" style="color:var(--err-fg);min-height:18px;font-size:13px"></p>' +
+    '<div class="rod"><button data-fechar>Cancelar</button><button class="pri" id="nu-ok">Criar usuário</button></div>',
+    (el, fechar) => {
+      ligarGerar(el); $("#nu-senha", el).value = gerarSenha();
+      $("#nu-ok", el).onclick = async () => {
+        const nome = $("#nu-nome", el).value.trim(), email = $("#nu-email", el).value.trim().toLowerCase(), senha = $("#nu-senha", el).value;
+        if (!nome) return $("#nu-erro", el).textContent = "Informe o nome.";
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return $("#nu-erro", el).textContent = "E-mail inválido.";
+        if (senha.length < 8) return $("#nu-erro", el).textContent = "A senha precisa ter pelo menos 8 caracteres.";
+        $("#nu-ok", el).disabled = true; $("#nu-erro", el).textContent = "";
+        try {
+          const r = await funcUsuarios({ acao: "criar", nome, email, senha });
+          fechar(); renderUsuarios();
+          if (r.ja_existia) modal('<h3>Acesso liberado</h3><p>' + h(email) + ' já tinha login (Disparador/Webnario). Agora também entra no TB Forms, com a mesma senha de sempre.</p><div class="rod"><button class="pri" data-fechar>Ok</button></div>');
+          else mostrarAcesso("Usuário criado", email, senha, "Mande esses dados para a pessoa. A senha não fica visível depois que você fechar esta janela.");
+        } catch (e) { $("#nu-erro", el).textContent = e.message; $("#nu-ok", el).disabled = false; }
+      };
+    });
+}
+
+function trocarSenhaDe(u) {
+  const souEu = EU && u.user_id === EU.id;
+  modal("<h3>Trocar senha de " + h(u.nome || u.email) + "</h3>" + campoSenha("ts-senha", "Nova senha", "Mínimo de 8 caracteres. Vale também para o Disparador e o Webnario, que usam o mesmo login.") +
+    '<p id="ts-erro" style="color:var(--err-fg);min-height:18px;font-size:13px"></p><div class="rod"><button data-fechar>Cancelar</button><button class="pri" id="ts-ok">Salvar senha</button></div>',
+    (el, fechar) => {
+      ligarGerar(el); $("#ts-senha", el).value = gerarSenha();
+      $("#ts-ok", el).onclick = async () => {
+        const senha = $("#ts-senha", el).value;
+        if (senha.length < 8) return $("#ts-erro", el).textContent = "A senha precisa ter pelo menos 8 caracteres.";
+        $("#ts-ok", el).disabled = true;
+        try {
+          if (souEu) { const { error } = await sb.auth.updateUser({ password: senha }); if (error) throw error; }
+          else await funcUsuarios({ acao: "senha", usuario_id: u.user_id, senha });
+          fechar();
+          if (souEu) toast("Sua senha foi trocada"); else mostrarAcesso("Senha trocada", u.email, senha, "Mande a nova senha para a pessoa.");
+        } catch (e) { $("#ts-erro", el).textContent = e.message || String(e); $("#ts-ok", el).disabled = false; }
+      };
+    });
+}
+
+function minhaSenha() {
+  modal('<h3>Minha senha</h3><label class="f"><span>Nova senha</span><input id="ms-1" type="password" autocomplete="new-password" minlength="8"></label>' +
+    '<label class="f"><span>Repita a nova senha</span><input id="ms-2" type="password" autocomplete="new-password"></label><p class="ajuda" style="margin:-6px 0 8px">Vale também para o Disparador e o Webnario.</p>' +
+    '<p id="ms-erro" style="color:var(--err-fg);min-height:18px;font-size:13px"></p><div class="rod"><button data-fechar>Cancelar</button><button class="pri" id="ms-ok">Salvar</button></div>',
+    (el, fechar) => {
+      $("#ms-ok", el).onclick = async () => {
+        const a = $("#ms-1", el).value, b = $("#ms-2", el).value;
+        if (a.length < 8) return $("#ms-erro", el).textContent = "A senha precisa ter pelo menos 8 caracteres.";
+        if (a !== b) return $("#ms-erro", el).textContent = "As duas senhas não são iguais.";
+        $("#ms-ok", el).disabled = true;
+        const { error } = await sb.auth.updateUser({ password: a });
+        if (error) { $("#ms-erro", el).textContent = error.message; $("#ms-ok", el).disabled = false; return; }
+        fechar(); toast("Senha trocada");
+      };
+    });
+}
+$("#minha-senha").onclick = minhaSenha;
 
 // ---------------- modelos ----------------
 const TEMA_PADRAO = { fundo: "#0a0b0c", texto: "#F2EEE6", destaque: "#C9A96E", fonte: "Hanken Grotesk" };
