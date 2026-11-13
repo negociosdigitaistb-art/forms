@@ -422,8 +422,23 @@
     const e = validar(p, v);
     if (e) { erro(e); return; }
     if (p.tipo !== "aviso") { if (FM.vazio(v)) delete respostas[p.id]; else respostas[p.id] = v; }
+    sincParams(p, v);
     historico.push(p.id);
     irPara(FM.proximo(form, p.id, respostas));
+  }
+
+  // Se a pessoa editou um campo que veio do link (?email=, ?nome=...), o valor editado passa a valer
+  // no lugar do link: variáveis {{...}}, bloco de tag, ActiveCampaign e o registro salvo.
+  function sincParams(p, v) {
+    if (!FM.PREENCHE.includes(p.tipo) || FM.vazio(v)) return;
+    const nomes = FM.paramsDaPergunta(p); if (!nomes.length) return;
+    const txt = FM.textoResposta(v).slice(0, 300);
+    Object.keys(params).forEach((k) => {
+      if (!nomes.includes(k.toLowerCase()) || params[k] === txt) return;
+      params[k] = txt; brutos[k] = txt;
+      respostas.__params = respostas.__params || {};
+      respostas.__params[k] = txt;
+    });
   }
 
   function autoAvancar() {

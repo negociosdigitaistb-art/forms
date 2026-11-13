@@ -157,3 +157,48 @@ begin
   return c.tags && v_tags;
 end $$;
 grant execute on function public.fm_tem_tag(text, text, text, text) to anon, authenticated;
+
+-- =====================================================================
+-- Valor editado pela pessoa substitui o do link (migração fm_params_editados)
+-- O formulário manda respostas.__params {chave: valor editado}; o banco grava em params e tira de respostas.
+-- =====================================================================
+-- Valor editado pela pessoa substitui o que veio no link: respostas.__params {chave: valor}
+-- só troca chaves que já estavam salvas em params (não deixa criar parâmetros novos)
+create or replace function public.fm_mescla_params(p_atual jsonb, p_resp jsonb) returns jsonb
+language sql immutable set search_path = public as $$
+  select case when jsonb_typeof(p_resp->'__params') = 'object'
+    then coalesce(p_atual, '{}'::jsonb) || coalesce((select jsonb_object_agg(k, left(v, 300)) from jsonb_each_text(p_resp->'__params') e(k, v) where coalesce(p_atual, '{}'::jsonb) ? k), '{}'::jsonb)
+    else coalesce(p_atual, '{}'::jsonb) end;
+$$;
+
+create or replace function public.fm_progresso(p_token text, p_respostas jsonb, p_vistas text[], p_atual text)
+ returns boolean language plpgsql security definer set search_path to 'public' as $function$
+begin
+  if pg_column_size(p_respostas) > 60000 or coalesce(array_length(p_vistas,1),0) > 300 then raise exception 'grande_demais'; end if;
+  update public.fm_respostas r set
+    params = public.fm_mescla_params(r.params, p_respostas),
+    respostas = coalesce(p_respostas, '{}'::jsonb) - '__params',
+    vistas = coalesce(p_vistas, '{}'),
+    atual = left(p_atual, 40),
+    status = case when r.status = 'concluida' then 'concluida'
+                  when (coalesce(p_respostas,'{}'::jsonb) - '__params') <> '{}'::jsonb then 'parcial' else r.status end,
+    atualizado_em = now()
+  where r.token = p_token and r.status <> 'concluida'
+    and exists (select 1 from public.fm_forms f where f.id = r.form_id and f.status = 'publicado');
+  return found;
+end $function$;
+
+create or replace function public.fm_concluir(p_token text, p_respostas jsonb, p_vistas text[], p_final text)
+ returns boolean language plpgsql security definer set search_path to 'public' as $function$
+begin
+  if pg_column_size(p_respostas) > 60000 or coalesce(array_length(p_vistas,1),0) > 300 then raise exception 'grande_demais'; end if;
+  update public.fm_respostas r set
+    params = public.fm_mescla_params(r.params, p_respostas),
+    respostas = coalesce(p_respostas, '{}'::jsonb) - '__params',
+    vistas = coalesce(p_vistas, '{}'),
+    atual = null, final_id = left(p_final, 40),
+    status = 'concluida', concluido_em = now(), atualizado_em = now()
+  where r.token = p_token and r.status <> 'concluida'
+    and exists (select 1 from public.fm_forms f where f.id = r.form_id and f.status = 'publicado');
+  return found;
+end $function$;
