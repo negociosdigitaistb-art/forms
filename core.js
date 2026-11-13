@@ -17,6 +17,7 @@
     aviso:    { nome: "Texto / aviso",     ic: "i",   grupo: "Outros", semResposta: true },
     score:    { nome: "Lead Score (cálculo)", ic: "Σ", grupo: "Lógica", semResposta: true, interno: true },
     faixa:    { nome: "Condição por score",   ic: "⑂", grupo: "Lógica", semResposta: true, interno: true },
+    tag:      { nome: "Tem a tag? (contatos)", ic: "#", grupo: "Lógica", semResposta: true, interno: true },
     active:   { nome: "ActiveCampaign",    ic: "AC",  grupo: "Integrações", semResposta: true, interno: true }
   };
 
@@ -106,6 +107,9 @@
     if (atualId == null) return ps.length ? { tipo: "pergunta", id: ps[0].id } : fimPadrao;
     const i = ps.findIndex((p) => p.id === atualId);
     const p = ps[i];
+    if (p && p.tipo === "tag") {
+      if (((respostas.__vars || {})[varTag(p)]) === "sim") { const d = resolver(p.destino_sim); if (d) return d; }
+    }
     if (p && p.tipo === "faixa") {
       const fx = faixaDe(p, respostas);
       if (fx) { const d = resolver(fx.destino); if (d) return d; }
@@ -161,6 +165,25 @@
     (form.perguntas || []).forEach((p) => { if (p.tipo === "score") s.add(nomeVar(p)); });
     return [...s];
   }
+
+  function varTag(b) { return (b && b.var ? String(b.var) : "tem_tag").replace(/[^\w]/g, "") || "tem_tag"; }
+  // valor de identificação (e-mail ou telefone) para o bloco de tag
+  function identDoBloco(b, form, respostas, params) {
+    const tipo = b.ident === "telefone" ? "telefone" : "email";
+    const ler = (fonte) => {
+      if (!fonte) return "";
+      if (fonte.startsWith("q:")) return textoResposta(respostas[fonte.slice(2)]);
+      if (fonte.startsWith("param:")) return String(pegaParamC(params, fonte.slice(6)) || "");
+      return "";
+    };
+    if (b.fonte) return ler(b.fonte);
+    const q = (form.perguntas || []).find((x) => x.tipo === tipo && !vazio(respostas[x.id]));
+    if (q) return textoResposta(respostas[q.id]);
+    const nomes = tipo === "email" ? ["email", "e-mail", "mail"] : ["telefone", "whatsapp", "phone", "celular", "tel"];
+    for (const n of nomes) { const v = pegaParamC(params, n); if (v) return String(v); }
+    return "";
+  }
+  function pegaParamC(obj, chave) { const k = Object.keys(obj || {}).find((x) => x.toLowerCase() === String(chave).toLowerCase()); return k == null ? undefined : obj[k]; }
 
   function textoResposta(v) {
     if (vazio(v)) return "";
@@ -268,5 +291,5 @@
   // procura um parâmetro sem diferenciar maiúsculas
   function pegaParam(obj, chave) { const k = Object.keys(obj || {}).find((x) => x.toLowerCase() === String(chave).toLowerCase()); return k == null ? undefined : obj[k]; }
 
-  window.FM = { PARAMS_PADRAO, capturaConfig, pegaParam, ehPergunta, ehInterno, calcularScore, faixaDe, rotuloFaixa, nomeVar, varsDoForm, valorDe, num, PREENCHE, paramsDaPergunta, valorDaUrl, TIPOS, OPS, uid, vazio, avaliar, regraBate, proximo, textoResposta, variaveis, chaveSugerida, slugify, norm };
+  window.FM = { varTag, identDoBloco, PARAMS_PADRAO, capturaConfig, pegaParam, ehPergunta, ehInterno, calcularScore, faixaDe, rotuloFaixa, nomeVar, varsDoForm, valorDe, num, PREENCHE, paramsDaPergunta, valorDaUrl, TIPOS, OPS, uid, vazio, avaliar, regraBate, proximo, textoResposta, variaveis, chaveSugerida, slugify, norm };
 })();

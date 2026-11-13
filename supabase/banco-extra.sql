@@ -45,3 +45,115 @@ alter table public.fm_respostas add column if not exists integracoes jsonb not n
 create table if not exists public.fm_ajustes (chave text primary key, valor jsonb not null default '{}'::jsonb, atualizado_em timestamptz not null default now());
 alter table public.fm_ajustes enable row level security;
 -- política fm_ajustes_admin (fm_is_admin) e fm_publico devolvendo 'captura'
+
+-- =====================================================================
+-- Contatos (base de alunos) com tags + bloco "Tem a tag?"  (migração fm_contatos_tags)
+-- =====================================================================
+create or replace function public.fm_tel_norm(t text) returns text language plpgsql immutable set search_path = public as $$
+declare d text := regexp_replace(coalesce(t, ''), '\D', '', 'g');
+begin
+  if length(d) >= 12 and left(d, 2) = '55' then d := substr(d, 3); end if;
+  if length(d) < 10 then return null; end if;
+  d := right(d, case when length(d) >= 11 then 11 else 10 end);
+  return left(d, 2) || right(d, 8);   -- DDD + 8 últimos dígitos (ignora o 9 extra)
+end $$;
+
+create or replace function public.fm_norm_tags(t text[]) returns text[] language sql immutable set search_path = public as $$
+  select coalesce(array_agg(distinct x order by x), '{}')
+  from (select lower(btrim(u)) x from unnest(coalesce(t, '{}')) u) s where x <> '';
+$$;
+
+create table if not exists public.fm_contatos (
+  id uuid primary key default gen_random_uuid(),
+  email text, nome text, telefone text, tel_norm text,
+  tags text[] not null default '{}',
+  criado_em timestamptz not null default now(),
+  atualizado_em timestamptz not null default now()
+);
+create unique index if not exists fm_contatos_email on public.fm_contatos(email) where email is not null;
+create index if not exists fm_contatos_tel on public.fm_contatos(tel_norm);
+create index if not exists fm_contatos_tags_gin on public.fm_contatos using gin(tags);
+
+create or replace function public.fm_contatos_normaliza() returns trigger language plpgsql set search_path = public as $$
+begin
+  new.email := nullif(lower(btrim(coalesce(new.email, ''))), '');
+  new.nome := nullif(btrim(coalesce(new.nome, '')), '');
+  new.telefone := nullif(btrim(coalesce(new.telefone, '')), '');
+  new.tel_norm := public.fm_tel_norm(new.telefone);
+  new.tags := public.fm_norm_tags(new.tags);
+  new.atualizado_em := now();
+  return new;
+end $$;
+drop trigger if exists fm_contatos_normaliza on public.fm_contatos;
+create trigger fm_contatos_normaliza before insert or update on public.fm_contatos for each row execute function public.fm_contatos_normaliza();
+
+alter table public.fm_contatos enable row level security;
+drop policy if exists fm_contatos_admin on public.fm_contatos;
+create policy fm_contatos_admin on public.fm_contatos for all to authenticated using (public.fm_is_admin()) with check (public.fm_is_admin());
+
+-- importa em lotes (até 1000 linhas por chamada); soma tags em quem já existe (mesmo e-mail ou telefone)
+create or replace function public.fm_importar_contatos(p_linhas jsonb, p_tags text[]) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare l jsonb; v_email text; v_tel text; v_norm text; v_nome text; v_tags text[]; v_id uuid;
+  novos int := 0; atualizados int := 0; ignorados int := 0;
+begin
+  if not public.fm_is_admin() then raise exception 'sem_permissao'; end if;
+  if jsonb_array_length(p_linhas) > 1000 then raise exception 'lote_grande'; end if;
+  for l in select * from jsonb_array_elements(p_linhas) loop
+    v_email := nullif(lower(btrim(coalesce(l->>'email', ''))), '');
+    if v_email is not null and v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then v_email := null; end if;
+    v_tel := nullif(btrim(coalesce(l->>'telefone', '')), '');
+    v_norm := public.fm_tel_norm(v_tel);
+    v_nome := nullif(btrim(coalesce(l->>'nome', '')), '');
+    v_tags := public.fm_norm_tags(coalesce(p_tags, '{}') || coalesce(array(select jsonb_array_elements_text(coalesce(l->'tags', '[]'::jsonb))), '{}'));
+    if v_email is null and v_norm is null then ignorados := ignorados + 1; continue; end if;
+    v_id := null;
+    if v_email is not null then select id into v_id from public.fm_contatos where email = v_email; end if;
+    if v_id is null and v_norm is not null then select id into v_id from public.fm_contatos where tel_norm = v_norm and (email is null or v_email is null) limit 1; end if;
+    if v_id is null then
+      insert into public.fm_contatos(email, nome, telefone, tags) values (v_email, v_nome, v_tel, v_tags);
+      novos := novos + 1;
+    else
+      update public.fm_contatos set tags = public.fm_norm_tags(tags || v_tags),
+        nome = coalesce(nome, v_nome), telefone = coalesce(telefone, v_tel), email = coalesce(email, v_email)
+      where id = v_id;
+      atualizados := atualizados + 1;
+    end if;
+  end loop;
+  return jsonb_build_object('novos', novos, 'atualizados', atualizados, 'ignorados', ignorados);
+end $$;
+
+create or replace function public.fm_contatos_tags() returns table(tag text, total bigint)
+language sql stable security definer set search_path = public as $$
+  select t, count(*) from public.fm_contatos, unnest(tags) t where public.fm_is_admin() group by t order by 2 desc, 1;
+$$;
+
+create or replace function public.fm_contatos_tirar_tag(p_tag text) returns integer
+language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  if not public.fm_is_admin() then raise exception 'sem_permissao'; end if;
+  update public.fm_contatos set tags = array_remove(tags, lower(btrim(p_tag))) where lower(btrim(p_tag)) = any(tags);
+  get diagnostics n = row_count; return n;
+end $$;
+
+-- pública: só responde sim/não, e só para as tags configuradas num bloco "tag" de um formulário publicado
+create or replace function public.fm_tem_tag(p_slug text, p_bloco text, p_email text, p_tel text) returns boolean
+language plpgsql stable security definer set search_path = public as $$
+declare f public.fm_forms; b jsonb; v_tags text[]; v_email text; v_norm text; c public.fm_contatos;
+begin
+  select * into f from public.fm_forms where slug = lower(p_slug) and status = 'publicado';
+  if not found then raise exception 'form_indisponivel'; end if;
+  select x into b from jsonb_array_elements(f.perguntas) x where x->>'id' = p_bloco and x->>'tipo' = 'tag';
+  if b is null then raise exception 'bloco_inexistente'; end if;
+  v_tags := public.fm_norm_tags(array(select jsonb_array_elements_text(coalesce(b->'tags', '[]'::jsonb))));
+  if coalesce(array_length(v_tags, 1), 0) = 0 then return false; end if;
+  v_email := nullif(lower(btrim(coalesce(p_email, ''))), '');
+  v_norm := public.fm_tel_norm(p_tel);
+  if v_email is not null then select * into c from public.fm_contatos where email = v_email; end if;
+  if c.id is null and v_norm is not null then select * into c from public.fm_contatos where tel_norm = v_norm limit 1; end if;
+  if c.id is null then return false; end if;
+  if coalesce(b->>'modo', 'qualquer') = 'todas' then return c.tags @> v_tags; end if;
+  return c.tags && v_tags;
+end $$;
+grant execute on function public.fm_tem_tag(text, text, text, text) to anon, authenticated;

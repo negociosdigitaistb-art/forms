@@ -376,7 +376,8 @@
   .fx-dot.ligado { background:var(--link); }
   .fx-dot.impl { border-color:var(--muted); border-style:dashed; }
   .fx-porta.faixa .fx-dot { border-color:var(--log-fg); } .fx-porta.faixa .fx-dot.ligado { background:var(--log-fg); }
-  .fx-linha.faixa { stroke:var(--log-fg); }
+  .fx-linha.faixa, .fx-linha.tagsim { stroke:var(--log-fg); }
+  .fx-porta.tagsim .fx-dot { border-color:var(--log-fg); } .fx-porta.tagsim .fx-dot.ligado { background:var(--log-fg); }
   .fx-porta.padrao .fx-dot { border-color:var(--ink2); } .fx-porta.padrao .fx-dot.ligado { background:var(--ink2); }
   .fx-porta.nps-det .fx-dot { border-color:#E5484D; } .fx-porta.nps-det .fx-dot.ligado { background:#E5484D; }
   .fx-porta.nps-neu .fx-dot { border-color:#D9A21B; } .fx-porta.nps-neu .fx-dot.ligado { background:#D9A21B; }
@@ -408,7 +409,7 @@
     .brand { font-size:15px; gap:8px; }
     .brand-dot { width:26px; height:26px; }
     .who { gap:6px; }
-    #nav-cfg, #nav-usu { display:none; }
+    #nav-cfg, #nav-usu, #nav-cont { display:none; }
     #nav-menu { display:inline-flex !important; }
     #minha-senha { max-width:120px; overflow:hidden; text-overflow:ellipsis; display:inline-block; }
     #quem { overflow:hidden; text-overflow:ellipsis; }
@@ -422,6 +423,8 @@
     .abas a { flex:1 1 auto; justify-content:center; padding:0 6px; font-size:12.5px; }
     .topo h1 { font-size:22px; min-width:0; }
     .topo { margin-bottom:16px; }
+    .topo-2 h1 { flex-basis:100%; }
+    #ct-busca { width:100% !important; }
     .painel { padding:16px 12px 60px; }
     .card { padding:16px; border-radius:12px; }
     .lado { max-height:none; padding:10px 8px 14px; }
@@ -508,6 +511,7 @@
         <svg class="sol" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>
       </button>
       <button class="mini ghost" id="nav-menu" aria-label="Menu">☰</button>
+      <a class="b mini ghost" href="#/contatos" id="nav-cont">Contatos</a>
       <a class="b mini ghost" href="#/usuarios" id="nav-usu">Usuários</a>
       <a class="b mini ghost" href="#/config" id="nav-cfg">Configurações</a>
       <button class="mini ghost" id="minha-senha" title="Trocar minha senha"><span id="quem"></span></button>
@@ -653,6 +657,7 @@ async function rotear() {
   if (ED) { await salvarAgora(); ED = null; }
   if (p[0] === "usuarios") return renderUsuarios();
   if (p[0] === "config") return renderConfig();
+  if (p[0] === "contatos") return renderContatos();
   renderLista();
 }
 window.addEventListener("beforeunload", (e) => { if (ED && ED.dirty) { salvarAgora(); e.preventDefault(); e.returnValue = ""; } });
@@ -782,6 +787,7 @@ function minhaSenha() {
 $("#minha-senha").onclick = minhaSenha;
 $("#nav-menu").onclick = (e) => menu(e.currentTarget, [
   { rot: "Formulários", fn: () => location.hash = "#/" },
+  { rot: "Contatos", fn: () => location.hash = "#/contatos" },
   { rot: "Usuários", fn: () => location.hash = "#/usuarios" },
   { rot: "Configurações", fn: () => location.hash = "#/config" },
   { rot: "Minha senha", fn: minhaSenha }
@@ -1133,6 +1139,15 @@ function prepararTipo(p) {
     if (p.zerar == null) p.zerar = true;
     p.pontuacao = p.pontuacao || [];
   }
+  if (p.tipo === "tag") {
+    p.obrigatorio = false; p.chave = "";
+    if (!p.titulo) p.titulo = "É aluno?";
+    if (!p.ident) p.ident = "email";
+    if (!p.tags) p.tags = [];
+    if (!p.modo) p.modo = "qualquer";
+    if (!p.var) p.var = "tem_tag";
+    if (p.destino_sim == null) p.destino_sim = "";
+  }
   if (p.tipo === "faixa") {
     p.obrigatorio = false; p.chave = "";
     if (!p.titulo) p.titulo = "Separar por score";
@@ -1165,6 +1180,7 @@ function removerReferencias(id, ehFinal) {
     p.regras = (p.regras || []).filter((r) => r.destino !== alvo && !(r.conds || []).some((c) => c.pergunta === id));
     if (p.depois === alvo) p.depois = "";
     (p.faixas || []).forEach((x) => { if (x.destino === alvo) x.destino = ""; });
+    if (p.destino_sim === alvo) p.destino_sim = "";
     if (p.pontuacao) p.pontuacao = p.pontuacao.filter((r) => r.pergunta !== id && !(r.conds || []).some((c) => c.pergunta === id));
   });
 }
@@ -1249,6 +1265,7 @@ function painelPergunta(pn, p) {
   if (p.tipo === "active") return painelActive(pn, p);
   if (p.tipo === "score") return painelScore(pn, p);
   if (p.tipo === "faixa") return painelFaixa(pn, p);
+  if (p.tipo === "tag") return painelTag(pn, p);
   const f = ED.form;
   const t = T[p.tipo] || T.curto;
   const i = f.perguntas.indexOf(p);
@@ -1523,13 +1540,14 @@ function fxPortas(p) {
       portas.push({ chave: "nps:" + k, rot, alvo: r && fxExiste(r.destino) ? r.destino : null, rid: r ? r.id : null, spec: { tipo: "nps", faixa: k }, cls: "nps-" + k });
     });
   }
+  if (t === "tag") portas.push({ chave: "tag:sim", rot: "Tem " + ((p.tags || []).length > 1 ? (p.modo === "todas" ? "todas as tags" : "alguma das tags") : "a tag" + (p.tags && p.tags[0] ? " " + p.tags[0] : "")), alvo: fxExiste(p.destino_sim) ? p.destino_sim : null, spec: { tipo: "tagsim" }, cls: "tagsim" });
   if (t === "faixa") (p.faixas || []).forEach((x) => portas.push({ chave: "fx:" + x.id, rot: (x.rotulo || "Faixa") + " (" + FM.rotuloFaixa(x) + ")", alvo: fxExiste(x.destino) ? x.destino : null, spec: { tipo: "faixa", id: x.id }, cls: "faixa" }));
   regras.forEach((r) => { if (!usadas.has(r.id)) portas.push({ chave: "r:" + r.id, rot: resumoRegra(r, p), alvo: fxExiste(r.destino) ? r.destino : null, rid: r.id, spec: { tipo: "regra" }, cls: "regra" }); });
   const i = f.perguntas.indexOf(p);
   let alvo = p.depois, impl = false;
   if (p.depois === "fim") alvo = null;
   else if (!fxExiste(alvo)) { impl = true; alvo = f.perguntas[i + 1] ? f.perguntas[i + 1].id : (f.finais[0] ? "fim:" + f.finais[0].id : null); }
-  portas.push({ chave: "padrao", rot: p.tipo === "faixa" ? "Nenhuma faixa" : portas.length ? "Qualquer outra resposta" : (p.tipo === "aviso" ? "Continuar" : p.tipo === "active" ? "Depois de enviar" : p.tipo === "score" ? "Depois de calcular" : "Depois de responder"), alvo, impl, spec: { tipo: "padrao" }, cls: "padrao" });
+  portas.push({ chave: "padrao", rot: p.tipo === "tag" ? "Não tem" : p.tipo === "faixa" ? "Nenhuma faixa" : portas.length ? "Qualquer outra resposta" : (p.tipo === "aviso" ? "Continuar" : p.tipo === "active" ? "Depois de enviar" : p.tipo === "score" ? "Depois de calcular" : "Depois de responder"), alvo, impl, spec: { tipo: "padrao" }, cls: "padrao" });
   return portas;
 }
 function fxLigar(p, chave, alvo) {
@@ -1537,6 +1555,7 @@ function fxLigar(p, chave, alvo) {
   p.regras = p.regras || [];
   if (porta.spec.tipo === "padrao") p.depois = alvo;
   else if (porta.spec.tipo === "faixa") { const x = (p.faixas || []).find((y) => y.id === porta.spec.id); if (x) x.destino = alvo; }
+  else if (porta.spec.tipo === "tagsim") p.destino_sim = alvo;
   else if (porta.rid) { const r = p.regras.find((x) => x.id === porta.rid); if (r) r.destino = alvo; }
   else {
     let conds, juncao = "e";
@@ -1552,6 +1571,7 @@ function fxDesligar(p, chave) {
   const porta = fxPortas(p).find((x) => x.chave === chave); if (!porta) return;
   if (porta.spec.tipo === "padrao") p.depois = "fim";
   else if (porta.spec.tipo === "faixa") { const x = (p.faixas || []).find((y) => y.id === porta.spec.id); if (x) x.destino = ""; }
+  else if (porta.spec.tipo === "tagsim") p.destino_sim = "";
   else if (porta.rid) p.regras = (p.regras || []).filter((x) => x.id !== porta.rid);
   marcarSujo();
 }
@@ -2040,6 +2060,7 @@ function fontesActive(atual) {
   return '<option value="">— escolha —</option>' +
     '<optgroup label="Respostas do formulário">' + ps.map((q) => opt("q:" + q.id, rotuloQ(q))).join("") + "</optgroup>" +
     '<optgroup label="Parâmetros do link">' + PARAMS.concat(extra).map((k) => opt("param:" + k, nomeParam(k) === k ? "?" + k + "=" : nomeParam(k) + "  (?" + k + "=)")).join("") + opt("param:__novo", "Outro parâmetro…") + "</optgroup>" +
+    (f.perguntas.some((q) => q.tipo === "tag") ? '<optgroup label="Tem a tag?">' + f.perguntas.filter((q) => q.tipo === "tag").map((b) => opt("var:" + FM.varTag(b), "# " + (b.titulo || "Tag") + " (sim/nao)")).join("") + "</optgroup>" : "") +
     (FM.varsDoForm(f).length ? '<optgroup label="Lead Score">' + FM.varsDoForm(f).map((v) => opt("var:" + v, "Σ " + v) + opt("var:" + v + "_faixa", "Σ " + v + " · nome da faixa")).join("") + "</optgroup>" : "") +
     '<optgroup label="Outros">' + opt("meta:form", "Nome do formulário") + opt("meta:data", "Data da resposta") + opt("fixo:", "Texto fixo…") + "</optgroup>";
 }
@@ -2169,6 +2190,7 @@ function resumoBloco(p) {
   if (p.tipo === "active") return resumoActive(p);
   if (p.tipo === "score") { const n = (p.pontuacao || []).length; return "{{" + FM.nomeVar(p) + "}} · " + n + " regra" + (n === 1 ? "" : "s"); }
   if (p.tipo === "faixa") { const n = (p.faixas || []).length; return "{{" + FM.nomeVar(p) + "}} · " + n + " faixa" + (n === 1 ? "" : "s"); }
+  if (p.tipo === "tag") return (p.tags || []).length ? (p.ident === "telefone" ? "pelo telefone · " : "pelo e-mail · ") + p.tags.join(", ") : "sem tag escolhida";
   return "";
 }
 function cabBloco(p, i, f, rotulo) {
@@ -2332,6 +2354,221 @@ function painelFaixa(pn, p) {
   ligarCabBloco(pn, p, i, f);
   renderLogica(p);
   const lbl = $("#logica label.f > span"); if (lbl) lbl.textContent = "Se o score não cair em nenhuma faixa, ir para";
+}
+
+
+// ---------------- CONTATOS (base de alunos) ----------------
+let TAGS_CACHE = null;
+async function carregarTags(forcar) {
+  if (TAGS_CACHE && !forcar) return TAGS_CACHE;
+  const { data, error } = await sb.rpc("fm_contatos_tags");
+  if (error) throw error;
+  TAGS_CACHE = data || []; return TAGS_CACHE;
+}
+const normTag = (t) => String(t || "").trim().toLowerCase().slice(0, 60);
+
+function painelTag(pn, p) {
+  const f = ED.form, i = f.perguntas.indexOf(p);
+  const tipo = p.ident === "telefone" ? "telefone" : "email";
+  const qs = f.perguntas.filter((q) => FM.ehPergunta(q) && (tipo === "email" ? ["email", "curto"].includes(q.tipo) : ["telefone", "curto"].includes(q.tipo)));
+  const auto = f.perguntas.find((q) => q.tipo === tipo);
+  pn.innerHTML = '<div class="painel-in">' + cabBloco(p, i, f, "Tem a tag?") +
+    '<div class="card"><p class="ajuda" style="margin:0 0 12px">Quem responde não vê esta etapa. O formulário procura a pessoa na sua base de <a href="#/contatos">Contatos</a> e segue por <b>Sim</b> se ela tiver a tag, ou por <b>Não</b> se não tiver (ou se não estiver na base).</p>' +
+    campo("Nome do bloco", '<input id="tg-nome" value="' + h(p.titulo || "") + '" maxlength="80">') +
+    '<div class="g2">' + campo("Identificar a pessoa por", '<select id="tg-ident"><option value="email"' + (tipo === "email" ? " selected" : "") + '>E-mail</option><option value="telefone"' + (tipo === "telefone" ? " selected" : "") + ">Telefone</option></select>") +
+    campo("Vem de", '<select id="tg-fonte"><option value="">Automático: ' + h(auto ? "pergunta “" + (auto.titulo || tipo) + "”" : "?" + (tipo === "email" ? "email" : "telefone") + "= do link") + "</option>" +
+      '<optgroup label="Respostas">' + qs.map((q) => '<option value="q:' + q.id + '"' + (p.fonte === "q:" + q.id ? " selected" : "") + ">" + h(rotuloQ(q)) + "</option>").join("") + "</optgroup>" +
+      '<optgroup label="Link">' + (tipo === "email" ? ["email"] : ["telefone", "whatsapp"]).map((k) => '<option value="param:' + k + '"' + (p.fonte === "param:" + k ? " selected" : "") + ">?" + k + "=</option>").join("") + "</optgroup></select>") + "</div>" +
+    '<p class="ajuda" style="margin-top:-6px">Coloque este bloco <b>depois</b> da pergunta de ' + (tipo === "email" ? "e-mail" : "telefone") + ', ou use o link com <code>?' + (tipo === "email" ? "email" : "telefone") + "=</code>." + (tipo === "telefone" ? " O telefone é comparado pelo DDD + 8 últimos dígitos (com ou sem 55 e o 9 na frente)." : "") + "</p></div>" +
+    '<div class="card"><h3>Tags</h3><div class="chips" id="tg-tags"></div><input id="tg-busca" placeholder="Digite uma tag da sua base…" autocomplete="off"><div id="tg-sug"></div>' +
+    '<div style="margin-top:12px"><label class="tg" style="margin-bottom:6px"><input type="radio" name="tg-modo" value="qualquer"' + (p.modo !== "todas" ? " checked" : "") + ' style="appearance:auto;width:auto;height:auto"> Sim se tiver <b>qualquer uma</b> das tags</label>' +
+    '<label class="tg"><input type="radio" name="tg-modo" value="todas"' + (p.modo === "todas" ? " checked" : "") + ' style="appearance:auto;width:auto;height:auto"> Sim só se tiver <b>todas</b></label></div><p class="ajuda" id="tg-cont"></p></div>' +
+    '<div class="card"><h3>Saídas</h3>' + campo("Se tiver a tag (Sim), ir para", '<select id="tg-sim"><option value="">— ligar depois —</option>' + opcoesDestino(p.id, p.destino_sim, false) + "</select>") +
+    '<p class="ajuda" style="margin-top:-6px">“Não tem” usa o destino logo abaixo. No Fluxo, cada saída é uma bolinha.</p>' +
+    campo("Guardar o resultado em", '<input id="tg-var" value="' + h(FM.varTag(p)) + '" maxlength="30">', "Fica <code>sim</code> ou <code>nao</code> em <code>{{" + h(FM.varTag(p)) + "}}</code>, aparece nos resultados e pode ir para o ActiveCampaign.") + "</div>" +
+    '<div class="card" id="logica"></div></div>';
+  const mud = () => { marcarSujo(); renderLadoLeve(); };
+  const desenharTags = () => {
+    $("#tg-tags").innerHTML = (p.tags || []).length ? p.tags.map((t, j) => '<span class="chip">' + h(t) + '<button data-tdel="' + j + '" aria-label="Remover tag">×</button></span>').join("") : '<span class="mut" style="font-size:13px">Nenhuma tag escolhida.</span>';
+    $$("[data-tdel]", pn).forEach((b) => b.onclick = () => { p.tags.splice(+b.dataset.tdel, 1); mud(); desenharTags(); contar(); });
+  };
+  const contar = () => {
+    const el = $("#tg-cont"); if (!el) return;
+    carregarTags().then((ts) => {
+      const m = {}; ts.forEach((x) => m[x.tag] = x.total);
+      el.textContent = (p.tags || []).length ? p.tags.map((t) => t + ": " + fmtN(m[t] || 0) + " contato" + ((m[t] || 0) === 1 ? "" : "s")).join(" · ") : "";
+      if ((p.tags || []).some((t) => !m[t])) el.textContent += " — atenção: tag sem ninguém na base ainda.";
+    }).catch(() => {});
+  };
+  desenharTags(); contar();
+  const busca = $("#tg-busca");
+  const sugerir = () => {
+    const q = normTag(busca.value);
+    carregarTags().then((ts) => {
+      const lst = ts.filter((x) => !p.tags.includes(x.tag) && (!q || x.tag.includes(q))).slice(0, 12);
+      $("#tg-sug").innerHTML = '<div class="sugest">' + lst.map((x) => '<button data-tadd="' + h(x.tag) + '">' + h(x.tag) + ' <span class="mut" style="margin-left:6px">' + fmtN(x.total) + "</span></button>").join("") +
+        (q && !ts.some((x) => x.tag === q) ? '<button data-tadd="' + h(q) + '">Usar “' + h(q) + '” (ainda sem contatos)</button>' : "") + "</div>";
+      if (!lst.length && !q) $("#tg-sug").innerHTML = '<p class="ajuda">Sua base ainda não tem tags. Importe contatos em <a href="#/contatos">Contatos</a>.</p>';
+      $$("[data-tadd]", pn).forEach((b) => b.onclick = () => { if (!p.tags.includes(b.dataset.tadd)) p.tags.push(b.dataset.tadd); busca.value = ""; $("#tg-sug").innerHTML = ""; mud(); desenharTags(); contar(); });
+    }).catch((e) => { $("#tg-sug").innerHTML = '<p class="ajuda" style="color:var(--err-fg)">' + h(e.message) + "</p>"; });
+  };
+  busca.onfocus = sugerir; busca.oninput = sugerir;
+  busca.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); const q = normTag(busca.value); if (q && !p.tags.includes(q)) { p.tags.push(q); mud(); desenharTags(); contar(); } busca.value = ""; $("#tg-sug").innerHTML = ""; } };
+  $("#tg-nome").oninput = (e) => { p.titulo = e.target.value; mud(); };
+  $("#tg-ident").onchange = (e) => { p.ident = e.target.value; p.fonte = ""; mud(); painelTag(pn, p); };
+  $("#tg-fonte").onchange = (e) => { p.fonte = e.target.value; mud(); };
+  $$('input[name="tg-modo"]', pn).forEach((r) => r.onchange = () => { p.modo = r.value; mud(); });
+  $("#tg-sim").onchange = (e) => { p.destino_sim = e.target.value; mud(); };
+  $("#tg-var").oninput = (e) => { const v = e.target.value.replace(/[^\w]/g, "").slice(0, 30); if (v !== e.target.value) e.target.value = v; p.var = v || "tem_tag"; mud(); };
+  ligarCabBloco(pn, p, i, f);
+  renderLogica(p);
+  const lbl = $("#logica label.f > span"); if (lbl) lbl.textContent = "Se não tiver a tag (Não), ir para";
+}
+
+// ---------- página Contatos ----------
+const CT = { busca: "", tag: "", pagina: 0 };
+async function renderContatos() {
+  view.innerHTML = '<div class="pagina"><div class="topo topo-2"><h1>Contatos</h1><button class="pri" id="ct-imp">⬆ Importar planilha</button><button id="ct-novo">+ Contato</button></div>' +
+    '<p class="mut" style="margin:-10px 0 16px">Sua base de alunos/clientes com tags. O bloco <b>Tem a tag?</b> dos formulários consulta esta base pelo e-mail ou telefone.</p>' +
+    '<div class="card" id="ct-tags"><span class="mut">Carregando tags…</span></div>' +
+    '<div class="barra"><input id="ct-busca" placeholder="Buscar por nome, e-mail ou telefone…" value="' + h(CT.busca) + '" style="width:320px"><select id="ct-ftag"><option value="">Todas as tags</option></select><div class="esp"></div><span id="ct-total" class="mut"></span></div>' +
+    '<div id="ct-lista" class="mut">Carregando…</div></div>';
+  $("#ct-imp").onclick = importarContatos;
+  $("#ct-novo").onclick = () => editarContato(null);
+  let bt; $("#ct-busca").oninput = (e) => { clearTimeout(bt); bt = setTimeout(() => { CT.busca = e.target.value.trim(); CT.pagina = 0; listarContatos(); }, 300); };
+  $("#ct-ftag").onchange = (e) => { CT.tag = e.target.value; CT.pagina = 0; listarContatos(); };
+  desenharTagsBase(true);
+  listarContatos();
+}
+async function desenharTagsBase(forcar) {
+  let ts;
+  try { ts = await carregarTags(forcar); } catch (e) { $("#ct-tags").innerHTML = '<p style="color:var(--err-fg)">' + h(e.message) + "</p>"; return; }
+  const box = $("#ct-tags"); if (!box) return;
+  box.innerHTML = "<h3>Tags <small>" + ts.length + "</small></h3>" + (ts.length ? '<div class="chips">' + ts.map((x) => '<span class="chip" style="cursor:pointer" data-ct="' + h(x.tag) + '">' + h(x.tag) + ' <b style="margin-left:4px">' + fmtN(x.total) + '</b><button data-ctm="' + h(x.tag) + '" aria-label="Opções da tag">⋯</button></span>').join("") + "</div>" : '<p class="mut">Nenhuma tag ainda. Importe uma planilha e escolha as tags.</p>');
+  const sel = $("#ct-ftag");
+  if (sel) sel.innerHTML = '<option value="">Todas as tags</option>' + ts.map((x) => '<option value="' + h(x.tag) + '"' + (CT.tag === x.tag ? " selected" : "") + ">" + h(x.tag) + " (" + fmtN(x.total) + ")</option>").join("");
+  $$("[data-ct]", box).forEach((c) => c.onclick = (e) => { if (e.target.closest("[data-ctm]")) return; CT.tag = c.dataset.ct; CT.pagina = 0; $("#ct-ftag").value = CT.tag; listarContatos(); });
+  $$("[data-ctm]", box).forEach((b) => b.onclick = (e) => {
+    e.stopPropagation();
+    const t = b.dataset.ctm;
+    menu(b, [
+      { rot: "Ver contatos com esta tag", fn: () => { CT.tag = t; CT.pagina = 0; $("#ct-ftag").value = t; listarContatos(); } },
+      { rot: "Tirar esta tag de todos", perigo: true, fn: async () => {
+        if (!await confirmar("Tirar a tag “" + t + "” de todos os contatos? Os contatos continuam na base.", "Tirar tag", true)) return;
+        const { data, error } = await sb.rpc("fm_contatos_tirar_tag", { p_tag: t });
+        if (error) return toast(error.message, true);
+        toast("Tag tirada de " + fmtN(data) + " contato(s)"); if (CT.tag === t) CT.tag = ""; desenharTagsBase(true); listarContatos();
+      } }
+    ]);
+  });
+}
+async function listarContatos() {
+  const POR = 50;
+  let q = sb.from("fm_contatos").select("id,nome,email,telefone,tags,atualizado_em", { count: "exact" }).order("atualizado_em", { ascending: false }).range(CT.pagina * POR, CT.pagina * POR + POR - 1);
+  if (CT.tag) q = q.contains("tags", [CT.tag]);
+  if (CT.busca) { const b = CT.busca.replace(/[,()%*]/g, " ").trim(); if (b) q = q.or("nome.ilike.*" + b + "*,email.ilike.*" + b + "*,telefone.ilike.*" + b + "*"); }
+  const { data, error, count } = await q;
+  const box = $("#ct-lista"); if (!box) return;
+  if (error) { box.innerHTML = '<p style="color:var(--err-fg)">' + h(error.message) + "</p>"; return; }
+  $("#ct-total").textContent = fmtN(count || 0) + " contato" + (count === 1 ? "" : "s") + (CT.tag ? " com " + CT.tag : "");
+  box.className = "";
+  if (!data.length) { box.innerHTML = '<div class="card vazio" style="padding:30px">' + (CT.busca || CT.tag ? "Nenhum contato com esse filtro." : "Base vazia. Clique em <b>Importar planilha</b> para começar.") + "</div>"; return; }
+  const pags = Math.max(1, Math.ceil((count || 0) / POR));
+  box.innerHTML = '<div class="tab-wrap"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Tags</th></tr></thead><tbody>' +
+    data.map((c) => '<tr data-id="' + c.id + '"><td>' + h(c.nome || "—") + "</td><td>" + h(c.email || "") + '</td><td class="mut">' + h(c.telefone || "") + '</td><td style="white-space:normal">' + (c.tags || []).map((t) => '<span class="chip">' + h(t) + "</span>").join(" ") + "</td></tr>").join("") +
+    '</tbody></table><div class="pag">Página ' + (CT.pagina + 1) + " de " + pags + '<button class="mini" id="ct-a"' + (CT.pagina === 0 ? " disabled" : "") + '>‹</button><button class="mini" id="ct-p"' + (CT.pagina >= pags - 1 ? " disabled" : "") + ">›</button></div></div>";
+  $("#ct-a").onclick = () => { CT.pagina--; listarContatos(); };
+  $("#ct-p").onclick = () => { CT.pagina++; listarContatos(); };
+  $$("#ct-lista tbody tr").forEach((tr) => tr.onclick = () => editarContato(data.find((c) => c.id === tr.dataset.id)));
+}
+function editarContato(c) {
+  const tags = c ? (c.tags || []).slice() : [];
+  modal("<h3>" + (c ? "Contato" : "Novo contato") + "</h3>" +
+    '<label class="f"><span>Nome</span><input id="ec-nome" value="' + h(c ? c.nome || "" : "") + '"></label>' +
+    '<div class="g2"><label class="f"><span>E-mail</span><input id="ec-email" type="email" value="' + h(c ? c.email || "" : "") + '"></label><label class="f"><span>Telefone</span><input id="ec-tel" value="' + h(c ? c.telefone || "" : "") + '"></label></div>' +
+    '<label class="f"><span>Tags</span><div class="chips" id="ec-tags"></div><input id="ec-tag" placeholder="Digite uma tag e aperte Enter"></label>' +
+    '<p id="ec-erro" style="color:var(--err-fg);min-height:18px;font-size:13px"></p>' +
+    '<div class="rod">' + (c ? '<button class="perigo" id="ec-del" style="margin-right:auto">Excluir</button>' : "") + '<button data-fechar>Cancelar</button><button class="pri" id="ec-ok">Salvar</button></div>', (el, fechar) => {
+      const dt = () => { $("#ec-tags", el).innerHTML = tags.map((t, j) => '<span class="chip">' + h(t) + '<button data-x="' + j + '">×</button></span>').join(""); $$("[data-x]", el).forEach((b) => b.onclick = () => { tags.splice(+b.dataset.x, 1); dt(); }); };
+      dt();
+      $("#ec-tag", el).onkeydown = (e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); const t = normTag(e.target.value); if (t && !tags.includes(t)) tags.push(t); e.target.value = ""; dt(); } };
+      $("#ec-ok", el).onclick = async () => {
+        const pend = normTag($("#ec-tag", el).value); if (pend && !tags.includes(pend)) tags.push(pend);
+        const reg = { nome: $("#ec-nome", el).value, email: $("#ec-email", el).value, telefone: $("#ec-tel", el).value, tags };
+        if (!reg.email.trim() && !reg.telefone.trim()) return $("#ec-erro", el).textContent = "Informe e-mail ou telefone.";
+        const r = c ? await sb.from("fm_contatos").update(reg).eq("id", c.id) : await sb.from("fm_contatos").insert(reg);
+        if (r.error) return $("#ec-erro", el).textContent = /duplicate|unique/i.test(r.error.message) ? "Já existe um contato com esse e-mail." : r.error.message;
+        fechar(); toast("Contato salvo"); desenharTagsBase(true); listarContatos();
+      };
+      if (c) $("#ec-del", el).onclick = async () => {
+        if (!await confirmar("Excluir este contato da base?", "Excluir", true)) return;
+        const { error } = await sb.from("fm_contatos").delete().eq("id", c.id);
+        if (error) return toast(error.message, true);
+        fechar(); toast("Contato excluído"); desenharTagsBase(true); listarContatos();
+      };
+    });
+}
+function importarContatos() {
+  let linhas = [], colunas = [];
+  const fechar = modal('<h3>Importar planilha</h3>' +
+    '<p class="ajuda" style="margin:-8px 0 12px">Excel (.xlsx/.xls) ou CSV, com uma linha de cabeçalho. Quem já estiver na base (mesmo e-mail ou telefone) só ganha as tags novas.</p>' +
+    '<input type="file" id="im-arq" accept=".xlsx,.xls,.csv,.txt"><div id="im-passo2"></div>', (el) => {
+      $("#im-arq", el).onchange = async (e) => {
+        const arq = e.target.files[0]; if (!arq) return;
+        $("#im-passo2", el).innerHTML = '<p class="mut" style="margin-top:12px">Lendo a planilha…</p>';
+        try {
+          await carregarXLSX();
+          const buf = await arq.arrayBuffer();
+          const wb = XLSX.read(buf, { type: "array", raw: false, codepage: 65001 });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          linhas = XLSX.utils.sheet_to_json(ws, { defval: "", raw: false });
+          colunas = linhas.length ? Object.keys(linhas[0]) : [];
+        } catch (er) { $("#im-passo2", el).innerHTML = '<p style="color:var(--err-fg);margin-top:12px">Não consegui ler: ' + h(er.message) + "</p>"; return; }
+        if (!linhas.length) { $("#im-passo2", el).innerHTML = '<p style="color:var(--err-fg);margin-top:12px">A planilha está vazia.</p>'; return; }
+        const acha = (re) => colunas.find((c) => re.test(FM.norm(c))) || "";
+        const sel = (id, atual) => '<select id="' + id + '"><option value="">— não usar —</option>' + colunas.map((c) => '<option' + (c === atual ? " selected" : "") + ">" + h(c) + "</option>").join("") + "</select>";
+        const tagsImp = [];
+        $("#im-passo2", el).innerHTML = '<p style="margin:14px 0 10px"><b>' + fmtN(linhas.length) + "</b> linhas em “" + h(arq.name) + "”.</p>" +
+          '<div class="g2">' + campo("Coluna do e-mail", sel("im-email", acha(/e-?mail/))) + campo("Coluna do telefone", sel("im-tel", acha(/tel|fone|whats|celular|phone/))) + "</div>" +
+          '<div class="g2">' + campo("Coluna do nome", sel("im-nome", acha(/^nome|name|cliente|aluno/))) + campo("Coluna com tags (opcional)", sel("im-ctags", acha(/^tags?$/)), "Várias separadas por vírgula ou ponto e vírgula.") + "</div>" +
+          '<label class="f"><span>Tags para todos os importados</span><div class="chips" id="im-tags"></div><input id="im-tag" placeholder="Ex.: aluno-oro (Enter para adicionar)" list="im-dl"><datalist id="im-dl"></datalist></label>' +
+          '<div id="im-prev"></div><p id="im-st" class="ajuda" style="min-height:18px"></p>' +
+          '<div class="rod"><button data-fechar>Cancelar</button><button class="pri" id="im-ok">Importar</button></div>';
+        $("[data-fechar]", el).onclick = fechar;
+        carregarTags().then((ts) => { $("#im-dl", el).innerHTML = ts.map((x) => '<option value="' + h(x.tag) + '">').join(""); }).catch(() => {});
+        const dt = () => { $("#im-tags", el).innerHTML = tagsImp.map((t, j) => '<span class="chip">' + h(t) + '<button data-x="' + j + '">×</button></span>').join(""); $$("[data-x]", el).forEach((b) => b.onclick = () => { tagsImp.splice(+b.dataset.x, 1); dt(); }); };
+        $("#im-tag", el).onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === ",") { ev.preventDefault(); const t = normTag(ev.target.value); if (t && !tagsImp.includes(t)) tagsImp.push(t); ev.target.value = ""; dt(); } };
+        $("#im-tag", el).onchange = (ev) => { const t = normTag(ev.target.value); if (t && !tagsImp.includes(t)) { tagsImp.push(t); ev.target.value = ""; dt(); } };
+        const montar = () => {
+          const ce = $("#im-email", el).value, ct = $("#im-tel", el).value, cn = $("#im-nome", el).value, cg = $("#im-ctags", el).value;
+          return linhas.map((l) => ({ email: ce ? String(l[ce]).trim() : "", telefone: ct ? String(l[ct]).trim() : "", nome: cn ? String(l[cn]).trim() : "", tags: cg ? String(l[cg]).split(/[,;|]/).map(normTag).filter(Boolean) : [] }));
+        };
+        const previa = () => {
+          const ls = montar();
+          const ok = ls.filter((x) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x.email) || x.telefone.replace(/\D/g, "").length >= 10).length;
+          $("#im-prev", el).innerHTML = '<div class="tab-wrap" style="margin:4px 0 8px;max-height:180px"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Telefone</th></tr></thead><tbody>' + ls.slice(0, 5).map((x) => "<tr style=\"cursor:default\"><td>" + h(x.nome) + "</td><td>" + h(x.email) + "</td><td>" + h(x.telefone) + "</td></tr>").join("") + "</tbody></table></div>" +
+            '<p class="ajuda">' + fmtN(ok) + " de " + fmtN(ls.length) + " linhas têm e-mail ou telefone válido. As outras serão ignoradas.</p>";
+        };
+        ["im-email", "im-tel", "im-nome", "im-ctags"].forEach((id) => $("#" + id, el).onchange = previa);
+        previa();
+        $("#im-ok", el).onclick = async () => {
+          const pend = normTag($("#im-tag", el).value); if (pend && !tagsImp.includes(pend)) tagsImp.push(pend);
+          if (!$("#im-email", el).value && !$("#im-tel", el).value) return toast("Escolha a coluna do e-mail ou do telefone.", true);
+          if (!tagsImp.length && !$("#im-ctags", el).value && !await confirmar("Importar sem nenhuma tag?", "Importar assim")) return;
+          const ls = montar(); const tot = { novos: 0, atualizados: 0, ignorados: 0 };
+          $("#im-ok", el).disabled = true;
+          for (let k = 0; k < ls.length; k += 500) {
+            $("#im-st", el).textContent = "Importando… " + fmtN(Math.min(k + 500, ls.length)) + " de " + fmtN(ls.length);
+            const { data, error } = await sb.rpc("fm_importar_contatos", { p_linhas: ls.slice(k, k + 500), p_tags: tagsImp });
+            if (error) { $("#im-st", el).textContent = "Parou com erro: " + error.message + " (" + fmtN(k) + " linhas já importadas)"; $("#im-ok", el).disabled = false; return; }
+            tot.novos += data.novos; tot.atualizados += data.atualizados; tot.ignorados += data.ignorados;
+          }
+          fechar(); TAGS_CACHE = null;
+          modal('<h3>Importação concluída</h3><p><b>' + fmtN(tot.novos) + "</b> contatos novos · <b>" + fmtN(tot.atualizados) + "</b> já existiam e foram atualizados" + (tot.ignorados ? " · " + fmtN(tot.ignorados) + " linhas ignoradas (sem e-mail/telefone válido)" : "") + "." + (tagsImp.length ? "<br>Tags aplicadas: " + tagsImp.map(h).join(", ") : "") + '</p><div class="rod"><button class="pri" data-fechar>Ok</button></div>');
+          if ($("#ct-lista")) { desenharTagsBase(true); listarContatos(); }
+        };
+      };
+    });
 }
 
 // ---------------- DESIGN ----------------
@@ -2754,7 +2991,9 @@ function tabela() {
   };
   const vs = FM.varsDoForm(f);
   const temFx = (v) => f.perguntas.some((q) => q.tipo === "faixa" && FM.nomeVar(q) === v);
-  $("#rs-tab").innerHTML = '<div class="tab-wrap tab-resp"><table><thead><tr><th class="fixa">#</th><th>Data</th><th>Status</th>' + vs.map((v) => "<th>Σ " + h(v) + "</th>" + (temFx(v) ? "<th>Faixa</th>" : "")).join("") +
+  const blTag = f.perguntas.filter((q) => q.tipo === "tag");
+  const celTag = (r, b) => { const v = ((r.respostas || {}).__vars || {})[FM.varTag(b)]; return v === "sim" ? '<span class="pill concluida">Sim</span>' : v === "nao" ? '<span class="pill visita">Não</span>' : '<span class="mut">—</span>'; };
+  $("#rs-tab").innerHTML = '<div class="tab-wrap tab-resp"><table><thead><tr><th class="fixa">#</th><th>Data</th><th>Status</th>' + vs.map((v) => "<th>Σ " + h(v) + "</th>" + (temFx(v) ? "<th>Faixa</th>" : "")).join("") + blTag.map((b) => '<th title="' + h((b.tags || []).join(", ")) + '"># ' + h(b.titulo || "Tag") + "</th>").join("") +
     qs.map((q) => '<th title="' + h(q.titulo) + '">' + h(curto(q.titulo)) + "</th>").join("") +
     "<th>Tela final</th><th>Parou em</th>" + colsP.map((k) => '<th title="' + h(k) + '">' + h(nomeParam(k)) + "</th>").join("") + (temAc ? "<th>ActiveCampaign</th>" : "") + "<th>Dispositivo</th></tr></thead><tbody>" +
     fatia.map((r, i) => {
@@ -2762,6 +3001,7 @@ function tabela() {
       const pr = r.params || {};
       return '<tr data-id="' + r.id + '"><td class="fixa mut">' + (tot - (R.pagina * POR + i)) + "</td><td>" + dataHora(r.iniciado_em) + '</td><td><span class="pill ' + r.status + '">' + stRot[r.status] + "</span></td>" +
         vs.map((v) => '<td style="font-weight:600;font-variant-numeric:tabular-nums">' + fmtScore(scoreDe(r, v)) + "</td>" + (temFx(v) ? "<td>" + (faixaTxt(r, v) ? '<span class="chip">' + h(faixaTxt(r, v)) + "</span>" : '<span class="mut">—</span>') + "</td>" : "")).join("") +
+        blTag.map((b) => "<td>" + celTag(r, b) + "</td>").join("") +
         qs.map((q) => "<td>" + cel(q, (r.respostas || {})[q.id]) + "</td>").join("") +
         "<td>" + h(nomeFinal(r.final_id)) + '</td><td class="mut">' + (parou ? h(curto(parou.titulo)) : "") + "</td>" +
         colsP.map((k) => { const v = FM.pegaParam(pr, k); return '<td class="mut">' + (v ? h(v) + (pr.origem_lembrada === "sim" ? ' <span title="Origem lembrada de um acesso anterior">↺</span>' : "") : "") + "</td>"; }).join("") +
@@ -2785,6 +3025,7 @@ function detalhe(r) {
   g.innerHTML = '<div role="dialog" aria-modal="true"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><h3 style="flex:1;font-size:18px">Resposta</h3><button class="ico ghost" id="dt-x" aria-label="Fechar">×</button></div>' +
     '<p class="mut" style="margin-bottom:12px"><span class="pill ' + r.status + '">' + stRot[r.status] + "</span> · " + dataHora(r.iniciado_em) + (dur ? " · " + (dur < 60 ? dur + "s" : Math.floor(dur / 60) + "min " + dur % 60 + "s") : "") + (r.dispositivo ? " · " + h(r.dispositivo) : "") + (fi ? " · final: " + h(fi.nome || fi.titulo) : "") + "</p>" +
     (parou ? '<div class="alerta">Parou em: “' + h(parou.titulo) + "”</div>" : "") +
+    f.perguntas.filter((q) => q.tipo === "tag").map((b) => { const v = ((r.respostas || {}).__vars || {})[FM.varTag(b)]; return !v ? "" : '<div class="integ ' + (v === "sim" ? "ok" : "") + '" style="' + (v === "sim" ? "" : "background:var(--line2);color:var(--ink2)") + '"><b>#</b><span><b>' + h(b.titulo || "Tag") + ":</b> " + (v === "sim" ? "tem " : "não tem ") + h((b.tags || []).join(", ")) + "</span></div>"; }).join("") +
     FM.varsDoForm(f).map((v) => scoreDe(r, v) == null ? "" : '<div class="integ ok" style="background:var(--log-bg);color:var(--log-fg)"><b>Σ</b><span><b>' + h(v) + ": " + fmtScore(scoreDe(r, v)) + "</b>" + (faixaTxt(r, v) ? " · " + h(faixaTxt(r, v)) : "") + "</span></div>").join("") +
     f.perguntas.filter(FM.ehPergunta).map((q) => {
       const v = (r.respostas || {})[q.id];
@@ -2831,13 +3072,15 @@ function tabelaExport() {
   const pks = todos.sort((a, b) => { const ia = ordem.indexOf(a.toLowerCase()), ib = ordem.indexOf(b.toLowerCase()); return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a.localeCompare(b); });
   const stRot = { concluida: "Concluída", parcial: "Parcial", visita: "Só visitou" };
   const vs = FM.varsDoForm(f);
-  const cab = ["Início", "Status", "Concluído em", "Tempo (s)", "Tela final", "Parou em"].concat(vs.flatMap((v) => ["Lead Score (" + v + ")", "Faixa (" + v + ")"])).concat(qs.map((q) => q.titulo || q.chave || q.id)).concat(pks.map((k) => nomeParam(k) === k ? k : nomeParam(k) + " (" + k + ")")).concat(["Dispositivo", "ID"]);
+  const blTag = f.perguntas.filter((q) => q.tipo === "tag");
+  const cab = ["Início", "Status", "Concluído em", "Tempo (s)", "Tela final", "Parou em"].concat(vs.flatMap((v) => ["Lead Score (" + v + ")", "Faixa (" + v + ")"])).concat(blTag.map((b) => (b.titulo || "Tag") + " (" + (b.tags || []).join(", ") + ")")).concat(qs.map((q) => q.titulo || q.chave || q.id)).concat(pks.map((k) => nomeParam(k) === k ? k : nomeParam(k) + " (" + k + ")")).concat(["Dispositivo", "ID"]);
   const linhas = L.filter((r) => r.status !== "visita").map((r) => {
     const fi = f.finais.find((x) => x.id === r.final_id);
     const parou = r.status !== "concluida" && r.atual ? P(r.atual) : null;
     return [new Date(r.iniciado_em), stRot[r.status], r.concluido_em ? new Date(r.concluido_em) : "", r.concluido_em ? Math.round((new Date(r.concluido_em) - new Date(r.iniciado_em)) / 1000) : "",
       fi ? fi.nome || fi.titulo : "", parou ? parou.titulo : ""]
       .concat(vs.flatMap((v) => [scoreDe(r, v) == null ? "" : scoreDe(r, v), faixaTxt(r, v)]))
+      .concat(blTag.map((b) => { const v = ((r.respostas || {}).__vars || {})[FM.varTag(b)]; return v === "sim" ? "Sim" : v === "nao" ? "Não" : ""; }))
       .concat(qs.map((q) => { const v = (r.respostas || {})[q.id]; return typeof v === "number" ? v : FM.textoResposta(v); }))
       .concat(pks.map((k) => (r.params || {})[k] || "")).concat([r.dispositivo || "", r.id]);
   });

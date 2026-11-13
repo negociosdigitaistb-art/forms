@@ -529,6 +529,18 @@
       const c = FM.calcularScore(p, respostas);
       if (PREVIA) mostrarScorePrevia(FM.nomeVar(p), c.total);
     }
+    if (p.tipo === "tag" && !p._consultado) {
+      // consulta a base de contatos antes de seguir
+      const ident = FM.identDoBloco(p, form, respostas, params);
+      respostas.__vars = respostas.__vars || {};
+      const seguir = (tem) => { respostas.__vars[FM.varTag(p)] = tem ? "sim" : "nao"; p._consultado = true; try { passarBloco(p, volta, saltos); } finally { delete p._consultado; } };
+      if (PREVIA) { $("#previa").textContent = "Pré-visualização · tag: simulado “não”"; return seguir(false); }
+      if (!ident) return seguir(false);
+      trocar('<div class="spin" role="status" aria-label="Carregando"></div>', volta, true);
+      const email = p.ident === "telefone" ? null : ident, tel = p.ident === "telefone" ? ident : null;
+      rpc("fm_tem_tag", { p_slug: slug, p_bloco: p.id, p_email: email, p_tel: tel }).then((r) => seguir(r === true)).catch(() => seguir(false));
+      return;
+    }
     if (p.tipo === "faixa") {
       const fx = FM.faixaDe(p, respostas);
       respostas.__vars = respostas.__vars || {};
