@@ -6,6 +6,9 @@
 //  Público (formulário):  { acao:"enviar", token, bloco }
 //    → faz o create/update do contato pelo e-mail com os campos mapeados
 //      no bloco, aplica tags e lista, e grava o resultado na resposta.
+//  Público (formulário):  { acao:"tem_tag", token, bloco, email }
+//    → responde só { tem: true|false } para as tags escolhidas num bloco
+//      "actag" de um formulário publicado (não devolve dados do contato).
 //  Painel (precisa estar logado no TB Forms):
 //    status | salvar {url,key} | copiar_webnario | remover | campos | tags {busca} | listas
 // =====================================================================
@@ -156,6 +159,50 @@ Deno.serve(async (req) => {
     } catch (e: any) {
       await salvar({ ok: false, email, erro: e.message || String(e) });
       return resp(200, { ok: false, erro: e.message });
+    }
+  }
+
+  if (b.acao === "tem_tag") {
+    const token = String(b.token || ""), bloco = String(b.bloco || "");
+    const email = String(b.email || "").replace(/\s/g, "").toLowerCase().slice(0, 200);
+    if (token.length < 16 || !bloco) return resp(400, { ok: false, erro: "Pedido inválido." });
+    const { data: r } = await db.from("fm_respostas").select("id,form_id,integracoes,status").eq("token", token).maybeSingle();
+    if (!r) return resp(404, { ok: false, erro: "Resposta não encontrada." });
+    if (r.status === "concluida") return resp(400, { ok: false, erro: "Resposta já concluída." });
+    const { data: f } = await db.from("fm_forms").select("perguntas,status").eq("id", r.form_id).single();
+    if (!f || f.status !== "publicado") return resp(404, { ok: false, erro: "Formulário indisponível." });
+    const blk = (f.perguntas || []).find((p: any) => p.id === bloco && p.tipo === "actag");
+    if (!blk) return resp(404, { ok: false, erro: "Bloco não encontrado." });
+    const antes = (r.integracoes || {})[bloco] || {};
+    const tentativas = (antes.tentativas || 0) + 1;
+    if (tentativas > 10) return resp(429, { ok: false, erro: "Limite de consultas para esta resposta." });
+    const salvar = async (res: Record<string, unknown>) => {
+      const { data: atual } = await db.from("fm_respostas").select("integracoes").eq("id", r.id).single();
+      const novo = { ...(atual?.integracoes || {}), [bloco]: { ...res, consulta: true, tentativas, em: new Date().toISOString(), nome: blk.titulo || "Active: tem a tag?" } };
+      await db.from("fm_respostas").update({ integracoes: novo }).eq("id", r.id);
+    };
+    const ids = (blk.tags || []).map((t: any) => String(t && t.id || "")).filter(Boolean);
+    if (!ids.length) return resp(200, { ok: true, tem: false });
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) { await salvar({ ok: false, erro: email ? "E-mail inválido: " + email : "Sem e-mail para consultar." }); return resp(200, { ok: true, tem: false }); }
+    const cfg = await lerCfg();
+    if (!cfg) { await salvar({ ok: false, email, erro: "ActiveCampaign não está configurado no TB Forms." }); return resp(200, { ok: true, tem: false }); }
+    try {
+      const c = await ac(cfg, "GET", "contacts?email=" + encodeURIComponent(email));
+      const contato = (c.contacts || []).find((x: any) => String(x.email || "").toLowerCase() === email);
+      if (!contato) { await salvar({ ok: true, email, tem: false, contato: null }); return resp(200, { ok: true, tem: false }); }
+      const tem = new Set<string>();
+      for (let off = 0; off < 2000; off += 100) {
+        const d = await ac(cfg, "GET", `contacts/${contato.id}/contactTags?limit=100&offset=${off}`);
+        const lst = d.contactTags || [];
+        for (const x of lst) tem.add(String(x.tag));
+        if (lst.length < 100) break;
+      }
+      const sim = blk.modo === "todas" ? ids.every((id: string) => tem.has(id)) : ids.some((id: string) => tem.has(id));
+      await salvar({ ok: true, email, tem: sim, contato: contato.id });
+      return resp(200, { ok: true, tem: sim });
+    } catch (e: any) {
+      await salvar({ ok: false, email, erro: e.message || String(e) });
+      return resp(200, { ok: false, tem: false, erro: e.message });
     }
   }
 

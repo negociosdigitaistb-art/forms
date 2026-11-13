@@ -18,7 +18,8 @@
     score:    { nome: "Lead Score (cálculo)", ic: "Σ", grupo: "Lógica", semResposta: true, interno: true },
     faixa:    { nome: "Condição por score",   ic: "⑂", grupo: "Lógica", semResposta: true, interno: true },
     tag:      { nome: "Tem a tag? (contatos)", ic: "#", grupo: "Lógica", semResposta: true, interno: true },
-    active:   { nome: "ActiveCampaign",    ic: "AC",  grupo: "Integrações", semResposta: true, interno: true }
+    active:   { nome: "ActiveCampaign",    ic: "AC",  grupo: "Integrações", semResposta: true, interno: true },
+    actag:    { nome: "Active: tem a tag?", ic: "A#", grupo: "Integrações", semResposta: true, interno: true }
   };
 
   const OPS = {
@@ -107,7 +108,7 @@
     if (atualId == null) return ps.length ? { tipo: "pergunta", id: ps[0].id } : fimPadrao;
     const i = ps.findIndex((p) => p.id === atualId);
     const p = ps[i];
-    if (p && p.tipo === "tag") {
+    if (p && (p.tipo === "tag" || p.tipo === "actag")) {
       if (((respostas.__vars || {})[varTag(p)]) === "sim") { const d = resolver(p.destino_sim); if (d) return d; }
     }
     if (p && p.tipo === "faixa") {

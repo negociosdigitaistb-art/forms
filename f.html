@@ -544,6 +544,24 @@
       const c = FM.calcularScore(p, respostas);
       if (PREVIA) mostrarScorePrevia(FM.nomeVar(p), c.total);
     }
+    if (p.tipo === "actag" && !p._consultado) {
+      const email = String(FM.identDoBloco(p, form, respostas, params) || "").replace(/\s/g, "").toLowerCase();
+      respostas.__vars = respostas.__vars || {};
+      let feito = false;
+      const seguir = (tem) => { if (feito) return; feito = true; respostas.__vars[FM.varTag(p)] = tem ? "sim" : "nao"; p._consultado = true; try { passarBloco(p, volta, saltos); } finally { delete p._consultado; } };
+      if (PREVIA) { $("#previa").textContent = "Pré-visualização · tag no Active: simulado “não”"; return seguir(false); }
+      if (!email || !token) return seguir(false);
+      trocar('<div class="spin" role="status" aria-label="Carregando"></div>', volta, true);
+      const pedido = fila.then(() => fetch(CFG.url + "/functions/v1/fm-active", {
+        method: "POST",
+        headers: { apikey: CFG.anon, Authorization: "Bearer " + CFG.anon, "Content-Type": "application/json" },
+        body: JSON.stringify({ acao: "tem_tag", token, bloco: p.id, email })
+      })).then((r) => r.json());
+      fila = pedido.catch(() => {});
+      setTimeout(() => seguir(false), 15000); // ActiveCampaign lento: segue como "não"
+      pedido.then((d) => seguir(!!(d && d.ok && d.tem === true))).catch(() => seguir(false));
+      return;
+    }
     if (p.tipo === "tag" && !p._consultado) {
       // consulta a base de contatos antes de seguir
       const ident = FM.identDoBloco(p, form, respostas, params);

@@ -1139,6 +1139,15 @@ function prepararTipo(p) {
     if (p.zerar == null) p.zerar = true;
     p.pontuacao = p.pontuacao || [];
   }
+  if (p.tipo === "actag") {
+    p.obrigatorio = false; p.chave = "";
+    if (!p.titulo) p.titulo = "Tem a tag no Active?";
+    p.ident = "email";
+    if (!p.tags) p.tags = [];
+    if (!p.modo) p.modo = "qualquer";
+    if (!p.var) p.var = "tem_tag_ac";
+    if (p.destino_sim == null) p.destino_sim = "";
+  }
   if (p.tipo === "tag") {
     p.obrigatorio = false; p.chave = "";
     if (!p.titulo) p.titulo = "É aluno?";
@@ -1266,6 +1275,7 @@ function painelPergunta(pn, p) {
   if (p.tipo === "score") return painelScore(pn, p);
   if (p.tipo === "faixa") return painelFaixa(pn, p);
   if (p.tipo === "tag") return painelTag(pn, p);
+  if (p.tipo === "actag") return painelACTag(pn, p);
   const f = ED.form;
   const t = T[p.tipo] || T.curto;
   const i = f.perguntas.indexOf(p);
@@ -1540,6 +1550,7 @@ function fxPortas(p) {
       portas.push({ chave: "nps:" + k, rot, alvo: r && fxExiste(r.destino) ? r.destino : null, rid: r ? r.id : null, spec: { tipo: "nps", faixa: k }, cls: "nps-" + k });
     });
   }
+  if (t === "actag") { const ns = (p.tags || []).map((x) => x.nome); portas.push({ chave: "tag:sim", rot: "Tem " + (ns.length > 1 ? (p.modo === "todas" ? "todas as tags" : "alguma das tags") : "a tag" + (ns[0] ? " " + ns[0] : "")), alvo: fxExiste(p.destino_sim) ? p.destino_sim : null, spec: { tipo: "tagsim" }, cls: "tagsim" }); }
   if (t === "tag") portas.push({ chave: "tag:sim", rot: "Tem " + ((p.tags || []).length > 1 ? (p.modo === "todas" ? "todas as tags" : "alguma das tags") : "a tag" + (p.tags && p.tags[0] ? " " + p.tags[0] : "")), alvo: fxExiste(p.destino_sim) ? p.destino_sim : null, spec: { tipo: "tagsim" }, cls: "tagsim" });
   if (t === "faixa") (p.faixas || []).forEach((x) => portas.push({ chave: "fx:" + x.id, rot: (x.rotulo || "Faixa") + " (" + FM.rotuloFaixa(x) + ")", alvo: fxExiste(x.destino) ? x.destino : null, spec: { tipo: "faixa", id: x.id }, cls: "faixa" }));
   regras.forEach((r) => { if (!usadas.has(r.id)) portas.push({ chave: "r:" + r.id, rot: resumoRegra(r, p), alvo: fxExiste(r.destino) ? r.destino : null, rid: r.id, spec: { tipo: "regra" }, cls: "regra" }); });
@@ -1547,7 +1558,7 @@ function fxPortas(p) {
   let alvo = p.depois, impl = false;
   if (p.depois === "fim") alvo = null;
   else if (!fxExiste(alvo)) { impl = true; alvo = f.perguntas[i + 1] ? f.perguntas[i + 1].id : (f.finais[0] ? "fim:" + f.finais[0].id : null); }
-  portas.push({ chave: "padrao", rot: p.tipo === "tag" ? "Não tem" : p.tipo === "faixa" ? "Nenhuma faixa" : portas.length ? "Qualquer outra resposta" : (p.tipo === "aviso" ? "Continuar" : p.tipo === "active" ? "Depois de enviar" : p.tipo === "score" ? "Depois de calcular" : "Depois de responder"), alvo, impl, spec: { tipo: "padrao" }, cls: "padrao" });
+  portas.push({ chave: "padrao", rot: p.tipo === "tag" || p.tipo === "actag" ? "Não tem" : p.tipo === "faixa" ? "Nenhuma faixa" : portas.length ? "Qualquer outra resposta" : (p.tipo === "aviso" ? "Continuar" : p.tipo === "active" ? "Depois de enviar" : p.tipo === "score" ? "Depois de calcular" : "Depois de responder"), alvo, impl, spec: { tipo: "padrao" }, cls: "padrao" });
   return portas;
 }
 function fxLigar(p, chave, alvo) {
@@ -2060,7 +2071,7 @@ function fontesActive(atual) {
   return '<option value="">— escolha —</option>' +
     '<optgroup label="Respostas do formulário">' + ps.map((q) => opt("q:" + q.id, rotuloQ(q))).join("") + "</optgroup>" +
     '<optgroup label="Parâmetros do link">' + PARAMS.concat(extra).map((k) => opt("param:" + k, nomeParam(k) === k ? "?" + k + "=" : nomeParam(k) + "  (?" + k + "=)")).join("") + opt("param:__novo", "Outro parâmetro…") + "</optgroup>" +
-    (f.perguntas.some((q) => q.tipo === "tag") ? '<optgroup label="Tem a tag?">' + f.perguntas.filter((q) => q.tipo === "tag").map((b) => opt("var:" + FM.varTag(b), "# " + (b.titulo || "Tag") + " (sim/nao)")).join("") + "</optgroup>" : "") +
+    (f.perguntas.some((q) => q.tipo === "tag" || q.tipo === "actag") ? '<optgroup label="Tem a tag?">' + f.perguntas.filter((q) => q.tipo === "tag" || q.tipo === "actag").map((b) => opt("var:" + FM.varTag(b), "# " + (b.titulo || "Tag") + " (sim/nao)")).join("") + "</optgroup>" : "") +
     (FM.varsDoForm(f).length ? '<optgroup label="Lead Score">' + FM.varsDoForm(f).map((v) => opt("var:" + v, "Σ " + v) + opt("var:" + v + "_faixa", "Σ " + v + " · nome da faixa")).join("") + "</optgroup>" : "") +
     '<optgroup label="Outros">' + opt("meta:form", "Nome do formulário") + opt("meta:data", "Data da resposta") + opt("fixo:", "Texto fixo…") + "</optgroup>";
 }
@@ -2190,6 +2201,7 @@ function resumoBloco(p) {
   if (p.tipo === "active") return resumoActive(p);
   if (p.tipo === "score") { const n = (p.pontuacao || []).length; return "{{" + FM.nomeVar(p) + "}} · " + n + " regra" + (n === 1 ? "" : "s"); }
   if (p.tipo === "faixa") { const n = (p.faixas || []).length; return "{{" + FM.nomeVar(p) + "}} · " + n + " faixa" + (n === 1 ? "" : "s"); }
+  if (p.tipo === "actag") return (p.tags || []).length ? "no Active · " + p.tags.map((x) => x.nome).join(", ") : "sem tag escolhida";
   if (p.tipo === "tag") return (p.tags || []).length ? (p.ident === "telefone" ? "pelo telefone · " : "pelo e-mail · ") + p.tags.join(", ") : "sem tag escolhida";
   return "";
 }
@@ -2420,6 +2432,58 @@ function painelTag(pn, p) {
   $$('input[name="tg-modo"]', pn).forEach((r) => r.onchange = () => { p.modo = r.value; mud(); });
   $("#tg-sim").onchange = (e) => { p.destino_sim = e.target.value; mud(); };
   $("#tg-var").oninput = (e) => { const v = e.target.value.replace(/[^\w]/g, "").slice(0, 30); if (v !== e.target.value) e.target.value = v; p.var = v || "tem_tag"; mud(); };
+  ligarCabBloco(pn, p, i, f);
+  renderLogica(p);
+  const lbl = $("#logica label.f > span"); if (lbl) lbl.textContent = "Se não tiver a tag (Não), ir para";
+}
+
+
+const nomesTags = (b) => (b.tags || []).map((t) => typeof t === "string" ? t : t.nome || t.id);
+function painelACTag(pn, p) {
+  const f = ED.form, i = f.perguntas.indexOf(p);
+  const qs = f.perguntas.filter((q) => FM.ehPergunta(q) && ["email", "curto"].includes(q.tipo));
+  const auto = f.perguntas.find((q) => q.tipo === "email");
+  pn.innerHTML = '<div class="painel-in">' + cabBloco(p, i, f, "Active: tem a tag?") +
+    '<div id="act-aviso"></div>' +
+    '<div class="card"><p class="ajuda" style="margin:0 0 12px">Quem responde não vê esta etapa. O formulário procura o e-mail no <b>ActiveCampaign</b> e segue por <b>Sim</b> se o contato tiver a tag, ou por <b>Não</b> se não tiver (ou se não existir no Active).</p>' +
+    campo("Nome do bloco", '<input id="act-nome" value="' + h(p.titulo || "") + '" maxlength="80">') +
+    campo("E-mail vem de", '<select id="act-fonte"><option value="">Automático: ' + h(auto ? "pergunta “" + (auto.titulo || "e-mail") + "”" : "?email= do link") + "</option>" +
+      '<optgroup label="Respostas">' + qs.map((q) => '<option value="q:' + q.id + '"' + (p.fonte === "q:" + q.id ? " selected" : "") + ">" + h(rotuloQ(q)) + "</option>").join("") + "</optgroup>" +
+      '<optgroup label="Link"><option value="param:email"' + (p.fonte === "param:email" ? " selected" : "") + ">?email=</option></optgroup></select>",
+      "Coloque este bloco <b>depois</b> da pergunta de e-mail, ou use o link com <code>?email=</code>.") + "</div>" +
+    '<div class="card"><h3>Tags do ActiveCampaign</h3><div class="chips" id="act-tags"></div><input id="act-busca" placeholder="Buscar tag no ActiveCampaign…" autocomplete="off"><div id="act-sug"></div>' +
+    '<div style="margin-top:12px"><label class="tg" style="margin-bottom:6px"><input type="radio" name="act-modo" value="qualquer"' + (p.modo !== "todas" ? " checked" : "") + ' style="appearance:auto;width:auto;height:auto"> Sim se tiver <b>qualquer uma</b> das tags</label>' +
+    '<label class="tg"><input type="radio" name="act-modo" value="todas"' + (p.modo === "todas" ? " checked" : "") + ' style="appearance:auto;width:auto;height:auto"> Sim só se tiver <b>todas</b></label></div></div>' +
+    '<div class="card"><h3>Saídas</h3>' + campo("Se tiver a tag (Sim), ir para", '<select id="act-sim"><option value="">— ligar depois —</option>' + opcoesDestino(p.id, p.destino_sim, false) + "</select>") +
+    '<p class="ajuda" style="margin-top:-6px">“Não tem” usa o destino logo abaixo. Se o ActiveCampaign não responder em 15 segundos, a pessoa segue pelo “Não”.</p>' +
+    campo("Guardar o resultado em", '<input id="act-var" value="' + h(FM.varTag(p)) + '" maxlength="30">', "Fica <code>sim</code> ou <code>nao</code> em <code>{{" + h(FM.varTag(p)) + "}}</code> e aparece nos resultados.") + "</div>" +
+    '<div class="card" id="logica"></div></div>';
+  const mud = () => { marcarSujo(); renderLadoLeve(); };
+  acCarregar("status").then((st) => { if (!st.configurado && $("#act-aviso")) $("#act-aviso").innerHTML = '<div class="card" style="background:var(--warn-bg);color:var(--warn-fg)"><b>ActiveCampaign não conectado.</b> Conecte em <a href="#/config">Configurações</a> para escolher as tags. Sem conexão, todo mundo segue pelo “Não”.</div>'; }).catch(() => {});
+  const desenharTags = () => {
+    $("#act-tags").innerHTML = (p.tags || []).length ? p.tags.map((t, j) => '<span class="chip">' + h(t.nome) + '<button data-tdel="' + j + '" aria-label="Remover tag">×</button></span>').join("") : '<span class="mut" style="font-size:13px">Nenhuma tag escolhida.</span>';
+    $$("[data-tdel]", pn).forEach((b) => b.onclick = () => { p.tags.splice(+b.dataset.tdel, 1); mud(); desenharTags(); });
+  };
+  desenharTags();
+  let tb;
+  $("#act-busca").oninput = (e) => {
+    clearTimeout(tb);
+    const q = e.target.value.trim();
+    if (!q) { $("#act-sug").innerHTML = ""; return; }
+    tb = setTimeout(async () => {
+      try {
+        const d = await funcActive({ acao: "tags", busca: q });
+        const sug = d.tags.filter((t) => !p.tags.some((x) => String(x.id) === String(t.id)));
+        $("#act-sug").innerHTML = sug.length ? '<div class="sugest">' + sug.map((t) => '<button data-tadd="' + h(t.id) + '" data-nome="' + h(t.nome) + '">' + h(t.nome) + "</button>").join("") + "</div>" : '<p class="ajuda">Nenhuma tag encontrada com “' + h(q) + "”.</p>";
+        $$("[data-tadd]", pn).forEach((b) => b.onclick = () => { p.tags.push({ id: b.dataset.tadd, nome: b.dataset.nome }); mud(); $("#act-busca").value = ""; $("#act-sug").innerHTML = ""; desenharTags(); });
+      } catch (er) { $("#act-sug").innerHTML = '<p class="ajuda" style="color:var(--err-fg)">' + h(er.message) + "</p>"; }
+    }, 350);
+  };
+  $("#act-nome").oninput = (e) => { p.titulo = e.target.value; mud(); };
+  $("#act-fonte").onchange = (e) => { p.fonte = e.target.value; mud(); };
+  $$('input[name="act-modo"]', pn).forEach((r) => r.onchange = () => { p.modo = r.value; mud(); });
+  $("#act-sim").onchange = (e) => { p.destino_sim = e.target.value; mud(); };
+  $("#act-var").oninput = (e) => { const v = e.target.value.replace(/[^\w]/g, "").slice(0, 30); if (v !== e.target.value) e.target.value = v; p.var = v || "tem_tag_ac"; mud(); };
   ligarCabBloco(pn, p, i, f);
   renderLogica(p);
   const lbl = $("#logica label.f > span"); if (lbl) lbl.textContent = "Se não tiver a tag (Não), ir para";
@@ -2979,7 +3043,7 @@ function tabela() {
   const temAc = f.perguntas.some((q) => q.tipo === "active");
   const colsP = paramsAtivos().filter((k) => R.linhas.some((r) => { const v = FM.pegaParam(r.params, k); return v != null && v !== ""; })).slice(0, 8);
   const celAc = (r) => {
-    const vs = Object.values(r.integracoes || {});
+    const vs = Object.values(r.integracoes || {}).filter((v) => !v.consulta || !v.ok);
     if (!vs.length) return '<span class="mut">—</span>';
     return vs.every((v) => v.ok) ? '<span class="pill concluida" title="Enviado">✓ enviado</span>' : '<span class="pill" style="background:var(--err-bg);color:var(--err-fg)" title="' + h(vs.filter((v) => !v.ok).map((v) => v.erro).join("; ")) + '">✕ erro</span>';
   };
@@ -2991,9 +3055,9 @@ function tabela() {
   };
   const vs = FM.varsDoForm(f);
   const temFx = (v) => f.perguntas.some((q) => q.tipo === "faixa" && FM.nomeVar(q) === v);
-  const blTag = f.perguntas.filter((q) => q.tipo === "tag");
+  const blTag = f.perguntas.filter((q) => q.tipo === "tag" || q.tipo === "actag");
   const celTag = (r, b) => { const v = ((r.respostas || {}).__vars || {})[FM.varTag(b)]; return v === "sim" ? '<span class="pill concluida">Sim</span>' : v === "nao" ? '<span class="pill visita">Não</span>' : '<span class="mut">—</span>'; };
-  $("#rs-tab").innerHTML = '<div class="tab-wrap tab-resp"><table><thead><tr><th class="fixa">#</th><th>Data</th><th>Status</th>' + vs.map((v) => "<th>Σ " + h(v) + "</th>" + (temFx(v) ? "<th>Faixa</th>" : "")).join("") + blTag.map((b) => '<th title="' + h((b.tags || []).join(", ")) + '"># ' + h(b.titulo || "Tag") + "</th>").join("") +
+  $("#rs-tab").innerHTML = '<div class="tab-wrap tab-resp"><table><thead><tr><th class="fixa">#</th><th>Data</th><th>Status</th>' + vs.map((v) => "<th>Σ " + h(v) + "</th>" + (temFx(v) ? "<th>Faixa</th>" : "")).join("") + blTag.map((b) => '<th title="' + h(nomesTags(b).join(", ")) + '"># ' + h(b.titulo || "Tag") + "</th>").join("") +
     qs.map((q) => '<th title="' + h(q.titulo) + '">' + h(curto(q.titulo)) + "</th>").join("") +
     "<th>Tela final</th><th>Parou em</th>" + colsP.map((k) => '<th title="' + h(k) + '">' + h(nomeParam(k)) + "</th>").join("") + (temAc ? "<th>ActiveCampaign</th>" : "") + "<th>Dispositivo</th></tr></thead><tbody>" +
     fatia.map((r, i) => {
@@ -3025,14 +3089,14 @@ function detalhe(r) {
   g.innerHTML = '<div role="dialog" aria-modal="true"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><h3 style="flex:1;font-size:18px">Resposta</h3><button class="ico ghost" id="dt-x" aria-label="Fechar">×</button></div>' +
     '<p class="mut" style="margin-bottom:12px"><span class="pill ' + r.status + '">' + stRot[r.status] + "</span> · " + dataHora(r.iniciado_em) + (dur ? " · " + (dur < 60 ? dur + "s" : Math.floor(dur / 60) + "min " + dur % 60 + "s") : "") + (r.dispositivo ? " · " + h(r.dispositivo) : "") + (fi ? " · final: " + h(fi.nome || fi.titulo) : "") + "</p>" +
     (parou ? '<div class="alerta">Parou em: “' + h(parou.titulo) + "”</div>" : "") +
-    f.perguntas.filter((q) => q.tipo === "tag").map((b) => { const v = ((r.respostas || {}).__vars || {})[FM.varTag(b)]; return !v ? "" : '<div class="integ ' + (v === "sim" ? "ok" : "") + '" style="' + (v === "sim" ? "" : "background:var(--line2);color:var(--ink2)") + '"><b>#</b><span><b>' + h(b.titulo || "Tag") + ":</b> " + (v === "sim" ? "tem " : "não tem ") + h((b.tags || []).join(", ")) + "</span></div>"; }).join("") +
+    f.perguntas.filter((q) => q.tipo === "tag" || q.tipo === "actag").map((b) => { const v = ((r.respostas || {}).__vars || {})[FM.varTag(b)]; return !v ? "" : '<div class="integ ' + (v === "sim" ? "ok" : "") + '" style="' + (v === "sim" ? "" : "background:var(--line2);color:var(--ink2)") + '"><b>#</b><span><b>' + h(b.titulo || "Tag") + ":</b> " + (v === "sim" ? "tem " : "não tem ") + h((b.tags || []).join(", ")) + "</span></div>"; }).join("") +
     FM.varsDoForm(f).map((v) => scoreDe(r, v) == null ? "" : '<div class="integ ok" style="background:var(--log-bg);color:var(--log-fg)"><b>Σ</b><span><b>' + h(v) + ": " + fmtScore(scoreDe(r, v)) + "</b>" + (faixaTxt(r, v) ? " · " + h(faixaTxt(r, v)) : "") + "</span></div>").join("") +
     f.perguntas.filter(FM.ehPergunta).map((q) => {
       const v = (r.respostas || {})[q.id];
       return '<div class="resp-item"><span>' + h(q.titulo || "Sem título") + "</span><p>" + (FM.vazio(v) ? '<i class="mut">' + ((r.vistas || []).includes(q.id) ? "não respondeu" : "não viu") + "</i>" : h(FM.textoResposta(v))) + "</p></div>";
     }).join("") +
     (Object.keys(r.integracoes || {}).length ? '<h4 style="margin:18px 0 6px">Integrações</h4>' + Object.entries(r.integracoes).map(([k, v]) =>
-      '<div class="integ ' + (v.ok ? "ok" : "erro") + '"><b>' + (v.ok ? "✓" : "✕") + "</b><span><b>" + h(v.nome || "ActiveCampaign") + "</b> · " + (v.ok ? "contato " + h(v.email || "") + " criado/atualizado" + (v.tags ? ", " + v.tags + " tag(s)" : "") + ((v.avisos || []).length ? ". Avisos: " + h(v.avisos.join("; ")) : "") : h(v.erro || "falhou")) + ' <span class="mut">· ' + dataHora(v.em) + "</span></span></div>").join("") : "") +
+      '<div class="integ ' + (v.ok ? "ok" : "erro") + '"><b>' + (v.ok ? "✓" : "✕") + "</b><span><b>" + h(v.nome || "ActiveCampaign") + "</b> · " + (v.ok && v.consulta ? "consultou " + h(v.email || "") + ": " + (v.tem ? "tem a tag" : v.contato ? "não tem a tag" : "não está no Active") : v.ok ? "contato " + h(v.email || "") + " criado/atualizado" + (v.tags ? ", " + v.tags + " tag(s)" : "") + ((v.avisos || []).length ? ". Avisos: " + h(v.avisos.join("; ")) : "") : h(v.erro || "falhou")) + ' <span class="mut">· ' + dataHora(v.em) + "</span></span></div>").join("") : "") +
     (Object.keys(r.params || {}).length ? '<h4 style="margin:18px 0 6px">Origem</h4>' + Object.entries(r.params).map(([k, v]) => '<div class="resp-item" style="padding:6px 0"><span>' + h(k === "origem_lembrada" ? "Origem lembrada de um acesso anterior" : nomeParam(k) === k ? k : nomeParam(k) + " · " + k) + '</span><p class="mono">' + h(v) + "</p></div>").join("") : "") +
     '<div style="margin-top:18px"><button class="mini perigo" id="dt-del">Excluir esta resposta</button></div></div>';
   document.body.appendChild(g);
@@ -3072,8 +3136,8 @@ function tabelaExport() {
   const pks = todos.sort((a, b) => { const ia = ordem.indexOf(a.toLowerCase()), ib = ordem.indexOf(b.toLowerCase()); return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a.localeCompare(b); });
   const stRot = { concluida: "Concluída", parcial: "Parcial", visita: "Só visitou" };
   const vs = FM.varsDoForm(f);
-  const blTag = f.perguntas.filter((q) => q.tipo === "tag");
-  const cab = ["Início", "Status", "Concluído em", "Tempo (s)", "Tela final", "Parou em"].concat(vs.flatMap((v) => ["Lead Score (" + v + ")", "Faixa (" + v + ")"])).concat(blTag.map((b) => (b.titulo || "Tag") + " (" + (b.tags || []).join(", ") + ")")).concat(qs.map((q) => q.titulo || q.chave || q.id)).concat(pks.map((k) => nomeParam(k) === k ? k : nomeParam(k) + " (" + k + ")")).concat(["Dispositivo", "ID"]);
+  const blTag = f.perguntas.filter((q) => q.tipo === "tag" || q.tipo === "actag");
+  const cab = ["Início", "Status", "Concluído em", "Tempo (s)", "Tela final", "Parou em"].concat(vs.flatMap((v) => ["Lead Score (" + v + ")", "Faixa (" + v + ")"])).concat(blTag.map((b) => (b.titulo || "Tag") + " (" + nomesTags(b).join(", ") + ")")).concat(qs.map((q) => q.titulo || q.chave || q.id)).concat(pks.map((k) => nomeParam(k) === k ? k : nomeParam(k) + " (" + k + ")")).concat(["Dispositivo", "ID"]);
   const linhas = L.filter((r) => r.status !== "visita").map((r) => {
     const fi = f.finais.find((x) => x.id === r.final_id);
     const parou = r.status !== "concluida" && r.atual ? P(r.atual) : null;
