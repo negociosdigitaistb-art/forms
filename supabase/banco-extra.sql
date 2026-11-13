@@ -40,3 +40,8 @@ create table if not exists public.fm_config (
 alter table public.fm_config enable row level security;
 revoke all on public.fm_config from anon, authenticated;
 alter table public.fm_respostas add column if not exists integracoes jsonb not null default '{}'::jsonb;
+
+-- ===== Parâmetros do link (fm_ajustes) — ver migração fm_ajustes_parametros =====
+create table if not exists public.fm_ajustes (chave text primary key, valor jsonb not null default '{}'::jsonb, atualizado_em timestamptz not null default now());
+alter table public.fm_ajustes enable row level security;
+-- política fm_ajustes_admin (fm_is_admin) e fm_publico devolvendo 'captura'

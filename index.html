@@ -59,10 +59,10 @@
 
   /* toggle */
   .tg { display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:12px; font-weight:500; user-select:none; }
-  .tg input { appearance:none; width:34px; height:20px; border-radius:99px; background:var(--field); position:relative; transition:background .15s; cursor:pointer; flex:none; border:0; }
-  .tg input::after { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; transition:transform .15s; box-shadow:0 1px 2px rgba(0,0,0,.2); }
-  .tg input:checked { background:var(--solid); }
-  .tg input:checked::after { transform:translateX(14px); }
+  .tg input[type=checkbox] { appearance:none; width:34px; height:20px; border-radius:99px; background:var(--field); position:relative; transition:background .15s; cursor:pointer; flex:none; border:0; }
+  .tg input[type=checkbox]::after { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; transition:transform .15s; box-shadow:0 1px 2px rgba(0,0,0,.2); }
+  .tg input[type=checkbox]:checked { background:var(--solid); }
+  .tg input[type=checkbox]:checked::after { transform:translateX(14px); }
 
   #login { min-height:100vh; display:grid; place-items:center; padding:20px; }
   #login form { width:100%; max-width:380px; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:28px; }
@@ -323,6 +323,8 @@
   .fx-resumo { display:block; margin-top:5px; font-size:11.5px; color:var(--muted); }
   .map { display:grid; grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr) 32px; gap:6px; align-items:center; margin-bottom:6px; }
   .map select, .map input { height:36px; font-size:13px; }
+  .map .tg input[type=checkbox] { height:20px; width:34px; }
+  .tg input[type=number] { appearance:auto; padding:0 8px; }
   .map .seta { text-align:center; color:var(--muted); font-weight:700; }
   .map-cab { display:grid; grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr) 32px; gap:6px; font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
   .chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
@@ -617,6 +619,7 @@ async function iniciar() {
   $("#login").classList.add("hide"); $("#app").classList.remove("hide");
   $("#quem").textContent = session.user.email;
   EU = session.user;
+  try { await carregarCaptura(); } catch (e) {}
   rotear();
 }
 window.addEventListener("hashchange", () => rotear());
@@ -624,6 +627,14 @@ window.addEventListener("hashchange", () => rotear());
 // ---------------- roteamento ----------------
 let ED = null; // estado do editor
 let EU = null; // usuário logado
+let CAP = FM.capturaConfig(null); // parâmetros do link capturados (Configurações)
+async function carregarCaptura() {
+  const { data } = await sb.from("fm_ajustes").select("valor").eq("chave", "parametros").maybeSingle();
+  CAP = FM.capturaConfig(data && data.valor);
+  return CAP;
+}
+const nomeParam = (k) => { if (k === "origem_lembrada") return "Origem lembrada"; if (k === "referrer") return "Veio do site"; const x = CAP.lista.find((y) => y.chave.toLowerCase() === String(k).toLowerCase()); return x && x.nome ? x.nome : k; };
+const paramsAtivos = () => CAP.lista.filter((x) => x.ativo).map((x) => x.chave);
 async function rotear() {
   const p = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
   if (p[0] === "f" && p[1]) {
@@ -1909,6 +1920,52 @@ function ligarFluxo() {
 }
 
 
+
+// ---------------- PARÂMETROS DO LINK ----------------
+async function renderCaptura() {
+  const box = $("#cap-box"); if (!box) return;
+  try { await carregarCaptura(); } catch (e) { box.innerHTML = '<p style="color:var(--err-fg)">' + h(e.message) + "</p>"; return; }
+  const c = JSON.parse(JSON.stringify(CAP));
+  let sujo = false;
+  const desenhar = () => {
+    box.className = "";
+    box.innerHTML = '<p class="ajuda" style="margin:0 0 12px">Assim que o link do formulário abre (antes até da tela de boas-vindas), estes parâmetros são lidos da URL e salvos junto da resposta. Eles viram colunas na tabela e no Excel, aparecem no gerador de link com rastreamento e podem ser enviados ao ActiveCampaign.</p>' +
+      '<div class="map-cab" style="grid-template-columns:44px minmax(0,1fr) minmax(0,1fr) 32px"><span>Ativo</span><span>Parâmetro na URL</span><span>Nome no relatório</span><span></span></div>' +
+      c.lista.map((x, j) => '<div class="map" data-j="' + j + '" style="grid-template-columns:44px minmax(0,1fr) minmax(0,1fr) 32px"><label class="tg" style="margin:0;justify-content:center"><input type="checkbox" data-ca' + (x.ativo ? " checked" : "") + ' aria-label="Capturar ' + h(x.chave) + '"></label>' +
+        '<input data-ck class="mono" value="' + h(x.chave) + '" placeholder="ex.: utm_id" spellcheck="false"><input data-cn value="' + h(x.nome) + '" placeholder="ex.: ID da campanha"><button class="ico ghost" data-cdel aria-label="Remover">×</button></div>').join("") +
+      '<button class="mini" id="cap-add" style="margin:4px 0 16px">+ Parâmetro</button>' +
+      '<label class="tg"><input type="checkbox" id="cap-lembrar"' + (c.lembrar ? " checked" : "") + '> Lembrar a origem por <input id="cap-dias" type="number" min="1" max="365" value="' + c.dias + '" style="width:72px;height:32px;margin:0 6px"> dias</label>' +
+      '<p class="ajuda" style="margin:-6px 0 12px 44px">Se a pessoa abriu pelo anúncio e volta depois por um link sem UTM, a resposta fica com a origem do anúncio (marcada como “origem lembrada”).</p>' +
+      '<label class="tg"><input type="checkbox" id="cap-outros"' + (c.outros ? " checked" : "") + "> Guardar também parâmetros que não estão na lista</label>" +
+      '<p class="ajuda" style="margin:-6px 0 14px 44px">Desligado, só os da lista acima (e o site de onde a pessoa veio) ficam salvos.</p>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="pri" id="cap-salvar">Salvar parâmetros</button><button class="ghost mini" id="cap-padrao">Restaurar padrão</button><span id="cap-st" class="mut" style="font-size:12.5px"></span></div>';
+    const marca = () => { sujo = true; $("#cap-st").textContent = "Alterações não salvas"; };
+    $$(".map[data-j]", box).forEach((row) => {
+      const x = c.lista[+row.dataset.j];
+      $("[data-ca]", row).onchange = (e) => { x.ativo = e.target.checked; marca(); };
+      $("[data-ck]", row).oninput = (e) => { const v = e.target.value.replace(/[^\w.-]/g, "").slice(0, 40); if (v !== e.target.value) e.target.value = v; x.chave = v; marca(); };
+      $("[data-cn]", row).oninput = (e) => { x.nome = e.target.value.slice(0, 40); marca(); };
+      $("[data-cdel]", row).onclick = () => { c.lista.splice(+row.dataset.j, 1); desenhar(); marca(); };
+    });
+    $("#cap-add").onclick = () => { c.lista.push({ chave: "", nome: "", ativo: true }); desenhar(); marca(); const ins = $$("[data-ck]", box); ins[ins.length - 1].focus(); };
+    $("#cap-lembrar").onchange = (e) => { c.lembrar = e.target.checked; marca(); };
+    $("#cap-dias").oninput = (e) => { c.dias = +e.target.value || 30; marca(); };
+    $("#cap-outros").onchange = (e) => { c.outros = e.target.checked; marca(); };
+    $("#cap-padrao").onclick = () => { c.lista = FM.PARAMS_PADRAO.map((x) => Object.assign({}, x)); desenhar(); marca(); };
+    $("#cap-salvar").onclick = async () => {
+      const chaves = c.lista.map((x) => x.chave.toLowerCase()).filter(Boolean);
+      if (new Set(chaves).size !== chaves.length) return toast("Tem parâmetro repetido na lista.", true);
+      const valor = { lista: c.lista.filter((x) => x.chave), lembrar: c.lembrar, dias: c.dias, outros: c.outros };
+      $("#cap-salvar").disabled = true;
+      const { error } = await sb.from("fm_ajustes").upsert({ chave: "parametros", valor, atualizado_em: new Date().toISOString() });
+      $("#cap-salvar").disabled = false;
+      if (error) return toast("Não salvou: " + error.message, true);
+      CAP = FM.capturaConfig(valor); sujo = false; toast("Parâmetros salvos"); desenhar(); $("#cap-st").textContent = "Salvo ✓";
+    };
+  };
+  desenhar();
+}
+
 // ---------------- ACTIVECAMPAIGN ----------------
 async function funcActive(corpo) {
   const { data: { session } } = await sb.auth.getSession();
@@ -1933,7 +1990,9 @@ function acCarregar(qual, forcar) {
 
 async function renderConfig() {
   view.innerHTML = '<div class="pagina" style="max-width:760px"><div class="topo"><h1>Configurações</h1></div>' +
+    '<div class="card" id="cap-card"><h3 style="display:flex;align-items:center;gap:10px"><span class="ic" style="width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--info-bg);color:var(--info-fg);font-size:12px">?=</span>Parâmetros do link (UTMs)</h3><div id="cap-box" class="mut">Carregando…</div></div>' +
     '<div class="card"><h3 style="display:flex;align-items:center;gap:10px"><span class="ic" style="width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--int-bg);color:var(--int-fg);font-size:12px">AC</span>ActiveCampaign</h3><div id="ac-box" class="mut">Verificando conexão…</div></div></div>';
+  renderCaptura();
   let st;
   try { st = await acCarregar("status", true); }
   catch (e) { $("#ac-box").innerHTML = '<p style="color:var(--err-fg)">' + h(e.message) + "</p>"; return; }
@@ -1975,12 +2034,12 @@ async function renderConfig() {
 function fontesActive(atual) {
   const f = ED.form;
   const ps = f.perguntas.filter(FM.ehPergunta);
-  const PARAMS = ["email", "nome", "telefone", "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "sck", "src"];
+  const PARAMS = ["email", "nome", "telefone"].concat(paramsAtivos().filter((k) => !["email", "nome", "telefone"].includes(k)));
   const extra = atual && atual.startsWith("param:") && !PARAMS.includes(atual.slice(6)) ? [atual.slice(6)] : [];
   const opt = (v, rot) => '<option value="' + h(v) + '"' + (atual === v || (v === "fixo:" && atual && atual.startsWith("fixo:")) ? " selected" : "") + ">" + h(rot) + "</option>";
   return '<option value="">— escolha —</option>' +
     '<optgroup label="Respostas do formulário">' + ps.map((q) => opt("q:" + q.id, rotuloQ(q))).join("") + "</optgroup>" +
-    '<optgroup label="Parâmetros do link">' + PARAMS.concat(extra).map((k) => opt("param:" + k, "?" + k + "=")).join("") + opt("param:__novo", "Outro parâmetro…") + "</optgroup>" +
+    '<optgroup label="Parâmetros do link">' + PARAMS.concat(extra).map((k) => opt("param:" + k, nomeParam(k) === k ? "?" + k + "=" : nomeParam(k) + "  (?" + k + "=)")).join("") + opt("param:__novo", "Outro parâmetro…") + "</optgroup>" +
     (FM.varsDoForm(f).length ? '<optgroup label="Lead Score">' + FM.varsDoForm(f).map((v) => opt("var:" + v, "Σ " + v) + opt("var:" + v + "_faixa", "Σ " + v + " · nome da faixa")).join("") + "</optgroup>" : "") +
     '<optgroup label="Outros">' + opt("meta:form", "Nome do formulário") + opt("meta:data", "Data da resposta") + opt("fixo:", "Texto fixo…") + "</optgroup>";
 }
@@ -2332,11 +2391,12 @@ function renderCompartilhar() {
     '<div class="copy"><input readonly value="' + h(link) + '" id="lk"><button id="lk-c">Copiar</button><a class="b" href="' + h(link) + '" target="_blank" rel="noopener">Abrir ↗</a></div>' +
     '<label class="f" style="margin-top:12px"><span>Endereço (slug)</span><div style="display:flex;gap:8px"><span class="mut mono" style="align-self:center;white-space:nowrap">' + h(baseUrl()) + '/f/</span><input id="slug" value="' + h(f.slug) + '" maxlength="60"><button id="slug-ok">Salvar</button></div><small>Só letras minúsculas, números e hífen. Se mudar, o link antigo para de funcionar.</small></label>' +
     "</div>" +
-    '<div class="card"><h3>Link com rastreamento <small>UTM e SCK ficam salvos em cada resposta</small></h3>' +
-    '<div class="g3">' + campo("utm_source", '<input data-utm="utm_source" placeholder="instagram">') + campo("utm_medium", '<input data-utm="utm_medium" placeholder="stories">') + campo("utm_campaign", '<input data-utm="utm_campaign" placeholder="pesquisa-nov">') + "</div>" +
-    '<div class="g3">' + campo("sck", '<input data-utm="sck" placeholder="opcional">') + campo("utm_content", '<input data-utm="utm_content" placeholder="opcional">') + campo("Outros", '<input data-utm="_extra" placeholder="email=x@y.com">') + "</div>" +
+    '<div class="card"><h3>Link com rastreamento <small>os parâmetros ficam salvos em cada resposta</small></h3>' +
+    '<div class="g3">' + paramsAtivos().filter((k) => !/^(fbclid|gclid)$/i.test(k)).map((k) => campo(h(nomeParam(k)) + ' <span class="mut mono" style="font-weight:400">' + h(k) + "</span>", '<input data-utm="' + h(k) + '" placeholder="' + h({ utm_source: "instagram", utm_medium: "stories", utm_campaign: "pesquisa-nov" }[k] || "opcional") + '">')).join("") +
+    campo("Outros", '<input data-utm="_extra" placeholder="email=x@y.com">') + "</div>" +
+    '<p class="ajuda" style="margin:-4px 0 10px">A lista vem de <a href="#/config">Configurações → Parâmetros do link</a>.</p>' +
     '<div class="copy"><input readonly id="lk-utm" value="' + h(link) + '"><button id="lk-utm-c">Copiar</button></div>' +
-    '<p class="ajuda">Qualquer parâmetro na URL fica salvo junto da resposta e pode ser usado como <code>{{nome_do_parametro}}</code> nos textos e no redirecionamento.</p></div>' +
+    '<p class="ajuda">Os parâmetros capturados ficam salvos junto da resposta' + (CAP.outros ? " (inclusive os que não estão na lista)" : "") + ' e qualquer parâmetro do link pode ser usado como <code>{{nome_do_parametro}}</code> nos textos e no redirecionamento.</p></div>' +
     blocoPreencher(f, link) +
     '<div class="card"><h3>Incorporar no site</h3><p class="ajuda" style="margin:0 0 10px">Cole este código na página (WordPress, Flow Pages, Elementor…):</p><pre id="emb">' + h(embed) + '</pre><button class="mini" id="emb-c" style="margin-top:10px">Copiar código</button></div>' +
     "</div>";
@@ -2680,6 +2740,7 @@ function tabela() {
   const stRot = { concluida: "Concluída", parcial: "Parcial", visita: "Só visitou" };
   if (!tot) { $("#rs-tab").innerHTML = '<div class="card vazio" style="padding:30px">Nenhuma resposta com esse filtro.</div>'; return; }
   const temAc = f.perguntas.some((q) => q.tipo === "active");
+  const colsP = paramsAtivos().filter((k) => R.linhas.some((r) => { const v = FM.pegaParam(r.params, k); return v != null && v !== ""; })).slice(0, 8);
   const celAc = (r) => {
     const vs = Object.values(r.integracoes || {});
     if (!vs.length) return '<span class="mut">—</span>';
@@ -2695,14 +2756,15 @@ function tabela() {
   const temFx = (v) => f.perguntas.some((q) => q.tipo === "faixa" && FM.nomeVar(q) === v);
   $("#rs-tab").innerHTML = '<div class="tab-wrap tab-resp"><table><thead><tr><th class="fixa">#</th><th>Data</th><th>Status</th>' + vs.map((v) => "<th>Σ " + h(v) + "</th>" + (temFx(v) ? "<th>Faixa</th>" : "")).join("") +
     qs.map((q) => '<th title="' + h(q.titulo) + '">' + h(curto(q.titulo)) + "</th>").join("") +
-    "<th>Tela final</th><th>Parou em</th><th>Origem</th>" + (temAc ? "<th>ActiveCampaign</th>" : "") + "<th>Dispositivo</th></tr></thead><tbody>" +
+    "<th>Tela final</th><th>Parou em</th>" + colsP.map((k) => '<th title="' + h(k) + '">' + h(nomeParam(k)) + "</th>").join("") + (temAc ? "<th>ActiveCampaign</th>" : "") + "<th>Dispositivo</th></tr></thead><tbody>" +
     fatia.map((r, i) => {
       const parou = r.status !== "concluida" && r.atual ? P(r.atual) : null;
       const pr = r.params || {};
       return '<tr data-id="' + r.id + '"><td class="fixa mut">' + (tot - (R.pagina * POR + i)) + "</td><td>" + dataHora(r.iniciado_em) + '</td><td><span class="pill ' + r.status + '">' + stRot[r.status] + "</span></td>" +
         vs.map((v) => '<td style="font-weight:600;font-variant-numeric:tabular-nums">' + fmtScore(scoreDe(r, v)) + "</td>" + (temFx(v) ? "<td>" + (faixaTxt(r, v) ? '<span class="chip">' + h(faixaTxt(r, v)) + "</span>" : '<span class="mut">—</span>') + "</td>" : "")).join("") +
         qs.map((q) => "<td>" + cel(q, (r.respostas || {})[q.id]) + "</td>").join("") +
-        "<td>" + h(nomeFinal(r.final_id)) + '</td><td class="mut">' + (parou ? h(curto(parou.titulo)) : "") + '</td><td class="mut">' + h([pr.utm_source, pr.utm_campaign, pr.sck].filter(Boolean).join(" · ")) + "</td>" +
+        "<td>" + h(nomeFinal(r.final_id)) + '</td><td class="mut">' + (parou ? h(curto(parou.titulo)) : "") + "</td>" +
+        colsP.map((k) => { const v = FM.pegaParam(pr, k); return '<td class="mut">' + (v ? h(v) + (pr.origem_lembrada === "sim" ? ' <span title="Origem lembrada de um acesso anterior">↺</span>' : "") : "") + "</td>"; }).join("") +
         (temAc ? "<td>" + celAc(r) + "</td>" : "") + '<td class="mut">' + h(r.dispositivo || "") + "</td></tr>";
     }).join("") +
     "</tbody></table></div>" +
@@ -2730,7 +2792,7 @@ function detalhe(r) {
     }).join("") +
     (Object.keys(r.integracoes || {}).length ? '<h4 style="margin:18px 0 6px">Integrações</h4>' + Object.entries(r.integracoes).map(([k, v]) =>
       '<div class="integ ' + (v.ok ? "ok" : "erro") + '"><b>' + (v.ok ? "✓" : "✕") + "</b><span><b>" + h(v.nome || "ActiveCampaign") + "</b> · " + (v.ok ? "contato " + h(v.email || "") + " criado/atualizado" + (v.tags ? ", " + v.tags + " tag(s)" : "") + ((v.avisos || []).length ? ". Avisos: " + h(v.avisos.join("; ")) : "") : h(v.erro || "falhou")) + ' <span class="mut">· ' + dataHora(v.em) + "</span></span></div>").join("") : "") +
-    (Object.keys(r.params || {}).length ? '<h4 style="margin:18px 0 6px">Origem</h4>' + Object.entries(r.params).map(([k, v]) => '<div class="resp-item" style="padding:6px 0"><span>' + h(k) + '</span><p class="mono">' + h(v) + "</p></div>").join("") : "") +
+    (Object.keys(r.params || {}).length ? '<h4 style="margin:18px 0 6px">Origem</h4>' + Object.entries(r.params).map(([k, v]) => '<div class="resp-item" style="padding:6px 0"><span>' + h(k === "origem_lembrada" ? "Origem lembrada de um acesso anterior" : nomeParam(k) === k ? k : nomeParam(k) + " · " + k) + '</span><p class="mono">' + h(v) + "</p></div>").join("") : "") +
     '<div style="margin-top:18px"><button class="mini perigo" id="dt-del">Excluir esta resposta</button></div></div>';
   document.body.appendChild(g);
   const fechar = () => { g.remove(); document.removeEventListener("keydown", tecla); };
@@ -2764,10 +2826,12 @@ function tabelaExport() {
   const f = ED.form;
   const qs = f.perguntas.filter(FM.ehPergunta);
   const L = ED.resultados.linhas;
-  const pks = [...new Set(L.flatMap((r) => Object.keys(r.params || {})))].sort();
+  const todos = [...new Set(L.flatMap((r) => Object.keys(r.params || {})))];
+  const ordem = CAP.lista.map((x) => x.chave.toLowerCase());
+  const pks = todos.sort((a, b) => { const ia = ordem.indexOf(a.toLowerCase()), ib = ordem.indexOf(b.toLowerCase()); return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a.localeCompare(b); });
   const stRot = { concluida: "Concluída", parcial: "Parcial", visita: "Só visitou" };
   const vs = FM.varsDoForm(f);
-  const cab = ["Início", "Status", "Concluído em", "Tempo (s)", "Tela final", "Parou em"].concat(vs.flatMap((v) => ["Lead Score (" + v + ")", "Faixa (" + v + ")"])).concat(qs.map((q) => q.titulo || q.chave || q.id)).concat(pks).concat(["Dispositivo", "ID"]);
+  const cab = ["Início", "Status", "Concluído em", "Tempo (s)", "Tela final", "Parou em"].concat(vs.flatMap((v) => ["Lead Score (" + v + ")", "Faixa (" + v + ")"])).concat(qs.map((q) => q.titulo || q.chave || q.id)).concat(pks.map((k) => nomeParam(k) === k ? k : nomeParam(k) + " (" + k + ")")).concat(["Dispositivo", "ID"]);
   const linhas = L.filter((r) => r.status !== "visita").map((r) => {
     const fi = f.finais.find((x) => x.id === r.final_id);
     const parou = r.status !== "concluida" && r.atual ? P(r.atual) : null;
@@ -2975,7 +3039,7 @@ async function gerarPdf(op) {
         const fi = f.finais.find((x) => x.id === r.final_id);
         const parou = r.status !== "concluida" && r.atual ? P(r.atual) : null;
         const pr = r.params || {};
-        const origem = [pr.utm_source, pr.utm_campaign, pr.sck].filter(Boolean).join(" · ");
+        const origem = paramsAtivos().map((k) => FM.pegaParam(pr, k)).filter(Boolean).slice(0, 4).join(" · ");
         const linhas = qs.filter((q) => !FM.vazio((r.respostas || {})[q.id])).map((q) => [{ text: tx(q.titulo || q.chave || "Pergunta"), style: "mut" }, resp(r.respostas[q.id])]);
         const sc = FM.varsDoForm(f).filter((v) => scoreDe(r, v) != null).map((v) => v + " " + fmtScore(scoreDe(r, v)) + (faixaTxt(r, v) ? " (" + tx(faixaTxt(r, v)) + ")" : "")).join("  ");
         const cab = "#" + (base.length - i) + "   " + dataHora(r.iniciado_em) + "   " + stRot[r.status] + (sc ? "   ·   " + sc : "") + (fi ? "   ·   " + tx(fi.nome || fi.titulo) : "") + (origem ? "   ·   " + tx(origem) : "");

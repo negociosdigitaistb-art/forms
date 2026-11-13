@@ -643,7 +643,29 @@
     try { token = sessionStorage.getItem(chave); } catch (e) {}
     if (!token) { token = novoToken(); try { sessionStorage.setItem(chave, token); } catch (e) {} }
     const disp = /Mobi|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : (window.innerWidth < 1024 && /iPad|Tablet/i.test(navigator.userAgent) ? "tablet" : "desktop");
-    fila = rpc("fm_abrir", { p_slug: slug, p_token: token, p_params: params, p_dispositivo: disp }).catch(() => {});
+    // ---- captura dos parâmetros do link (lista definida em Configurações) ----
+    const cap = FM.capturaConfig(f.captura);
+    const ativos = cap.lista.filter((x) => x.ativo).map((x) => x.chave);
+    if (cap.lembrar) {
+      const daUrl = {};
+      ativos.forEach((k) => { const v = FM.pegaParam(params, k); if (v != null && v !== "") daUrl[k] = v; });
+      try {
+        if (Object.keys(daUrl).length) localStorage.setItem("fm_origem", JSON.stringify({ v: daUrl, ate: Date.now() + cap.dias * 864e5 }));
+        else {
+          const mem = JSON.parse(localStorage.getItem("fm_origem") || "null");
+          if (mem && mem.ate > Date.now() && mem.v) {
+            Object.keys(mem.v).forEach((k) => { if (FM.pegaParam(params, k) == null && ativos.includes(k)) params[k] = String(mem.v[k]).slice(0, 300); });
+            if (Object.keys(mem.v).some((k) => ativos.includes(k))) params.origem_lembrada = "sim";
+          }
+        }
+      } catch (e) {}
+    }
+    let salvos = params;
+    if (!cap.outros) {
+      salvos = {};
+      Object.keys(params).forEach((k) => { if (ativos.some((a) => a.toLowerCase() === k.toLowerCase()) || k === "referrer" || k === "origem_lembrada") salvos[k] = params[k]; });
+    }
+    fila = rpc("fm_abrir", { p_slug: slug, p_token: token, p_params: salvos, p_dispositivo: disp }).catch(() => {});
     comecar(f);
   }).catch((e) => {
     const m = e.message || "";

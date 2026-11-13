@@ -246,5 +246,27 @@
   const ehPergunta = (q) => !!q && q.tipo !== "aviso" && !(TIPOS[q.tipo] && TIPOS[q.tipo].interno);
   const ehInterno = (q) => !!q && !!(TIPOS[q.tipo] && TIPOS[q.tipo].interno);
 
-  window.FM = { ehPergunta, ehInterno, calcularScore, faixaDe, rotuloFaixa, nomeVar, varsDoForm, valorDe, num, PREENCHE, paramsDaPergunta, valorDaUrl, TIPOS, OPS, uid, vazio, avaliar, regraBate, proximo, textoResposta, variaveis, chaveSugerida, slugify, norm };
+  // ---------- parâmetros do link (UTMs) ----------
+  const PARAMS_PADRAO = [
+    { chave: "utm_source", nome: "Origem", ativo: true },
+    { chave: "utm_medium", nome: "Mídia", ativo: true },
+    { chave: "utm_campaign", nome: "Campanha", ativo: true },
+    { chave: "utm_content", nome: "Conteúdo", ativo: true },
+    { chave: "utm_term", nome: "Termo", ativo: true },
+    { chave: "sck", nome: "SCK", ativo: true },
+    { chave: "src", nome: "SRC", ativo: true },
+    { chave: "fbclid", nome: "Facebook (fbclid)", ativo: true },
+    { chave: "gclid", nome: "Google Ads (gclid)", ativo: true }
+  ];
+  function capturaConfig(c) {
+    c = c || {};
+    const lista = (Array.isArray(c.lista) && c.lista.length ? c.lista : PARAMS_PADRAO)
+      .map((x) => ({ chave: String(x.chave || "").trim(), nome: String(x.nome || "").trim(), ativo: x.ativo !== false }))
+      .filter((x) => x.chave);
+    return { lista, lembrar: c.lembrar !== false, dias: Math.min(365, Math.max(1, +c.dias || 30)), outros: c.outros !== false };
+  }
+  // procura um parâmetro sem diferenciar maiúsculas
+  function pegaParam(obj, chave) { const k = Object.keys(obj || {}).find((x) => x.toLowerCase() === String(chave).toLowerCase()); return k == null ? undefined : obj[k]; }
+
+  window.FM = { PARAMS_PADRAO, capturaConfig, pegaParam, ehPergunta, ehInterno, calcularScore, faixaDe, rotuloFaixa, nomeVar, varsDoForm, valorDe, num, PREENCHE, paramsDaPergunta, valorDaUrl, TIPOS, OPS, uid, vazio, avaliar, regraBate, proximo, textoResposta, variaveis, chaveSugerida, slugify, norm };
 })();
