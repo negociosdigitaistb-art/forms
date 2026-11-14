@@ -1194,6 +1194,7 @@ function prepararTipo(p) {
 function removerReferencias(id, ehFinal) {
   const f = ED.form;
   const alvo = ehFinal ? "fim:" + id : id;
+  if (f.inicio && f.inicio.destino === alvo) f.inicio.destino = "";
   f.perguntas.forEach((p) => {
     p.regras = (p.regras || []).filter((r) => r.destino !== alvo && !(r.conds || []).some((c) => c.pergunta === id));
     if (p.depois === alvo) p.depois = "";
@@ -1242,8 +1243,10 @@ function painelInicio(pn) {
     campo("Texto", txa("texto", i.texto, 'rows="3" placeholder="Ex.: São só 3 perguntas rápidas."')) +
     '<div class="g2">' + campo("Texto do botão", inp("botao", i.botao || "Começar")) + campo("Tempo estimado", inp("tempo", i.tempo, 'placeholder="Ex.: 2 minutos"'), "Aparece embaixo do botão.") + "</div>" +
     campo("Imagem (link)", inp("imagem", i.imagem, 'placeholder="https://…"'), "Opcional. Cole o endereço de uma imagem.") +
-    "</div></div>";
+    "</div>" +
+    '<div class="card">' + campo("Depois de começar, ir para", '<select id="ini-dest"><option value="">1ª pergunta da lista</option>' + opcoesDestino(null, fxExiste(i.destino) ? i.destino : "", false) + "</select>", "Também dá para trocar no Fluxo, arrastando a bolinha da boas-vindas.") + "</div></div>";
   ligarCampos(pn, i, (k) => { if (k === "ativo") renderLado(); });
+  $("#ini-dest").onchange = (e) => { i.destino = e.target.value; marcarSujo(); };
 }
 
 function painelFim(pn, fi) {
@@ -1682,7 +1685,8 @@ function desenharFluxo() {
   if (nos.some((n) => !pos[n.id])) fxAutoLayout(true);
   // entradas para achar etapas soltas
   const entra = new Set();
-  if (f.perguntas[0]) entra.add(f.perguntas[0].id);
+  const iniAlvo = fxExiste(f.inicio.destino) ? f.inicio.destino : (f.perguntas[0] && f.perguntas[0].id);
+  if (iniAlvo) entra.add(iniAlvo);
   f.perguntas.forEach((p) => fxPortas(p).forEach((pt) => { if (pt.alvo) entra.add(pt.alvo); }));
   let n = 0;
   caixa.innerHTML = nos.map((no) => {
@@ -1691,7 +1695,7 @@ function desenharFluxo() {
     if (no.tipo === "inicio") {
       const i = f.inicio;
       return '<div class="fx-no fx-inicio' + on + '" data-no="inicio" style="left:' + x + "px;top:" + y + 'px"><div class="fx-cab"><small><span class="fx-ic t-tela">▶</span>Boas-vindas</small><b>' + h(i.titulo || "Tela de boas-vindas") + "</b></div>" +
-        '<div class="fx-portas"><div class="fx-porta padrao" data-chave="inicio"><span class="rot">' + h(i.botao || "Começar") + '</span><span class="fx-dot ligado fixa" title="Sempre vai para a primeira pergunta"></span></div></div></div>';
+        '<div class="fx-portas"><div class="fx-porta padrao" data-chave="inicio"><span class="rot">' + h(i.botao || "Começar") + '</span><span class="fx-dot ligado" data-q="inicio" data-chave="inicio" title="Arraste até a etapa onde a pessoa começa"></span></div></div></div>';
     }
     if (no.tipo === "fim") {
       const fi = no.fi;
@@ -1739,9 +1743,18 @@ function desenharArestas() {
   const g = $("#fx-g"); if (!g) return;
   const f = ED.form; let svg = "", botao = "";
   if (!ED.fxGeo) medirFluxo();
-  if (ED.fxGeo.inicio && f.perguntas[0]) {
-    const a = fxSaida("inicio", "inicio"), b = fxEntrada(f.perguntas[0].id);
-    if (a && b) svg += '<path class="fx-linha padrao" d="' + fxCurva(a, b).d + '"/>';
+  const iniEsc = fxExiste(f.inicio.destino);
+  const iniAlvo = iniEsc ? f.inicio.destino : (f.perguntas[0] && f.perguntas[0].id);
+  if (ED.fxGeo.inicio && iniAlvo) {
+    const a = fxSaida("inicio", "inicio"), b = fxEntrada(iniAlvo);
+    if (a && b) {
+      const c = fxCurva(a, b);
+      const sel = ED.fxAresta && ED.fxAresta.q === "inicio";
+      svg += '<path class="fx-hit" data-q="inicio" data-chave="inicio" d="' + c.d + '"><title>Começar → ' + h(fxNome(iniAlvo)) + '</title></path><path class="fx-linha padrao' + (iniEsc ? "" : " impl") + (sel ? " sel" : "") + '" d="' + c.d + '"/>';
+      if (sel) botao = '<div class="fx-aresta-ctl" style="left:' + c.meio[0] + "px;top:" + c.meio[1] + "px;transform:translate(-50%,-50%) scale(" + (1 / ED.fxView.z) + ')">' +
+        (iniEsc ? '<button class="mini perigo" id="fx-rm">Remover ligação</button>' : "") +
+        '<small class="fx-obs">' + (iniEsc ? "sem ligação, começa pela 1ª pergunta da lista" : "automática: começa pela 1ª pergunta da lista. Arraste a bolinha para outra etapa para trocar") + "</small></div>";
+    }
   }
   f.perguntas.forEach((p) => {
     (ED.fxPortasC[p.id] || []).forEach((pt) => {
@@ -1766,6 +1779,10 @@ function desenharArestas() {
 }
 function fxRemoverSel() {
   const a = ED.fxAresta; if (!a) return;
+  if (a.q === "inicio") {
+    ED.fxAresta = null; ED.form.inicio.destino = ""; marcarSujo(); desenharFluxo();
+    return toast("Ligação removida. A pessoa começa pela 1ª pergunta da lista.");
+  }
   const p = P(a.q); ED.fxAresta = null;
   if (p) fxDesligar(p, a.chave);
   desenharFluxo();
@@ -1901,6 +1918,20 @@ function ligarFluxo() {
       if (!a.moveu) return; // só um clique na bolinha: não liga nem abre nada
       const sob = document.elementFromPoint(e.clientX, e.clientY);
       const alvo = sob && sob.closest(".fx-no");
+      if (a.q === "inicio") {
+        const ligarIni = (id) => { ED.form.inicio.destino = id; ED.fxAresta = null; marcarSujo(); };
+        if (alvo && alvo.dataset.no !== "inicio") { ligarIni(alvo.dataset.no); desenharFluxo(); toast("A pessoa começa por " + fxNome(alvo.dataset.no)); }
+        else if (!alvo && sob && sob.closest("#fluxo")) {
+          const pt = mundoPt(e);
+          escolherTipo((tipo) => {
+            const nova = fxNovoBloco(tipo);
+            fxPosicoes()[nova.id] = [Math.round(pt[0]), Math.round(pt[1] - 26)];
+            ligarIni(nova.id); desenharFluxo(); fxSelecionar(nova.id);
+            setTimeout(() => { const ti = $("#q-titulo"); if (ti) ti.focus(); }, 60);
+          });
+        }
+        return;
+      }
       const p = P(a.q); if (!p) return;
       if (alvo && alvo.dataset.no !== "inicio" && alvo.dataset.no !== a.q) { fxLigar(p, a.chave, alvo.dataset.no); desenharFluxo(); toast("Ligado a " + fxNome(alvo.dataset.no)); }
       else if (!alvo && sob && sob.closest("#fluxo")) {

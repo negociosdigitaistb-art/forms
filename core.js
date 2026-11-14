@@ -105,7 +105,11 @@
       if (ps.some((p) => p.id === dest)) return { tipo: "pergunta", id: dest };
       return null;
     };
-    if (atualId == null) return ps.length ? { tipo: "pergunta", id: ps[0].id } : fimPadrao;
+    if (atualId == null) {
+      const d = resolver(((form.inicio || {}).destino) || "");
+      if (d) return d;
+      return ps.length ? { tipo: "pergunta", id: ps[0].id } : fimPadrao;
+    }
     const i = ps.findIndex((p) => p.id === atualId);
     const p = ps[i];
     if (p && (p.tipo === "tag" || p.tipo === "actag")) {
