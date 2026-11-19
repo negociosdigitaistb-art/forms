@@ -10,8 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#F6F7FA; --surface:#FFFFFF; --ink:#1B1F3B; --ink2:#2B3040; --muted:#5B6170; --line:#E6E8EE; --line2:#EEF0F4;
-    --field:#D9DCE4; --link:#2F44C8; --sel:#F2F4FF; --solid:#1B1F3B; --solid-h:#2A2F55; --pop:#1B1F3B;
+    --bg:#F6F7FA; --surface:#FFFFFF; --ink:#010926; --ink2:#2B3040; --muted:#5B6170; --line:#E6E8EE; --line2:#EEF0F4;
+    --field:#D9DCE4; --link:#2F44C8; --sel:#F2F4FF; --solid:#010926; --solid-h:#0D1A4A; --pop:#010926;
     --ok-bg:#DCF5E3; --ok-fg:#1E6B3A; --err-bg:#FBE1EC; --err-fg:#8F2756; --warn-bg:#FCEFD3; --warn-fg:#7A5310; --info-bg:#E3ECFF; --info-fg:#2F44C8; --lil-bg:#EEE6FB; --lil-fg:#5B3AA8;
     --code:#EEF0F4; --shadow:0 12px 32px rgba(15,18,40,.14);
     --bar1:#2F44C8; --bar2:#C9D0F5; --gold:#B8924A;
@@ -21,14 +21,14 @@
     --sombra:0 12px 32px rgba(15,18,40,.14); --sombra-s:0 1px 2px rgba(15,18,40,.08);
   }
   :root[data-theme="dark"] { color-scheme:dark;
-    --bg:#0E1117; --surface:#161A23; --ink:#E7E9F0; --ink2:#CDD1DC; --muted:#9CA3B4; --line:#2A303D; --line2:#212632;
-    --field:#3A4152; --link:#93A1F7; --sel:#1F2745; --solid:#4C5FDC; --solid-h:#5A6CE6; --pop:#2A3146;
+    --bg:#010926; --surface:#0D1536; --ink:#E7E9F0; --ink2:#CDD1DC; --muted:#9CA3B4; --line:#212C54; --line2:#172145;
+    --field:#2F3C6A; --link:#93A1F7; --sel:#142357; --solid:#4C5FDC; --solid-h:#5A6CE6; --pop:#1D2B5D;
     --ok-bg:#15331F; --ok-fg:#7FD9A0; --err-bg:#3A1826; --err-fg:#F3A0C1; --warn-bg:#382B10; --warn-fg:#EEC56F; --info-bg:#1A2744; --info-fg:#93A1F7; --lil-bg:#2A2145; --lil-fg:#C4A9F5;
-    --code:#212632; --shadow:0 12px 32px rgba(0,0,0,.5);
+    --code:#172145; --shadow:0 12px 32px rgba(0,0,0,.5);
     --bar1:#7C8CF2; --bar2:#2C3555; --gold:#D9B878;
     --int-bg:#3A2414; --int-fg:#F5A86B;
     --log-bg:#133331; --log-fg:#5EEAD4;
-    --col:#12161E; --card:#1C212C;
+    --col:#080F2B; --card:#121C40;
     --sombra:0 12px 32px rgba(0,0,0,.5); --sombra-s:0 1px 2px rgba(0,0,0,.4);
   }
   * { box-sizing:border-box; margin:0; padding:0; }
@@ -2782,7 +2782,7 @@ const PRESETS = [
   { nome: "TB Escuro", fundo: "#0a0b0c", texto: "#F2EEE6", destaque: "#C9A96E", fonte: "Hanken Grotesk" },
   { nome: "TB Verde", fundo: "#0B1410", texto: "#EAF2EC", destaque: "#5FB07C", fonte: "Hanken Grotesk" },
   { nome: "Noite", fundo: "#0E1430", texto: "#E8ECFF", destaque: "#7C9BFF", fonte: "Archivo" },
-  { nome: "Claro", fundo: "#FFFFFF", texto: "#1B1F3B", destaque: "#2F44C8", fonte: "Hanken Grotesk" },
+  { nome: "Claro", fundo: "#FFFFFF", texto: "#010926", destaque: "#2F44C8", fonte: "Hanken Grotesk" },
   { nome: "Areia", fundo: "#F5F0E6", texto: "#2A241A", destaque: "#8A6A2F", fonte: "Lora" },
   { nome: "Rosa", fundo: "#FFF4F6", texto: "#3A1022", destaque: "#D6336C", fonte: "Poppins" }
 ];
@@ -3382,7 +3382,7 @@ function opcoesPdf() {
 async function gerarPdf(op) {
   await carregarPdfmake();
   const f = ED.form, R = ED.resultados, L = R.linhas;
-  const COR = { ink: "#1B1F3B", mut: "#5B6170", linha: "#E6E8EE", fundo: "#F3F4F8", barra: "#2F44C8", barra2: "#C9D0F5", ok: "#1E6B3A", warn: "#7A5310", err: "#8F2756" };
+  const COR = { ink: "#010926", mut: "#5B6170", linha: "#E6E8EE", fundo: "#F3F4F8", barra: "#2F44C8", barra2: "#C9D0F5", ok: "#1E6B3A", warn: "#7A5310", err: "#8F2756" };
   const tx = (v) => String(v == null ? "" : v).replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "").trim();
   const resp = (v) => tx(FM.textoResposta(v));
   const visitas = L.length;
